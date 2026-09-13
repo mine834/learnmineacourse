@@ -4,548 +4,625 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '../lib/supabase'
 
-export default function AdminPage() {
+function Icon({ name, size = 20 }) {
+  const common = {
+    width: size,
+    height: size,
+    viewBox: '0 0 24 24',
+    fill: 'none',
+    stroke: 'currentColor',
+    strokeWidth: 1.8,
+    strokeLinecap: 'round',
+    strokeLinejoin: 'round',
+  }
+
+  const icons = {
+    products: (
+      <svg {...common}>
+        <path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z" />
+        <path d="m3.3 7 8.7 5 8.7-5" />
+        <path d="M12 22V12" />
+      </svg>
+    ),
+
+    courses: (
+      <svg {...common}>
+        <path d="M22 10 12 5 2 10l10 5 10-5Z" />
+        <path d="M6 12.5V16c0 1.7 2.7 3 6 3s6-1.3 6-3v-3.5" />
+        <path d="M22 10v6" />
+      </svg>
+    ),
+
+    students: (
+      <svg {...common}>
+        <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+        <circle cx="9" cy="7" r="4" />
+        <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
+        <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+      </svg>
+    ),
+
+    content: (
+      <svg {...common}>
+        <path d="M12 20h9" />
+        <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L8 18l-4 1 1-4Z" />
+      </svg>
+    ),
+
+    email: (
+      <svg {...common}>
+        <rect x="3" y="5" width="18" height="14" rx="2" />
+        <path d="m3 7 9 6 9-6" />
+      </svg>
+    ),
+
+    payments: (
+      <svg {...common}>
+        <rect x="2" y="5" width="20" height="14" rx="2" />
+        <path d="M2 10h20" />
+        <path d="M6 15h2" />
+      </svg>
+    ),
+
+    arrow: (
+      <svg {...common}>
+        <path d="M5 12h14" />
+        <path d="m13 6 6 6-6 6" />
+      </svg>
+    ),
+  }
+
+  return icons[name] || null
+}
+
+export default function AdminDashboardPage() {
   const router = useRouter()
 
-  const [user, setUser] = useState(null)
-  const [profile, setProfile] = useState(null)
-  const [loading, setLoading] = useState(true)
-  const [errorMessage, setErrorMessage] = useState('')
+  const [stats, setStats] = useState({
+    students: null,
+    courses: null,
+    products: null,
+  })
 
   useEffect(() => {
-    checkAdmin()
+    loadStats()
   }, [])
 
-  async function checkAdmin() {
-    setLoading(true)
-    setErrorMessage('')
-
+  async function loadStats() {
     try {
-      const {
-        data: { session },
-        error: sessionError,
-      } = await supabase.auth.getSession()
+      const [
+        studentsResult,
+        coursesResult,
+        productsResult,
+      ] = await Promise.all([
+        supabase
+          .from('profiles')
+          .select('*', { count: 'exact', head: true })
+          .eq('role', 'student'),
 
-      if (sessionError) {
-        console.error('SESSION ERROR:', sessionError)
-        setErrorMessage('Session шалгах үед алдаа гарлаа.')
-        setLoading(false)
-        return
-      }
+        supabase
+          .from('courses')
+          .select('*', { count: 'exact', head: true }),
 
-      if (!session?.user) {
-        router.replace('/login')
-        return
-      }
+        supabase
+          .from('products')
+          .select('*', { count: 'exact', head: true }),
+      ])
 
-      const currentUser = session.user
-      setUser(currentUser)
-
-      const { data: profileData, error: profileError } = await supabase
-        .from('profiles')
-        .select('id, email, full_name, role')
-        .eq('id', currentUser.id)
-        .single()
-
-      console.log('CURRENT USER:', currentUser)
-      console.log('PROFILE:', profileData)
-
-      if (profileError) {
-        console.error('PROFILE ERROR:', profileError)
-
-        setErrorMessage(
-          'Profile мэдээлэл олдсонгүй. Supabase profiles table-ээ шалгана уу.'
-        )
-
-        setLoading(false)
-        return
-      }
-
-      if (!profileData) {
-        setErrorMessage('Profile мэдээлэл байхгүй байна.')
-        setLoading(false)
-        return
-      }
-
-      setProfile(profileData)
-
-      if (profileData.role !== 'admin') {
-        router.replace('/dashboard')
-        return
-      }
-
-      setLoading(false)
+      setStats({
+        students: studentsResult.count ?? 0,
+        courses: coursesResult.count ?? 0,
+        products: productsResult.count ?? 0,
+      })
     } catch (error) {
-      console.error(error)
-      setErrorMessage(error.message || 'Тодорхойгүй алдаа гарлаа.')
-      setLoading(false)
+      console.error('Dashboard stats error:', error)
     }
   }
 
-  async function logout() {
-    await supabase.auth.signOut()
-    router.replace('/login')
-  }
-
-  if (loading) {
-    return (
-      <main style={styles.loadingPage}>
-        <div style={styles.loadingCard}>
-          <h2>LEARN·MINEA</h2>
-          <p>Admin эрхийг шалгаж байна...</p>
-        </div>
-      </main>
-    )
-  }
-
-  if (errorMessage) {
-    return (
-      <main style={styles.loadingPage}>
-        <div style={styles.errorCard}>
-          <h2>Admin page нээгдсэнгүй</h2>
-
-          <p style={styles.errorText}>{errorMessage}</p>
-
-          <p style={styles.helpText}>
-            Supabase → Table Editor → profiles дээр одоо нэвтэрсэн
-            хэрэглэгчийн role яг admin байгаа эсэхийг шалгаарай.
-          </p>
-
-          <button
-            style={styles.primaryButton}
-            onClick={() => router.push('/dashboard')}
-          >
-            Dashboard руу буцах
-          </button>
-        </div>
-      </main>
-    )
-  }
+  const actions = [
+    {
+      title: 'Бүтээгдэхүүн',
+      description: 'Ном нэмэх, зураг солих, үнэ болон тайлбар засах',
+      path: '/admin/products',
+      icon: 'products',
+    },
+    {
+      title: 'Сургалт',
+      description: 'Course, module, lesson болон quiz нэмэх',
+      path: '/admin/courses',
+      icon: 'courses',
+    },
+    {
+      title: 'Сурагчид',
+      description: 'Сурагчийн course access нэмэх, хаах',
+      path: '/admin/students',
+      icon: 'students',
+    },
+    {
+      title: 'Website Content',
+      description: 'Нүүр хуудасны контент, FAQ засах',
+      path: '/admin/content',
+      icon: 'content',
+    },
+    {
+      title: 'Email',
+      description: 'Хэрэглэгчдэд announcement болон email илгээх',
+      path: '/admin/email',
+      icon: 'email',
+    },
+    {
+      title: 'Payments',
+      description: 'Төлбөрийн хүсэлтүүдийг шалгаж, зөвшөөрөх',
+      path: '/admin/payments',
+      icon: 'payments',
+    },
+  ]
 
   return (
-    <main style={styles.page}>
-      <aside style={styles.sidebar}>
-        <div>
-          <h2 style={styles.logo}>LEARN·MINEA</h2>
-          <p style={styles.adminBadge}>ADMIN PANEL</p>
-        </div>
+    <>
+      <main className="dashboard-page">
+        <div className="dashboard-inner">
+          <section className="hero">
+            <div className="eyebrow">
+              ADMIN DASHBOARD
+            </div>
 
-        <nav style={styles.nav}>
-          <button
-            style={styles.activeNav}
-            onClick={() => router.push('/admin')}
-          >
-            Dashboard
-          </button>
-
-          <button
-            style={styles.navButton}
-            onClick={() => router.push('/admin/products')}
-          >
-            Products
-          </button>
-
-          <button
-            style={styles.navButton}
-            onClick={() => router.push('/admin/courses')}
-          >
-            Courses
-          </button>
-
-          <button
-            style={styles.navButton}
-            onClick={() => router.push('/admin/students')}
-          >
-            Students
-          </button>
-
-          <button
-            style={styles.navButton}
-            onClick={() => router.push('/admin/content')}
-          >
-            Website Content
-          </button>
-
-          <button
-            style={styles.navButton}
-            onClick={() => router.push('/admin/email')}
-          >
-            Email
-          </button>
-        </nav>
-
-        <div style={styles.sidebarBottom}>
-          <p style={styles.adminEmail}>
-            {profile?.email || user?.email}
-          </p>
-
-          <button style={styles.logoutButton} onClick={logout}>
-            Гарах
-          </button>
-        </div>
-      </aside>
-
-      <section style={styles.content}>
-        <div style={styles.header}>
-          <div>
-            <p style={styles.eyebrow}>ADMIN DASHBOARD</p>
-
-            <h1 style={styles.title}>
-              Сайн байна уу{profile?.full_name ? `, ${profile.full_name}` : ''} 👋
+            <h1>
+              Сайн байна уу <span>👋</span>
             </h1>
 
-            <p style={styles.subtitle}>
+            <p>
               Learn Minea сайтын арын удирдлага
             </p>
-          </div>
-        </div>
+          </section>
 
-        <div style={styles.stats}>
-          <div style={styles.statCard}>
-            <p style={styles.statLabel}>Students</p>
-            <h2 style={styles.statNumber}>—</h2>
-            <p style={styles.statHint}>Бүртгэлтэй сурагчид</p>
-          </div>
+          <section className="stats-grid">
+            <StatCard
+              title="Students"
+              value={stats.students}
+              description="Бүртгэлтэй сурагчид"
+              icon="students"
+            />
 
-          <div style={styles.statCard}>
-            <p style={styles.statLabel}>Courses</p>
-            <h2 style={styles.statNumber}>—</h2>
-            <p style={styles.statHint}>Нийт сургалт</p>
-          </div>
+            <StatCard
+              title="Courses"
+              value={stats.courses}
+              description="Нийт сургалт"
+              icon="courses"
+            />
 
-          <div style={styles.statCard}>
-            <p style={styles.statLabel}>Products</p>
-            <h2 style={styles.statNumber}>—</h2>
-            <p style={styles.statHint}>Ном, цахим материал</p>
-          </div>
-        </div>
+            <StatCard
+              title="Products"
+              value={stats.products}
+              description="Ном, цахим материал"
+              icon="products"
+            />
+          </section>
 
-        <section style={styles.panel}>
-          <div style={styles.panelHeader}>
-            <div>
-              <p style={styles.eyebrow}>QUICK ACTIONS</p>
-              <h2 style={styles.panelTitle}>Хурдан удирдлага</h2>
+          <section className="quick-panel">
+            <div className="section-eyebrow">
+              QUICK ACTIONS
             </div>
-          </div>
 
-          <div style={styles.actions}>
-            <button
-              style={styles.actionCard}
-              onClick={() => router.push('/admin/products')}
-            >
-              <span style={styles.actionIcon}>📚</span>
-              <strong style={styles.actionTitle}>
-                Бүтээгдэхүүн
-              </strong>
-              <span style={styles.actionText}>
-                Ном нэмэх, зураг солих, үнэ болон тайлбар засах
-              </span>
-            </button>
+            <h2>
+              Хурдан удирдлага
+            </h2>
 
-            <button
-              style={styles.actionCard}
-              onClick={() => router.push('/admin/courses')}
-            >
-              <span style={styles.actionIcon}>🎓</span>
-              <strong style={styles.actionTitle}>
-                Сургалт
-              </strong>
-              <span style={styles.actionText}>
-                Course, module, lesson болон quiz нэмэх
-              </span>
-            </button>
+            <div className="actions-grid">
+              {actions.map((action) => (
+                <button
+                  key={action.path}
+                  type="button"
+                  className="action-card"
+                  onClick={() => router.push(action.path)}
+                >
+                  <div className="action-top">
+                    <div className="action-icon">
+                      <Icon
+                        name={action.icon}
+                        size={19}
+                      />
+                    </div>
 
-            <button
-              style={styles.actionCard}
-              onClick={() => router.push('/admin/students')}
-            >
-              <span style={styles.actionIcon}>👥</span>
-              <strong style={styles.actionTitle}>
-                Сурагчид
-              </strong>
-              <span style={styles.actionText}>
-                Сурагчийн course access нээх, хаах
-              </span>
-            </button>
+                    <div className="action-arrow">
+                      <Icon
+                        name="arrow"
+                        size={17}
+                      />
+                    </div>
+                  </div>
 
-            <button
-              style={styles.actionCard}
-              onClick={() => router.push('/admin/content')}
-            >
-              <span style={styles.actionIcon}>✏️</span>
-              <strong style={styles.actionTitle}>
-                Website Content
-              </strong>
-              <span style={styles.actionText}>
-                Нүүр хуудасны бичвэр, FAQ, testimonial засах
-              </span>
-            </button>
+                  <h3>
+                    {action.title}
+                  </h3>
 
-            <button
-              style={styles.actionCard}
-              onClick={() => router.push('/admin/email')}
-            >
-              <span style={styles.actionIcon}>✉️</span>
-              <strong style={styles.actionTitle}>
-                Email
-              </strong>
-              <span style={styles.actionText}>
-                Сурагчдад announcement болон notification явуулах
-              </span>
-            </button>
-          </div>
-        </section>
-      </section>
-    </main>
+                  <p>
+                    {action.description}
+                  </p>
+                </button>
+              ))}
+            </div>
+          </section>
+        </div>
+      </main>
+
+      <style jsx>{`
+        .dashboard-page {
+          width: 100%;
+          min-height: 100%;
+          background: #f8f7ff;
+          padding: 0;
+        }
+
+        .dashboard-inner {
+          width: 100%;
+          max-width: 1180px;
+
+          /*
+            ӨМНӨ:
+            margin: 0 auto;
+
+            ОДОО:
+            content зүүн тийш татагдана.
+          */
+          margin: 0;
+
+          padding:
+            58px
+            34px
+            80px
+            42px;
+        }
+
+        .hero {
+          margin-bottom: 38px;
+        }
+
+        .eyebrow,
+        .section-eyebrow {
+          font-size: 13px;
+          line-height: 1;
+          font-weight: 800;
+          letter-spacing: 0.09em;
+          color: #6c5ce7;
+        }
+
+        .hero h1 {
+          margin:
+            17px
+            0
+            8px;
+
+          font-size: clamp(34px, 4vw, 46px);
+          line-height: 1.12;
+          letter-spacing: -0.035em;
+          font-weight: 500;
+          color: #24242e;
+        }
+
+        .hero h1 span {
+          font-size: 0.8em;
+        }
+
+        .hero p {
+          margin: 0;
+          color: #8d8d96;
+          font-size: 17px;
+          line-height: 1.6;
+        }
+
+        .stats-grid {
+          display: grid;
+          grid-template-columns:
+            repeat(3, minmax(0, 1fr));
+          gap: 18px;
+          margin-bottom: 34px;
+        }
+
+        .quick-panel {
+          width: 100%;
+          background: #ffffff;
+          border: 1px solid #efedf8;
+          border-radius: 22px;
+          padding: 31px 34px 35px;
+          box-shadow:
+            0 8px 30px
+            rgba(80, 64, 150, 0.04);
+        }
+
+        .quick-panel h2 {
+          margin:
+            10px
+            0
+            25px;
+
+          color: #2c2c34;
+          font-size: 20px;
+          line-height: 1.3;
+          font-weight: 650;
+          letter-spacing: -0.02em;
+        }
+
+        .actions-grid {
+          display: grid;
+          grid-template-columns:
+            repeat(3, minmax(0, 1fr));
+          gap: 15px;
+        }
+
+        .action-card {
+          appearance: none;
+          width: 100%;
+          min-height: 164px;
+
+          border:
+            1px solid
+            #e9e7f1;
+
+          border-radius: 17px;
+
+          background:
+            #ffffff;
+
+          padding:
+            20px
+            20px
+            19px;
+
+          text-align: left;
+          font-family: inherit;
+
+          cursor: pointer;
+
+          transition:
+            transform 0.18s ease,
+            border-color 0.18s ease,
+            box-shadow 0.18s ease,
+            background 0.18s ease;
+        }
+
+        .action-card:hover {
+          transform: translateY(-2px);
+
+          border-color:
+            rgba(108, 92, 231, 0.24);
+
+          background:
+            #fdfcff;
+
+          box-shadow:
+            0 10px 24px
+            rgba(61, 48, 120, 0.07);
+        }
+
+        .action-top {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          margin-bottom: 18px;
+        }
+
+        .action-icon {
+          width: 38px;
+          height: 38px;
+
+          display: flex;
+          align-items: center;
+          justify-content: center;
+
+          border:
+            1px solid
+            #e8e5f8;
+
+          border-radius: 10px;
+
+          background:
+            #f8f7ff;
+
+          color:
+            #6c5ce7;
+        }
+
+        .action-arrow {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+
+          color: #bbb8c8;
+
+          opacity: 0;
+          transform:
+            translateX(-5px);
+
+          transition:
+            opacity 0.18s ease,
+            transform 0.18s ease;
+        }
+
+        .action-card:hover
+        .action-arrow {
+          opacity: 1;
+          transform: translateX(0);
+        }
+
+        .action-card h3 {
+          margin:
+            0
+            0
+            7px;
+
+          color: #292933;
+          font-size: 17px;
+          line-height: 1.35;
+          font-weight: 700;
+        }
+
+        .action-card p {
+          margin: 0;
+
+          max-width: 250px;
+
+          color: #96949e;
+          font-size: 13.5px;
+          line-height: 1.55;
+        }
+
+        @media (max-width: 1100px) {
+          .dashboard-inner {
+            max-width: 100%;
+            padding:
+              46px
+              28px
+              70px;
+          }
+
+          .actions-grid {
+            grid-template-columns:
+              repeat(2, minmax(0, 1fr));
+          }
+        }
+
+        @media (max-width: 760px) {
+          .dashboard-inner {
+            padding:
+              32px
+              18px
+              60px;
+          }
+
+          .hero {
+            margin-bottom: 28px;
+          }
+
+          .hero h1 {
+            font-size: 34px;
+          }
+
+          .hero p {
+            font-size: 15px;
+          }
+
+          .stats-grid {
+            grid-template-columns: 1fr;
+            gap: 12px;
+          }
+
+          .quick-panel {
+            border-radius: 18px;
+            padding:
+              24px
+              18px
+              25px;
+          }
+
+          .actions-grid {
+            grid-template-columns: 1fr;
+            gap: 11px;
+          }
+
+          .action-card {
+            min-height: 145px;
+          }
+        }
+      `}</style>
+    </>
   )
 }
 
-const styles = {
-  loadingPage: {
-    minHeight: '100vh',
-    display: 'flex',
-    justifyContent: 'center',
-    alignItems: 'center',
-    background: '#f8f7ff',
-    fontFamily: 'Arial, sans-serif',
-    padding: '30px',
-  },
+function StatCard({
+  title,
+  value,
+  description,
+  icon,
+}) {
+  return (
+    <article className="stat-card">
+      <div className="stat-top">
+        <div className="stat-icon">
+          <Icon
+            name={icon}
+            size={18}
+          />
+        </div>
 
-  loadingCard: {
-    background: '#ffffff',
-    padding: '35px',
-    borderRadius: '20px',
-    boxShadow: '0 12px 40px rgba(0,0,0,0.07)',
-  },
+        <span className="stat-title">
+          {title}
+        </span>
+      </div>
 
-  errorCard: {
-    width: '100%',
-    maxWidth: '520px',
-    background: '#ffffff',
-    padding: '35px',
-    borderRadius: '20px',
-    boxShadow: '0 12px 40px rgba(0,0,0,0.07)',
-  },
+      <div className="stat-value">
+        {value === null ? '—' : value}
+      </div>
 
-  errorText: {
-    color: '#d63031',
-    lineHeight: '1.6',
-  },
+      <div className="stat-description">
+        {description}
+      </div>
 
-  helpText: {
-    color: '#666',
-    lineHeight: '1.6',
-  },
+      <style jsx>{`
+        .stat-card {
+          min-height: 174px;
+          padding: 25px 27px;
 
-  primaryButton: {
-    marginTop: '15px',
-    padding: '13px 20px',
-    border: 'none',
-    borderRadius: '11px',
-    background: '#6c5ce7',
-    color: 'white',
-    cursor: 'pointer',
-    fontWeight: '700',
-  },
+          display: flex;
+          flex-direction: column;
 
-  page: {
-    minHeight: '100vh',
-    display: 'flex',
-    background: '#f8f7ff',
-    color: '#20202a',
-    fontFamily: 'Arial, sans-serif',
-  },
+          background: #ffffff;
 
-  sidebar: {
-    position: 'fixed',
-    left: 0,
-    top: 0,
-    bottom: 0,
-    width: '260px',
-    padding: '30px 22px',
-    boxSizing: 'border-box',
-    background: '#191926',
-    color: '#ffffff',
-    display: 'flex',
-    flexDirection: 'column',
-  },
+          border:
+            1px solid
+            #efedf7;
 
-  logo: {
-    margin: 0,
-    fontSize: '20px',
-    letterSpacing: '1.5px',
-  },
+          border-radius: 21px;
 
-  adminBadge: {
-    marginTop: '8px',
-    color: '#9f94ff',
-    fontSize: '11px',
-    fontWeight: '800',
-    letterSpacing: '1.5px',
-  },
+          box-shadow:
+            0 7px 24px
+            rgba(72, 56, 130, 0.035);
+        }
 
-  nav: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '8px',
-    marginTop: '38px',
-  },
+        .stat-top {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+        }
 
-  navButton: {
-    width: '100%',
-    textAlign: 'left',
-    padding: '13px 14px',
-    border: 'none',
-    borderRadius: '10px',
-    background: 'transparent',
-    color: '#ccccd6',
-    cursor: 'pointer',
-    fontSize: '15px',
-  },
+        .stat-icon {
+          width: 32px;
+          height: 32px;
 
-  activeNav: {
-    width: '100%',
-    textAlign: 'left',
-    padding: '13px 14px',
-    border: 'none',
-    borderRadius: '10px',
-    background: '#6c5ce7',
-    color: '#ffffff',
-    cursor: 'pointer',
-    fontSize: '15px',
-    fontWeight: '700',
-  },
+          display: flex;
+          align-items: center;
+          justify-content: center;
 
-  sidebarBottom: {
-    marginTop: 'auto',
-  },
+          background: #f8f7ff;
+          border-radius: 9px;
 
-  adminEmail: {
-    color: '#9999a8',
-    fontSize: '12px',
-    wordBreak: 'break-all',
-  },
+          color: #6c5ce7;
+        }
 
-  logoutButton: {
-    width: '100%',
-    padding: '12px',
-    borderRadius: '10px',
-    border: '1px solid #444454',
-    background: 'transparent',
-    color: 'white',
-    cursor: 'pointer',
-  },
+        .stat-title {
+          color: #85838c;
+          font-size: 14px;
+          font-weight: 500;
+        }
 
-  content: {
-    marginLeft: '260px',
-    width: 'calc(100% - 260px)',
-    padding: '48px',
-    boxSizing: 'border-box',
-  },
+        .stat-value {
+          margin-top: 20px;
 
-  header: {
-    maxWidth: '1180px',
-    margin: '0 auto 32px',
-  },
+          color: #292933;
+          font-size: 29px;
+          line-height: 1;
+          font-weight: 650;
+          letter-spacing: -0.03em;
+        }
 
-  eyebrow: {
-    color: '#6c5ce7',
-    fontSize: '12px',
-    fontWeight: '800',
-    letterSpacing: '1px',
-  },
+        .stat-description {
+          margin-top: auto;
+          padding-top: 19px;
 
-  title: {
-    margin: '7px 0',
-    fontSize: '36px',
-  },
-
-  subtitle: {
-    margin: 0,
-    color: '#777',
-  },
-
-  stats: {
-    maxWidth: '1180px',
-    margin: '0 auto',
-    display: 'grid',
-    gridTemplateColumns: 'repeat(3, 1fr)',
-    gap: '18px',
-  },
-
-  statCard: {
-    background: 'white',
-    padding: '24px',
-    borderRadius: '18px',
-    boxShadow: '0 6px 20px rgba(0,0,0,0.04)',
-  },
-
-  statLabel: {
-    margin: 0,
-    color: '#777',
-    fontSize: '14px',
-  },
-
-  statNumber: {
-    margin: '12px 0 7px',
-    fontSize: '32px',
-  },
-
-  statHint: {
-    margin: 0,
-    color: '#999',
-    fontSize: '12px',
-  },
-
-  panel: {
-    maxWidth: '1180px',
-    margin: '28px auto 0',
-    background: '#ffffff',
-    padding: '28px',
-    borderRadius: '20px',
-    boxShadow: '0 6px 20px rgba(0,0,0,0.04)',
-  },
-
-  panelHeader: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-
-  panelTitle: {
-    margin: '5px 0 0',
-  },
-
-  actions: {
-    marginTop: '22px',
-    display: 'grid',
-    gridTemplateColumns: 'repeat(3, 1fr)',
-    gap: '16px',
-  },
-
-  actionCard: {
-    textAlign: 'left',
-    border: '1px solid #eeeeF4',
-    background: '#ffffff',
-    borderRadius: '16px',
-    padding: '20px',
-    cursor: 'pointer',
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '9px',
-  },
-
-  actionIcon: {
-    fontSize: '24px',
-  },
-
-  actionTitle: {
-    fontSize: '16px',
-  },
-
-  actionText: {
-    color: '#777',
-    lineHeight: '1.5',
-    fontSize: '13px',
-  },
+          color: #aaa8af;
+          font-size: 13px;
+        }
+      `}</style>
+    </article>
+  )
 }

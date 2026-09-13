@@ -1,738 +1,854 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { supabase } from '../../../lib/supabase'
 
-export default function CoursePage() {
-  const { courseId } = useParams()
+export default function StudentCoursePage() {
   const router = useRouter()
+  const params = useParams()
+
+  const courseId = params?.courseId
 
   const [loading, setLoading] = useState(true)
+
   const [course, setCourse] = useState(null)
   const [modules, setModules] = useState([])
-  const [error, setError] = useState('')
+  const [lessons, setLessons] = useState([])
+  const [progress, setProgress] = useState([])
 
   useEffect(() => {
-    initialize()
+    if (courseId) {
+      loadCourse()
+    }
+
+    const handleFocus = () => {
+      if (courseId) {
+        loadCourse(false)
+      }
+    }
+
+    window.addEventListener('focus', handleFocus)
+
+    return () => {
+      window.removeEventListener('focus', handleFocus)
+    }
   }, [courseId])
 
-  async function initialize() {
-    setLoading(true)
-    setError('')
+  async function loadCourse(showLoading = true) {
+    try {
+      if (showLoading) {
+        setLoading(true)
+      }
 
-    const {
-      data: { session },
-    } = await supabase.auth.getSession()
-
-    if (!session) {
-      router.replace('/login')
-      return
-    }
-
-    const {
-      data: enrollment,
-      error: enrollmentError,
-    } = await supabase
-      .from('enrollments')
-      .select('id')
-      .eq('user_id', session.user.id)
-      .eq('course_id', courseId)
-      .maybeSingle()
-
-    if (enrollmentError) {
-      setError(enrollmentError.message)
-      setLoading(false)
-      return
-    }
-
-    if (!enrollment) {
-      router.replace('/dashboard')
-      return
-    }
-
-    const {
-      data: courseData,
-      error: courseError,
-    } = await supabase
-      .from('courses')
-      .select('*')
-      .eq('id', courseId)
-      .eq('published', true)
-      .single()
-
-    if (courseError) {
-      setError(courseError.message)
-      setLoading(false)
-      return
-    }
-
-    setCourse(courseData)
-
-    const {
-      data: moduleData,
-      error: moduleError,
-    } = await supabase
-      .from('modules')
-      .select('*')
-      .eq('course_id', courseId)
-      .order('position', { ascending: true })
-
-    if (moduleError) {
-      setError(moduleError.message)
-      setLoading(false)
-      return
-    }
-
-    const moduleIds = (moduleData || []).map(
-      (module) => module.id
-    )
-
-    let lessonData = []
-
-    if (moduleIds.length > 0) {
       const {
-        data,
-        error: lessonError,
-      } = await supabase
-        .from('lessons')
-        .select('*')
-        .in('module_id', moduleIds)
-        .eq('published', true)
-        .order('position', { ascending: true })
+        data: { session },
+      } = await supabase.auth.getSession()
 
-      if (lessonError) {
-        setError(lessonError.message)
-        setLoading(false)
+      if (!session?.user) {
+        router.replace('/login')
         return
       }
 
-      lessonData = data || []
-    }
+      const userId = session.user.id
 
-    const lessonIds = lessonData.map(
-      (lesson) => lesson.id
-    )
-
-    let completedIds = []
-
-    if (lessonIds.length > 0) {
       const {
-        data: progressData,
+        data: enrollmentData,
+        error: enrollmentError,
       } = await supabase
-        .from('lesson_progress')
-        .select('lesson_id, completed')
-        .eq('user_id', session.user.id)
-        .in('lesson_id', lessonIds)
-        .eq('completed', true)
+        .from('enrollments')
+        .select('course_id')
+        .eq('user_id', userId)
+        .eq('course_id', courseId)
+        .maybeSingle()
 
-      completedIds = (progressData || []).map(
-        (item) => item.lesson_id
+      if (enrollmentError) {
+        throw enrollmentError
+      }
+
+      if (!enrollmentData) {
+        router.replace('/dashboard')
+        return
+      }
+
+      const [
+        courseResult,
+        moduleResult,
+        progressResult,
+      ] = await Promise.all([
+        supabase
+          .from('courses')
+          .select(
+            'id, title, description, level, price, published, created_at'
+          )
+          .eq('id', courseId)
+          .eq('published', true)
+          .single(),
+
+        supabase
+          .from('modules')
+          .select(
+            'id, course_id, title, position'
+          )
+          .eq('course_id', courseId)
+          .order('position', {
+            ascending: true,
+          }),
+
+        supabase
+          .from('lesson_progress')
+          .select(
+            'lesson_id, completed, completed_at'
+          )
+          .eq('user_id', userId),
+      ])
+
+      if (courseResult.error) {
+        throw courseResult.error
+      }
+
+      if (moduleResult.error) {
+        throw moduleResult.error
+      }
+
+      if (progressResult.error) {
+        throw progressResult.error
+      }
+
+      const liveModules =
+        moduleResult.data || []
+
+      const moduleIds =
+        liveModules.map(
+          (module) => module.id
+        )
+
+      let lessonData = []
+
+      if (moduleIds.length > 0) {
+        const {
+          data,
+          error,
+        } = await supabase
+          .from('lessons')
+          .select(
+            'id, module_id, title, description, position, published'
+          )
+          .in('module_id', moduleIds)
+          .eq('published', true)
+          .order('position', {
+            ascending: true,
+          })
+
+        if (error) {
+          throw error
+        }
+
+        lessonData = data || []
+      }
+
+      setCourse(courseResult.data)
+      setModules(liveModules)
+      setLessons(lessonData)
+      setProgress(
+        progressResult.data || []
       )
+    } catch (error) {
+      console.error(
+        'Course page load error:',
+        error
+      )
+
+      router.replace('/dashboard')
+    } finally {
+      if (showLoading) {
+        setLoading(false)
+      }
+    }
+  }
+
+  const completedLessonIds = useMemo(() => {
+    return new Set(
+      progress
+        .filter(
+          (item) =>
+            item.completed === true
+        )
+        .map(
+          (item) => item.lesson_id
+        )
+    )
+  }, [progress])
+
+  const courseStats = useMemo(() => {
+    const total = lessons.length
+
+    const completed =
+      lessons.filter(
+        (lesson) =>
+          completedLessonIds.has(
+            lesson.id
+          )
+      ).length
+
+    const percentage =
+      total > 0
+        ? Math.round(
+            (completed / total) * 100
+          )
+        : 0
+
+    return {
+      total,
+      completed,
+      percentage,
+      isCompleted:
+        total > 0 &&
+        total === completed,
+    }
+  }, [
+    lessons,
+    completedLessonIds,
+  ])
+
+  function getModuleLessons(moduleId) {
+    return lessons
+      .filter(
+        (lesson) =>
+          lesson.module_id === moduleId
+      )
+      .sort(
+        (a, b) =>
+          (a.position || 0) -
+          (b.position || 0)
+      )
+  }
+
+  function openLesson(lessonId) {
+    router.push(
+      `/dashboard/courses/${courseId}/lessons/${lessonId}`
+    )
+  }
+
+  function continueLearning() {
+    const nextLesson =
+      lessons.find(
+        (lesson) =>
+          !completedLessonIds.has(
+            lesson.id
+          )
+      )
+
+    const target =
+      nextLesson ||
+      lessons[0]
+
+    if (!target) {
+      return
     }
 
-    const combined = (moduleData || []).map(
-      (module) => ({
-        ...module,
-        lessons: lessonData
-          .filter(
-            (lesson) =>
-              lesson.module_id === module.id
-          )
-          .map((lesson) => ({
-            ...lesson,
-            completed:
-              completedIds.includes(lesson.id),
-          })),
-      })
-    )
-
-    setModules(combined)
-    setLoading(false)
+    openLesson(target.id)
   }
 
   if (loading) {
     return (
-      <div style={styles.center}>
-        Course ачаалж байна...
+      <div className="loading">
+        Сургалт ачааллаж байна...
+
+        <style jsx>{`
+          .loading {
+            padding: 50px 32px;
+            color: #9995a4;
+          }
+        `}</style>
       </div>
     )
   }
 
-  if (error) {
-    return (
-      <div style={styles.center}>
-        <div style={styles.errorCard}>
-          <h2>Алдаа гарлаа</h2>
-          <p>{error}</p>
-
-          <button
-            style={styles.primaryButton}
-            onClick={() =>
-              router.push('/dashboard')
-            }
-          >
-            Dashboard руу буцах
-          </button>
-        </div>
-      </div>
-    )
+  if (!course) {
+    return null
   }
-
-  if (!course) return null
-
-  const allLessons = modules.flatMap(
-    (module) => module.lessons
-  )
-
-  const completedCount = allLessons.filter(
-    (lesson) => lesson.completed
-  ).length
-
-  const totalLessons = allLessons.length
-
-  const progress =
-    totalLessons === 0
-      ? 0
-      : Math.round(
-          (completedCount / totalLessons) * 100
-        )
-
-  const courseCompleted =
-    totalLessons > 0 &&
-    completedCount === totalLessons
-
-  const nextLesson =
-    allLessons.find(
-      (lesson) => !lesson.completed
-    ) || allLessons[0]
 
   return (
-    <div style={styles.page}>
-      <div style={styles.container}>
-        {courseCompleted && (
-          <section style={styles.completionCard}>
-            <div style={styles.completeIcon}>
-              ✓
-            </div>
+    <main className="course-page">
+      <button
+        className="back-button"
+        onClick={() =>
+          router.push('/dashboard')
+        }
+      >
+        ← Dashboard
+      </button>
 
-            <div style={{ flex: 1 }}>
-              <p style={styles.completeLabel}>
-                COURSE COMPLETED
-              </p>
+      <section className="hero">
+        <div className="hero-content">
+          <div className="eyebrow">
+            MY COURSE
+          </div>
 
-              <h2 style={styles.completeTitle}>
-                Сургалтаа амжилттай дуусгалаа
-              </h2>
+          <div className="hero-meta">
+            {course.level && (
+              <span>
+                {course.level}
+              </span>
+            )}
 
-              <p style={styles.completeText}>
-                Та бүх {totalLessons} хичээлийг
-                амжилттай дуусгасан байна.
-              </p>
-            </div>
+            {courseStats.isCompleted && (
+              <span className="completed-badge">
+                COMPLETED
+              </span>
+            )}
+          </div>
 
-            <div style={styles.completePercent}>
-              100%
-            </div>
-          </section>
-        )}
+          <h1>
+            {course.title}
+          </h1>
 
-        <section style={styles.hero}>
-          <div style={styles.heroTop}>
+          <p>
+            {course.description ||
+              'Сургалтын хичээлүүдээ дарааллаар нь үзэж дуусгаарай.'}
+          </p>
+
+          <div className="progress-row">
             <div>
-              <p style={styles.eyebrow}>
-                COURSE
-              </p>
+              <span>
+                COURSE PROGRESS
+              </span>
 
-              <h1 style={styles.title}>
-                {course.title}
-              </h1>
-
-              {course.description && (
-                <p style={styles.description}>
-                  {course.description}
-                </p>
-              )}
+              <strong>
+                {courseStats.completed}/
+                {courseStats.total} хичээл
+              </strong>
             </div>
 
+            <b>
+              {courseStats.percentage}%
+            </b>
+          </div>
+
+          <div className="progress-track">
             <div
+              className="progress-fill"
               style={{
-                ...styles.progressCircle,
-                ...(courseCompleted
-                  ? styles.progressCircleDone
-                  : {}),
+                width: `${courseStats.percentage}%`,
               }}
-            >
-              <strong>{progress}%</strong>
-              <span>
-                {courseCompleted
-                  ? 'completed'
-                  : 'progress'}
-              </span>
-            </div>
+            />
           </div>
 
-          <div style={styles.progressInfo}>
-            <div style={styles.progressText}>
-              <span>
-                {completedCount} / {totalLessons} хичээл
-              </span>
-
-              <strong>{progress}%</strong>
-            </div>
-
-            <div style={styles.track}>
-              <div
-                style={{
-                  ...styles.bar,
-                  width: `${progress}%`,
-                }}
-              />
-            </div>
-          </div>
-
-          {nextLesson && (
+          {lessons.length > 0 && (
             <button
-              type="button"
-              style={styles.continueButton}
-              onClick={() =>
-                router.push(
-                  `/dashboard/courses/${courseId}/lessons/${nextLesson.id}`
-                )
-              }
+              className="continue-button"
+              onClick={continueLearning}
             >
-              {courseCompleted
-                ? 'Дахин үзэх'
-                : progress === 0
-                  ? 'Эхлэх'
-                  : 'Үргэлжлүүлэх'}{' '}
-              →
+              {courseStats.isCompleted
+                ? 'Дахин үзэх →'
+                : courseStats.completed > 0
+                  ? 'Үргэлжлүүлэх →'
+                  : 'Эхлэх →'}
             </button>
           )}
-        </section>
+        </div>
+      </section>
 
-        <div style={styles.sectionHeader}>
-          <div>
-            <p style={styles.sectionLabel}>
-              CURRICULUM
-            </p>
-
-            <h2 style={styles.sectionTitle}>
-              Хичээлийн агуулга
-            </h2>
+      <section className="curriculum-section">
+        <div className="section-heading">
+          <div className="eyebrow">
+            CURRICULUM
           </div>
 
-          <span style={styles.lessonCount}>
-            {totalLessons} lesson
-          </span>
+          <h2>
+            Хичээлийн бүтэц
+          </h2>
         </div>
 
         {modules.length === 0 ? (
-          <div style={styles.emptyCard}>
-            Одоогоор хичээл байхгүй байна.
+          <div className="empty">
+            Одоогоор module нэмэгдээгүй байна.
           </div>
         ) : (
-          <div style={styles.moduleList}>
+          <div className="module-list">
             {modules.map(
-              (module, moduleIndex) => (
-                <section
-                  key={module.id}
-                  style={styles.moduleCard}
-                >
-                  <div style={styles.moduleHeader}>
-                    <div style={styles.moduleNumber}>
-                      {String(moduleIndex + 1).padStart(
-                        2,
-                        '0'
-                      )}
+              (module, moduleIndex) => {
+                const moduleLessons =
+                  getModuleLessons(
+                    module.id
+                  )
+
+                const moduleCompleted =
+                  moduleLessons.filter(
+                    (lesson) =>
+                      completedLessonIds.has(
+                        lesson.id
+                      )
+                  ).length
+
+                return (
+                  <section
+                    className="module-card"
+                    key={module.id}
+                  >
+                    <div className="module-header">
+                      <div className="module-left">
+                        <div className="module-number">
+                          {String(
+                            moduleIndex + 1
+                          ).padStart(
+                            2,
+                            '0'
+                          )}
+                        </div>
+
+                        <div>
+                          <span>
+                            MODULE
+                          </span>
+
+                          <h3>
+                            {module.title}
+                          </h3>
+                        </div>
+                      </div>
+
+                      <div className="module-stat">
+                        {moduleCompleted}/
+                        {
+                          moduleLessons.length
+                        }
+                      </div>
                     </div>
 
-                    <div style={{ flex: 1 }}>
-                      <p style={styles.moduleLabel}>
-                        MODULE {moduleIndex + 1}
-                      </p>
+                    {moduleLessons.length ===
+                    0 ? (
+                      <div className="no-lessons">
+                        Хичээл хараахан
+                        нэмэгдээгүй байна.
+                      </div>
+                    ) : (
+                      <div className="lesson-list">
+                        {moduleLessons.map(
+                          (
+                            lesson,
+                            lessonIndex
+                          ) => {
+                            const completed =
+                              completedLessonIds.has(
+                                lesson.id
+                              )
 
-                      <h3 style={styles.moduleTitle}>
-                        {module.title}
-                      </h3>
-                    </div>
+                            return (
+                              <button
+                                className="lesson-row"
+                                key={
+                                  lesson.id
+                                }
+                                onClick={() =>
+                                  openLesson(
+                                    lesson.id
+                                  )
+                                }
+                              >
+                                <div className="lesson-left">
+                                  <div
+                                    className={`lesson-icon ${
+                                      completed
+                                        ? 'completed'
+                                        : ''
+                                    }`}
+                                  >
+                                    {completed
+                                      ? '✓'
+                                      : lessonIndex +
+                                        1}
+                                  </div>
 
-                    <span style={styles.moduleMeta}>
-                      {module.lessons.length} lesson
-                    </span>
-                  </div>
+                                  <div className="lesson-text">
+                                    <span>
+                                      LESSON{' '}
+                                      {lessonIndex +
+                                        1}
+                                    </span>
 
-                  <div style={styles.lessonList}>
-                    {module.lessons.map(
-                      (lesson, lessonIndex) => (
-                        <button
-                          type="button"
-                          key={lesson.id}
-                          style={styles.lessonRow}
-                          onClick={() =>
-                            router.push(
-                              `/dashboard/courses/${courseId}/lessons/${lesson.id}`
+                                    <strong>
+                                      {
+                                        lesson.title
+                                      }
+                                    </strong>
+
+                                    {lesson.description && (
+                                      <p>
+                                        {
+                                          lesson.description
+                                        }
+                                      </p>
+                                    )}
+                                  </div>
+                                </div>
+
+                                <div className="lesson-right">
+                                  <span
+                                    className={`lesson-status ${
+                                      completed
+                                        ? 'done'
+                                        : ''
+                                    }`}
+                                  >
+                                    {completed
+                                      ? 'COMPLETED'
+                                      : 'START'}
+                                  </span>
+
+                                  <b>→</b>
+                                </div>
+                              </button>
                             )
                           }
-                        >
-                          <div style={styles.lessonLeft}>
-                            <div
-                              style={{
-                                ...styles.lessonIndex,
-                                ...(lesson.completed
-                                  ? styles.completedIndex
-                                  : {}),
-                              }}
-                            >
-                              {lesson.completed
-                                ? '✓'
-                                : lessonIndex + 1}
-                            </div>
-
-                            <div>
-                              <strong
-                                style={styles.lessonTitle}
-                              >
-                                {lesson.title}
-                              </strong>
-
-                              <p style={styles.lessonMeta}>
-                                {lesson.completed
-                                  ? 'Дууссан'
-                                  : 'Үзэх'}
-                              </p>
-                            </div>
-                          </div>
-
-                          <span style={styles.openArrow}>
-                            →
-                          </span>
-                        </button>
-                      )
+                        )}
+                      </div>
                     )}
-                  </div>
-                </section>
-              )
+                  </section>
+                )
+              }
             )}
           </div>
         )}
-      </div>
-    </div>
+      </section>
+
+      <style jsx>{`
+        .course-page {
+          width: 100%;
+          max-width: 1080px;
+          padding: 42px 32px 100px;
+          color: #302e38;
+        }
+
+        .back-button {
+          margin-bottom: 20px;
+          border: 0;
+          background: transparent;
+          color: #8d8994;
+          font-size: 12px;
+          font-weight: 700;
+          cursor: pointer;
+        }
+
+        .hero {
+          padding: 38px;
+          border: 1px solid #e6e1f2;
+          border-radius: 24px;
+          background: #f8f7ff;
+        }
+
+        .hero-content {
+          max-width: 720px;
+        }
+
+        .eyebrow {
+          color: #6c5ce7;
+          font-size: 10px;
+          font-weight: 900;
+          letter-spacing: 0.14em;
+        }
+
+        .hero-meta {
+          display: flex;
+          gap: 8px;
+          margin-top: 18px;
+        }
+
+        .hero-meta span {
+          padding: 7px 10px;
+          border-radius: 999px;
+          background: #edeaff;
+          color: #6c5ce7;
+          font-size: 9px;
+          font-weight: 900;
+        }
+
+        .hero-meta .completed-badge {
+          background: #e7f6ec;
+          color: #378154;
+        }
+
+        .hero h1 {
+          margin: 18px 0 10px;
+          font-size: 36px;
+          letter-spacing: -0.045em;
+        }
+
+        .hero p {
+          max-width: 620px;
+          margin: 0;
+          color: #8f8a98;
+          font-size: 14px;
+          line-height: 1.7;
+        }
+
+        .progress-row {
+          display: flex;
+          align-items: flex-end;
+          justify-content: space-between;
+          margin-top: 28px;
+        }
+
+        .progress-row span {
+          display: block;
+          margin-bottom: 6px;
+          color: #a29daa;
+          font-size: 9px;
+          font-weight: 900;
+          letter-spacing: 0.12em;
+        }
+
+        .progress-row strong {
+          font-size: 13px;
+          color: #5a5660;
+        }
+
+        .progress-row b {
+          color: #6c5ce7;
+          font-size: 17px;
+        }
+
+        .progress-track {
+          height: 7px;
+          margin-top: 10px;
+          overflow: hidden;
+          border-radius: 999px;
+          background: #e6e2ef;
+        }
+
+        .progress-fill {
+          height: 100%;
+          border-radius: inherit;
+          background: #6c5ce7;
+          transition: width 0.25s ease;
+        }
+
+        .continue-button {
+          margin-top: 24px;
+          padding: 13px 20px;
+          border: 0;
+          border-radius: 11px;
+          background: #6c5ce7;
+          color: white;
+          font-size: 12px;
+          font-weight: 800;
+          cursor: pointer;
+        }
+
+        .curriculum-section {
+          margin-top: 38px;
+        }
+
+        .section-heading {
+          margin-bottom: 18px;
+        }
+
+        .section-heading h2 {
+          margin: 7px 0 0;
+          font-size: 24px;
+        }
+
+        .module-list {
+          display: flex;
+          flex-direction: column;
+          gap: 18px;
+        }
+
+        .module-card {
+          overflow: hidden;
+          border: 1px solid #e6e2ec;
+          border-radius: 20px;
+          background: white;
+        }
+
+        .module-header {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 20px;
+          padding: 20px 22px;
+          border-bottom: 1px solid #eeeaf3;
+        }
+
+        .module-left {
+          display: flex;
+          align-items: center;
+          gap: 15px;
+        }
+
+        .module-number {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          width: 40px;
+          height: 40px;
+          border-radius: 12px;
+          background: #f0edff;
+          color: #6c5ce7;
+          font-size: 11px;
+          font-weight: 900;
+        }
+
+        .module-left span {
+          display: block;
+          margin-bottom: 4px;
+          color: #aaa5b0;
+          font-size: 8px;
+          font-weight: 900;
+          letter-spacing: 0.13em;
+        }
+
+        .module-left h3 {
+          margin: 0;
+          font-size: 17px;
+        }
+
+        .module-stat {
+          color: #918c99;
+          font-size: 11px;
+          font-weight: 800;
+        }
+
+        .lesson-list {
+          display: flex;
+          flex-direction: column;
+        }
+
+        .lesson-row {
+          width: 100%;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 20px;
+          padding: 17px 22px;
+          border: 0;
+          border-bottom: 1px solid #f0edf4;
+          background: white;
+          text-align: left;
+          cursor: pointer;
+          transition: background 0.15s ease;
+        }
+
+        .lesson-row:last-child {
+          border-bottom: 0;
+        }
+
+        .lesson-row:hover {
+          background: #faf9fd;
+        }
+
+        .lesson-left {
+          min-width: 0;
+          display: flex;
+          align-items: center;
+          gap: 14px;
+        }
+
+        .lesson-icon {
+          flex: 0 0 auto;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          width: 34px;
+          height: 34px;
+          border-radius: 50%;
+          background: #f2eff6;
+          color: #89838f;
+          font-size: 10px;
+          font-weight: 900;
+        }
+
+        .lesson-icon.completed {
+          background: #e5f5eb;
+          color: #398258;
+        }
+
+        .lesson-text {
+          min-width: 0;
+        }
+
+        .lesson-text span {
+          display: block;
+          margin-bottom: 4px;
+          color: #aaa6b0;
+          font-size: 8px;
+          font-weight: 900;
+          letter-spacing: 0.12em;
+        }
+
+        .lesson-text strong {
+          display: block;
+          color: #47434d;
+          font-size: 13px;
+        }
+
+        .lesson-text p {
+          margin: 5px 0 0;
+          color: #9b96a2;
+          font-size: 11px;
+          line-height: 1.5;
+        }
+
+        .lesson-right {
+          flex: 0 0 auto;
+          display: flex;
+          align-items: center;
+          gap: 14px;
+        }
+
+        .lesson-status {
+          padding: 6px 9px;
+          border-radius: 999px;
+          background: #f0edff;
+          color: #6c5ce7;
+          font-size: 8px;
+          font-weight: 900;
+        }
+
+        .lesson-status.done {
+          background: #e8f6ec;
+          color: #378154;
+        }
+
+        .lesson-right b {
+          color: #aaa5b0;
+        }
+
+        .empty,
+        .no-lessons {
+          padding: 30px;
+          color: #9c97a3;
+          font-size: 12px;
+          text-align: center;
+        }
+
+        @media (max-width: 650px) {
+          .course-page {
+            padding: 28px 16px 100px;
+          }
+
+          .hero {
+            padding: 24px 20px;
+          }
+
+          .hero h1 {
+            font-size: 28px;
+          }
+
+          .module-header {
+            padding: 17px;
+          }
+
+          .lesson-row {
+            padding: 15px 17px;
+          }
+
+          .lesson-status {
+            display: none;
+          }
+        }
+      `}</style>
+    </main>
   )
-}
-
-const styles = {
-  page: {
-    minHeight: '100%',
-    background: '#F8F7FF',
-    padding: '40px 48px 80px',
-  },
-
-  container: {
-    maxWidth: '1050px',
-    margin: '0 auto',
-  },
-
-  center: {
-    minHeight: 'calc(100vh - 76px)',
-    display: 'flex',
-    justifyContent: 'center',
-    alignItems: 'center',
-    background: '#F8F7FF',
-    padding: '20px',
-  },
-
-  errorCard: {
-    background: '#fff',
-    padding: '30px',
-    borderRadius: '20px',
-    textAlign: 'center',
-  },
-
-  completionCard: {
-    background: '#FFFFFF',
-    border: '1px solid #DDEFE3',
-    borderRadius: '22px',
-    padding: '24px 26px',
-    marginBottom: '20px',
-    display: 'flex',
-    alignItems: 'center',
-    gap: '18px',
-  },
-
-  completeIcon: {
-    width: '58px',
-    height: '58px',
-    borderRadius: '16px',
-    background: '#EAF8EE',
-    color: '#218647',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    fontSize: '28px',
-    fontWeight: '900',
-  },
-
-  completeLabel: {
-    margin: 0,
-    fontSize: '10px',
-    fontWeight: '900',
-    letterSpacing: '1.5px',
-    color: '#218647',
-  },
-
-  completeTitle: {
-    margin: '5px 0',
-    color: '#292932',
-    fontSize: '22px',
-  },
-
-  completeText: {
-    margin: 0,
-    color: '#85838C',
-    fontSize: '14px',
-  },
-
-  completePercent: {
-    fontSize: '28px',
-    fontWeight: '900',
-    color: '#218647',
-  },
-
-  hero: {
-    background:
-      'linear-gradient(135deg, #ffffff 0%, #f7f4ff 100%)',
-    border: '1px solid #ECE8FA',
-    borderRadius: '24px',
-    padding: '30px',
-    marginBottom: '40px',
-  },
-
-  heroTop: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    gap: '30px',
-  },
-
-  eyebrow: {
-    margin: 0,
-    fontSize: '11px',
-    fontWeight: '900',
-    letterSpacing: '1.7px',
-    color: '#6C5CE7',
-  },
-
-  title: {
-    margin: '10px 0 12px',
-    fontSize: '38px',
-    color: '#26262E',
-  },
-
-  description: {
-    color: '#7E7D87',
-    lineHeight: 1.7,
-    maxWidth: '650px',
-  },
-
-  progressCircle: {
-    width: '94px',
-    height: '94px',
-    borderRadius: '50%',
-    border: '8px solid #ECE8FF',
-    background: '#FFFFFF',
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    justifyContent: 'center',
-    color: '#6C5CE7',
-  },
-
-  progressCircleDone: {
-    borderColor: '#DDF1E4',
-    color: '#218647',
-  },
-
-  progressInfo: {
-    marginTop: '28px',
-  },
-
-  progressText: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    marginBottom: '9px',
-    color: '#777680',
-    fontSize: '13px',
-  },
-
-  track: {
-    height: '10px',
-    background: '#ECE8F8',
-    borderRadius: '999px',
-    overflow: 'hidden',
-  },
-
-  bar: {
-    height: '100%',
-    background: '#6C5CE7',
-    borderRadius: '999px',
-  },
-
-  continueButton: {
-    marginTop: '22px',
-    background: '#6C5CE7',
-    color: '#fff',
-    border: 'none',
-    borderRadius: '13px',
-    padding: '14px 20px',
-    fontWeight: '800',
-    cursor: 'pointer',
-  },
-
-  sectionHeader: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    marginBottom: '18px',
-  },
-
-  sectionLabel: {
-    margin: 0,
-    fontSize: '11px',
-    fontWeight: '900',
-    color: '#A29FAC',
-  },
-
-  sectionTitle: {
-    margin: '6px 0 0',
-    fontSize: '28px',
-    color: '#2A2A32',
-  },
-
-  lessonCount: {
-    color: '#88868F',
-    fontSize: '13px',
-  },
-
-  moduleList: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '18px',
-  },
-
-  moduleCard: {
-    background: '#FFFFFF',
-    borderRadius: '20px',
-    border: '1px solid #EEEAF7',
-    overflow: 'hidden',
-  },
-
-  moduleHeader: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '16px',
-    padding: '22px 24px',
-    borderBottom: '1px solid #F0EDF7',
-  },
-
-  moduleNumber: {
-    width: '46px',
-    height: '46px',
-    borderRadius: '13px',
-    background: '#F0ECFF',
-    color: '#6C5CE7',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    fontWeight: '900',
-  },
-
-  moduleLabel: {
-    margin: 0,
-    color: '#A09EAA',
-    fontSize: '10px',
-    fontWeight: '900',
-  },
-
-  moduleTitle: {
-    margin: '5px 0 0',
-    color: '#292932',
-    fontSize: '20px',
-  },
-
-  moduleMeta: {
-    color: '#9997A0',
-    fontSize: '12px',
-  },
-
-  lessonList: {
-    padding: '0 20px',
-  },
-
-  lessonRow: {
-    width: '100%',
-    border: 'none',
-    borderBottom: '1px solid #F0EDF6',
-    background: 'transparent',
-    padding: '18px 4px',
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    cursor: 'pointer',
-  },
-
-  lessonLeft: {
-    display: 'flex',
-    gap: '14px',
-    alignItems: 'center',
-  },
-
-  lessonIndex: {
-    width: '38px',
-    height: '38px',
-    borderRadius: '11px',
-    background: '#F5F3FA',
-    color: '#777580',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    fontWeight: '800',
-  },
-
-  completedIndex: {
-    background: '#EAF8EE',
-    color: '#218647',
-  },
-
-  lessonTitle: {
-    color: '#303038',
-    fontSize: '15px',
-  },
-
-  lessonMeta: {
-    margin: '5px 0 0',
-    color: '#9A98A1',
-    fontSize: '12px',
-  },
-
-  openArrow: {
-    color: '#6C5CE7',
-    fontWeight: '900',
-  },
-
-  emptyCard: {
-    background: '#FFFFFF',
-    borderRadius: '20px',
-    padding: '35px',
-    textAlign: 'center',
-    color: '#8B8993',
-  },
-
-  primaryButton: {
-    background: '#6C5CE7',
-    color: '#FFFFFF',
-    border: 'none',
-    borderRadius: '10px',
-    padding: '12px 18px',
-    fontWeight: '800',
-    cursor: 'pointer',
-  },
 }

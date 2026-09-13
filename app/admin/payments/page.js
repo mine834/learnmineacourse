@@ -1,560 +1,798 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { supabase } from '../../lib/supabase'
 
-export default function AdminPaymentsPage() {
+export default function StudentPaymentsPage() {
+  const router = useRouter()
+
   const [loading, setLoading] = useState(true)
+  const [submitting, setSubmitting] = useState(false)
+
+  const [user, setUser] = useState(null)
+  const [profile, setProfile] = useState(null)
+
+  const [courses, setCourses] = useState([])
+  const [enrollments, setEnrollments] = useState([])
   const [requests, setRequests] = useState([])
-  const [processingId, setProcessingId] = useState(null)
 
-  const [filter, setFilter] = useState('all')
-  const [search, setSearch] = useState('')
-
-  const [selectedRequest, setSelectedRequest] = useState(null)
-
-  const [error, setError] = useState('')
+  const [selectedCourseId, setSelectedCourseId] = useState('')
+  const [senderName, setSenderName] = useState('')
+  const [senderPhone, setSenderPhone] = useState('')
+  const [note, setNote] = useState('')
+  const [proofFile, setProofFile] = useState(null)
 
   useEffect(() => {
-    loadRequests()
+    loadPage()
   }, [])
 
-  async function loadRequests() {
-    setLoading(true)
-    setError('')
-
-    const {
-      data,
-      error,
-    } = await supabase
-      .from('payment_requests')
-      .select(`
-        *,
-        profiles (
-          id,
-          email,
-          full_name
-        ),
-        courses (
-          id,
-          title
-        )
-      `)
-      .order('created_at', {
-        ascending: false,
-      })
-
-    if (error) {
-      setError(error.message)
-      setLoading(false)
-      return
-    }
-
-    setRequests(data || [])
-
-    setSelectedRequest((current) => {
-      if (!current) return null
-
-      const updated = (data || []).find(
-        (item) => item.id === current.id
-      )
-
-      if (!updated) return null
-
-      return {
-        ...updated,
-        signedProofUrl:
-          current.signedProofUrl || null,
-      }
-    })
-
-    setLoading(false)
-  }
-
-  async function openProof(request) {
-  if (!request.proof_url) {
-    alert('Баримтын файл байхгүй байна.')
-    return
-  }
-
-  let filePath = request.proof_url
-
-  // Хуучин record дээр бүтэн public URL хадгалагдсан бол
-  // storage доторх жинхэнэ path-ийг салгаж авна.
-  if (
-    filePath.startsWith('http://') ||
-    filePath.startsWith('https://')
-  ) {
+  async function loadPage() {
     try {
-      const url = new URL(filePath)
+      setLoading(true)
 
-      const marker =
-        '/storage/v1/object/public/payment-proofs/'
+      const {
+        data: { session },
+      } = await supabase.auth.getSession()
 
-      const signedMarker =
-        '/storage/v1/object/sign/payment-proofs/'
+      if (!session?.user) {
+        router.replace('/login')
+        return
+      }
 
-      if (url.pathname.includes(marker)) {
-        filePath = decodeURIComponent(
-          url.pathname.split(marker)[1]
-        )
-      } else if (
-        url.pathname.includes(signedMarker)
-      ) {
-        filePath = decodeURIComponent(
-          url.pathname.split(signedMarker)[1]
-        )
-      } else {
-        throw new Error(
-          'Payment proof path олдсонгүй.'
+      const currentUser = session.user
+      setUser(currentUser)
+
+      const [
+        profileResult,
+        courseResult,
+        enrollmentResult,
+        requestResult,
+      ] = await Promise.all([
+        supabase
+          .from('profiles')
+          .select('id, email, full_name')
+          .eq('id', currentUser.id)
+          .single(),
+
+        supabase
+          .from('courses')
+          .select(
+            'id, title, description, price, published'
+          )
+          .eq('published', true)
+          .order('created_at', {
+            ascending: true,
+          }),
+
+        supabase
+          .from('enrollments')
+          .select('id, course_id, user_id')
+          .eq('user_id', currentUser.id),
+
+        supabase
+          .from('payment_requests')
+          .select('*')
+          .eq('user_id', currentUser.id)
+          .order('created_at', {
+            ascending: false,
+          }),
+      ])
+
+      if (profileResult.error) {
+        throw profileResult.error
+      }
+
+      if (courseResult.error) {
+        throw courseResult.error
+      }
+
+      if (enrollmentResult.error) {
+        throw enrollmentResult.error
+      }
+
+      if (requestResult.error) {
+        throw requestResult.error
+      }
+
+      setProfile(profileResult.data || null)
+      setCourses(courseResult.data || [])
+      setEnrollments(enrollmentResult.data || [])
+      setRequests(requestResult.data || [])
+
+      if (profileResult.data?.full_name) {
+        setSenderName(
+          profileResult.data.full_name
         )
       }
     } catch (error) {
-      alert(
-        'Хуучин payment proof URL буруу байна.'
+      console.error(
+        'Load student payments error:',
+        error
       )
-      return
+
+      alert(
+        error?.message ||
+          'Payment мэдээлэл ачааллахад алдаа гарлаа.'
+      )
+    } finally {
+      setLoading(false)
     }
   }
 
-  const {
-    data,
-    error,
-  } = await supabase.storage
-    .from('payment-proofs')
-    .createSignedUrl(
-      filePath,
-      60 * 10
-    )
+  // ==========================================
+  // REAL ACTIVE COURSE ACCESS
+  // ==========================================
 
-  if (error) {
-    console.error(
-      'SIGNED URL ERROR:',
-      error
+  const enrolledCourseIds = useMemo(() => {
+    return new Set(
+      enrollments.map(
+        (item) => item.course_id
+      )
     )
+  }, [enrollments])
 
-    alert(error.message)
-    return
+  const pendingCourseIds = useMemo(() => {
+    return new Set(
+      requests
+        .filter(
+          (item) =>
+            item.status === 'pending'
+        )
+        .map(
+          (item) => item.course_id
+        )
+    )
+  }, [requests])
+
+  function hasCourseAccess(courseId) {
+    return enrolledCourseIds.has(
+      courseId
+    )
   }
 
-  setSelectedRequest({
-    ...request,
-    proof_url: filePath,
-    signedProofUrl: data.signedUrl,
-  })
-}
+  // ==========================================
+  // COURSES AVAILABLE FOR PAYMENT
+  // ==========================================
 
-  async function approveRequest(request) {
-    const confirmed = window.confirm(
-      `${request.profiles?.email || 'Student'} хэрэглэгчид "${request.courses?.title || 'Course'}" сургалтын эрх нээх үү?`
+  const availableCourses = useMemo(() => {
+    return courses.filter(
+      (course) =>
+        !enrolledCourseIds.has(
+          course.id
+        ) &&
+        !pendingCourseIds.has(
+          course.id
+        )
     )
+  }, [
+    courses,
+    enrolledCourseIds,
+    pendingCourseIds,
+  ])
 
-    if (!confirmed) return
+  const selectedCourse = useMemo(() => {
+    return (
+      courses.find(
+        (course) =>
+          course.id ===
+          selectedCourseId
+      ) || null
+    )
+  }, [
+    courses,
+    selectedCourseId,
+  ])
 
-    setProcessingId(request.id)
+  // ==========================================
+  // FORMAT
+  // ==========================================
 
-    try {
-      const {
-        error: enrollmentError,
-      } = await supabase
-        .from('enrollments')
-        .upsert(
+  function formatPrice(value) {
+    return (
+      new Intl.NumberFormat(
+        'en-US'
+      ).format(
+        Number(value || 0)
+      ) + '₮'
+    )
+  }
+
+  function formatDate(value) {
+    if (!value) return '—'
+
+    return new Date(
+      value
+    ).toLocaleString('en-US', {
+      month: '2-digit',
+      day: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    })
+  }
+
+  function getCourseTitle(courseId) {
+    return (
+      courses.find(
+        (course) =>
+          course.id === courseId
+      )?.title || 'Сургалт'
+    )
+  }
+
+  // ==========================================
+  // EFFECTIVE STATUS
+  //
+  // approved payment + no enrollment
+  // => access revoked
+  // ==========================================
+
+  function getEffectiveStatus(
+    request
+  ) {
+    if (
+      request.status ===
+        'approved' &&
+      !hasCourseAccess(
+        request.course_id
+      )
+    ) {
+      return 'revoked'
+    }
+
+    return request.status
+  }
+
+  function getStatusLabel(
+    request
+  ) {
+    const status =
+      getEffectiveStatus(
+        request
+      )
+
+    if (status === 'approved') {
+      return 'APPROVED'
+    }
+
+    if (status === 'rejected') {
+      return 'REJECTED'
+    }
+
+    if (status === 'revoked') {
+      return 'ACCESS REVOKED'
+    }
+
+    return 'PENDING'
+  }
+
+  function getStatusText(
+    request
+  ) {
+    const status =
+      getEffectiveStatus(
+        request
+      )
+
+    if (status === 'approved') {
+      return 'Төлбөр баталгаажсан'
+    }
+
+    if (status === 'rejected') {
+      return 'Төлбөр татгалзсан'
+    }
+
+    if (status === 'revoked') {
+      return 'Сургалтын эрх цуцлагдсан'
+    }
+
+    return 'Шалгаж байна'
+  }
+
+  // ==========================================
+  // FORM
+  // ==========================================
+
+  function resetForm() {
+    setSelectedCourseId('')
+    setSenderPhone('')
+    setNote('')
+    setProofFile(null)
+
+    if (profile?.full_name) {
+      setSenderName(
+        profile.full_name
+      )
+    } else {
+      setSenderName('')
+    }
+
+    const input =
+      document.getElementById(
+        'payment-proof-input'
+      )
+
+    if (input) {
+      input.value = ''
+    }
+  }
+
+  async function uploadProof(
+    courseId
+  ) {
+    if (!proofFile) return ''
+
+    if (!user?.id) {
+      throw new Error(
+        'User мэдээлэл олдсонгүй.'
+      )
+    }
+
+    const extension =
+      proofFile.name
+        .split('.')
+        .pop()
+        ?.toLowerCase() ||
+      'jpg'
+
+    const filePath =
+      `${user.id}/${courseId}/${Date.now()}.${extension}`
+
+    const { error } =
+      await supabase.storage
+        .from('payment-proofs')
+        .upload(
+          filePath,
+          proofFile,
           {
-            user_id: request.user_id,
-            course_id: request.course_id,
-          },
-          {
-            onConflict: 'user_id,course_id',
+            cacheControl: '3600',
+            upsert: false,
           }
         )
 
-      if (enrollmentError) {
-        throw enrollmentError
-      }
-
-      const {
-        error: requestError,
-      } = await supabase
-        .from('payment_requests')
-        .update({
-          status: 'approved',
-          reviewed_at: new Date().toISOString(),
-        })
-        .eq('id', request.id)
-
-      if (requestError) {
-        throw requestError
-      }
-
-      await loadRequests()
-
-      alert('Payment approved. Course access нээгдлээ.')
-    } catch (error) {
-      alert(
-        error?.message ||
-          'Payment approve хийхэд алдаа гарлаа.'
-      )
-    } finally {
-      setProcessingId(null)
+    if (error) {
+      throw error
     }
+
+    return filePath
   }
 
-  async function rejectRequest(request) {
-    const confirmed = window.confirm(
-      'Энэ төлбөрийн хүсэлтийг reject хийх үү?'
-    )
+  async function submitPayment(
+    event
+  ) {
+    event.preventDefault()
 
-    if (!confirmed) return
+    if (!selectedCourseId) {
+      alert(
+        'Сургалтаа сонгоно уу.'
+      )
+      return
+    }
 
-    setProcessingId(request.id)
+    if (!senderName.trim()) {
+      alert(
+        'Шилжүүлсэн хүний нэрээ оруулна уу.'
+      )
+      return
+    }
+
+    if (!proofFile) {
+      alert(
+        'Төлбөрийн баримтаа хавсаргана уу.'
+      )
+      return
+    }
 
     try {
+      setSubmitting(true)
+
+      const proofPath =
+        await uploadProof(
+          selectedCourseId
+        )
+
       const {
+        data,
         error,
-      } = await supabase
-        .from('payment_requests')
-        .update({
-          status: 'rejected',
-          reviewed_at: new Date().toISOString(),
-        })
-        .eq('id', request.id)
+      } = await supabase.rpc(
+        'create_payment_request',
+        {
+          target_course_id:
+            selectedCourseId,
+
+          sender_name_input:
+            senderName.trim(),
+
+          sender_phone_input:
+            senderPhone.trim(),
+
+          note_input:
+            note.trim(),
+
+          proof_path_input:
+            proofPath,
+        }
+      )
 
       if (error) {
         throw error
       }
 
-      await loadRequests()
+      console.log(
+        'Created payment request:',
+        data
+      )
 
-      alert('Payment request rejected.')
+      alert(
+        'Төлбөрийн хүсэлт амжилттай илгээгдлээ.'
+      )
+
+      resetForm()
+      await loadPage()
     } catch (error) {
+      console.error(
+        'Submit payment error:',
+        error
+      )
+
       alert(
         error?.message ||
-          'Payment reject хийхэд алдаа гарлаа.'
+          'Төлбөрийн хүсэлт илгээхэд алдаа гарлаа.'
       )
     } finally {
-      setProcessingId(null)
+      setSubmitting(false)
     }
   }
 
-  const pendingCount = requests.filter(
-    (item) => item.status === 'pending'
-  ).length
-
-  const approvedCount = requests.filter(
-    (item) => item.status === 'approved'
-  ).length
-
-  const rejectedCount = requests.filter(
-    (item) => item.status === 'rejected'
-  ).length
-
-  const filteredRequests = useMemo(() => {
-    const keyword =
-      search.trim().toLowerCase()
-
-    return requests.filter((request) => {
-      const matchesFilter =
-        filter === 'all' ||
-        request.status === filter
-
-      const studentName =
-        request.profiles?.full_name || ''
-
-      const email =
-        request.profiles?.email || ''
-
-      const courseTitle =
-        request.courses?.title || ''
-
-      const senderName =
-        request.sender_name || ''
-
-      const senderPhone =
-        request.sender_phone || ''
-
-      const matchesSearch =
-        !keyword ||
-        studentName
-          .toLowerCase()
-          .includes(keyword) ||
-        email
-          .toLowerCase()
-          .includes(keyword) ||
-        courseTitle
-          .toLowerCase()
-          .includes(keyword) ||
-        senderName
-          .toLowerCase()
-          .includes(keyword) ||
-        senderPhone
-          .toLowerCase()
-          .includes(keyword)
-
-      return (
-        matchesFilter &&
-        matchesSearch
+  function retryRejected(
+    request
+  ) {
+    const course =
+      courses.find(
+        (item) =>
+          item.id ===
+          request.course_id
       )
+
+    if (!course) {
+      alert(
+        'Сургалтын мэдээлэл олдсонгүй.'
+      )
+      return
+    }
+
+    setSelectedCourseId(
+      course.id
+    )
+
+    setSenderName(
+      request.sender_name ||
+        profile?.full_name ||
+        ''
+    )
+
+    setSenderPhone(
+      request.sender_phone ||
+        ''
+    )
+
+    setNote(
+      request.note || ''
+    )
+
+    setProofFile(null)
+
+    window.scrollTo({
+      top: 0,
+      behavior: 'smooth',
     })
-  }, [requests, filter, search])
-
-  function formatDate(value) {
-    if (!value) return '—'
-
-    return new Date(value).toLocaleString()
-  }
-
-  function getStatusClass(status) {
-    if (status === 'approved') {
-      return 'approved'
-    }
-
-    if (status === 'rejected') {
-      return 'rejected'
-    }
-
-    return 'pending'
   }
 
   if (loading) {
     return (
-      <div className="admin-payment-loading">
-        Payment requests ачаалж байна...
+      <div className="loading-page">
+        Төлбөрийн мэдээлэл
+        ачааллаж байна...
+
+        <style jsx>{`
+          .loading-page {
+            padding: 50px 24px;
+            color: #8e8a99;
+          }
+        `}</style>
       </div>
     )
   }
 
   return (
-    <>
-      <div className="admin-payment-page">
-        <div className="admin-payment-container">
+    <div className="payment-page">
+      {/* HEADER */}
 
-          <header className="page-header">
-            <div>
-              <p className="eyebrow">
-                PAYMENTS
-              </p>
+      <div className="heading">
+        <div className="eyebrow">
+          PAYMENT
+        </div>
 
-              <h1>
-                Payment Requests
-              </h1>
+        <h1>
+          Сургалтын төлбөр
+        </h1>
 
-              <p className="subtitle">
-                Төлбөрийн баримт шалгаж,
-                сургалтын эрх нээнэ.
-              </p>
-            </div>
+        <p>
+          Төлбөрөө шилжүүлсний
+          дараа баримтаа илгээж,
+          admin баталгаажуулсны
+          дараа сургалтын эрх
+          нээгдэнэ.
+        </p>
+      </div>
 
-            <button
-              type="button"
-              onClick={loadRequests}
-              className="refresh-button"
-            >
-              ↻ Refresh
-            </button>
-          </header>
+      <div className="content-grid">
+        {/* PAYMENT FORM */}
 
-          <section className="stats-grid">
-            <div className="stat-card">
-              <span>
-                Нийт хүсэлт
-              </span>
+        <section className="form-card">
+          <div className="section-label">
+            NEW REQUEST
+          </div>
 
-              <strong>
-                {requests.length}
-              </strong>
-            </div>
+          <h2>
+            Төлбөрийн хүсэлт
+            илгээх
+          </h2>
 
-            <div className="stat-card pending-stat">
-              <span>
-                Pending
-              </span>
+          <form
+            onSubmit={
+              submitPayment
+            }
+          >
+            <label>
+              Сургалт
+            </label>
 
-              <strong>
-                {pendingCount}
-              </strong>
-            </div>
-
-            <div className="stat-card approved-stat">
-              <span>
-                Approved
-              </span>
-
-              <strong>
-                {approvedCount}
-              </strong>
-            </div>
-
-            <div className="stat-card rejected-stat">
-              <span>
-                Rejected
-              </span>
-
-              <strong>
-                {rejectedCount}
-              </strong>
-            </div>
-          </section>
-
-          <section className="toolbar">
-            <div className="filters">
-              {[
-                {
-                  label: 'All',
-                  value: 'all',
-                },
-                {
-                  label: 'Pending',
-                  value: 'pending',
-                },
-                {
-                  label: 'Approved',
-                  value: 'approved',
-                },
-                {
-                  label: 'Rejected',
-                  value: 'rejected',
-                },
-              ].map((item) => (
-                <button
-                  key={item.value}
-                  type="button"
-                  onClick={() =>
-                    setFilter(item.value)
-                  }
-                  className={
-                    filter === item.value
-                      ? 'filter-button active'
-                      : 'filter-button'
-                  }
-                >
-                  {item.label}
-                </button>
-              ))}
-            </div>
-
-            <input
-              value={search}
-              onChange={(event) =>
-                setSearch(
-                  event.target.value
+            <select
+              value={
+                selectedCourseId
+              }
+              onChange={(
+                event
+              ) =>
+                setSelectedCourseId(
+                  event.target
+                    .value
                 )
               }
-              placeholder="Нэр, email, утас, course хайх..."
-              className="search-input"
+            >
+              <option value="">
+                Сургалт сонгох
+              </option>
+
+              {availableCourses.map(
+                (course) => (
+                  <option
+                    key={
+                      course.id
+                    }
+                    value={
+                      course.id
+                    }
+                  >
+                    {
+                      course.title
+                    }{' '}
+                    —{' '}
+                    {formatPrice(
+                      course.price
+                    )}
+                  </option>
+                )
+              )}
+            </select>
+
+            {availableCourses.length ===
+              0 && (
+              <div className="info-box">
+                Одоогоор шинэ
+                payment request
+                илгээх сургалт
+                байхгүй байна.
+              </div>
+            )}
+
+            {selectedCourse && (
+              <div className="selected-course">
+                <div>
+                  <span>
+                    Сонгосон
+                    сургалт
+                  </span>
+
+                  <strong>
+                    {
+                      selectedCourse.title
+                    }
+                  </strong>
+                </div>
+
+                <div className="course-price">
+                  {formatPrice(
+                    selectedCourse.price
+                  )}
+                </div>
+              </div>
+            )}
+
+            <label>
+              Шилжүүлсэн хүний
+              нэр
+            </label>
+
+            <input
+              type="text"
+              value={
+                senderName
+              }
+              onChange={(
+                event
+              ) =>
+                setSenderName(
+                  event.target
+                    .value
+                )
+              }
+              placeholder="Жишээ: Аминаа"
             />
-          </section>
 
-          {error && (
-            <div className="error-box">
-              {error}
-            </div>
-          )}
+            <label>
+              Утасны дугаар
+            </label>
 
-          {filteredRequests.length === 0 ? (
-            <div className="empty-card">
-              Payment request олдсонгүй.
+            <input
+              type="text"
+              value={
+                senderPhone
+              }
+              onChange={(
+                event
+              ) =>
+                setSenderPhone(
+                  event.target
+                    .value
+                )
+              }
+              placeholder="99112233"
+            />
+
+            <label>
+              Төлбөрийн баримт
+            </label>
+
+            <input
+              id="payment-proof-input"
+              type="file"
+              accept="image/*"
+              onChange={(
+                event
+              ) =>
+                setProofFile(
+                  event.target
+                    .files?.[0] ||
+                    null
+                )
+              }
+            />
+
+            {proofFile && (
+              <div className="file-name">
+                {proofFile.name}
+              </div>
+            )}
+
+            <label>
+              Тэмдэглэл
+            </label>
+
+            <textarea
+              value={note}
+              onChange={(
+                event
+              ) =>
+                setNote(
+                  event.target
+                    .value
+                )
+              }
+              placeholder="Нэмэлт мэдээлэл байвал..."
+              rows={4}
+            />
+
+            <button
+              type="submit"
+              className="submit-button"
+              disabled={
+                submitting ||
+                availableCourses.length ===
+                  0
+              }
+            >
+              {submitting
+                ? 'Илгээж байна...'
+                : 'Төлбөрийн хүсэлт илгээх'}
+            </button>
+          </form>
+        </section>
+
+        {/* HISTORY */}
+
+        <section className="history-card">
+          <div className="section-label">
+            HISTORY
+          </div>
+
+          <h2>
+            Миний хүсэлтүүд
+          </h2>
+
+          {requests.length ===
+          0 ? (
+            <div className="empty">
+              Одоогоор payment
+              request байхгүй
+              байна.
             </div>
           ) : (
-            <div className="requests-list">
-              {filteredRequests.map(
-                (request) => (
-                  <article
-                    key={request.id}
-                    className="request-card"
-                  >
-                    <div className="request-main">
-                      <div className="request-header">
-                        <div className="student-block">
-                          <div className="student-avatar">
-                            {(
-                              request.profiles?.full_name ||
-                              request.profiles?.email ||
-                              'S'
-                            )
-                              .charAt(0)
-                              .toUpperCase()}
+            <div className="request-list">
+              {requests.map(
+                (request) => {
+                  const effectiveStatus =
+                    getEffectiveStatus(
+                      request
+                    )
+
+                  return (
+                    <div
+                      className="request-card"
+                      key={
+                        request.id
+                      }
+                    >
+                      <div className="request-top">
+                        <div>
+                          <div className="course-label">
+                            COURSE
                           </div>
 
-                          <div className="student-info">
-                            <div className="student-topline">
-                              <h2>
-                                {request.profiles?.full_name ||
-                                  request.sender_name ||
-                                  'Student'}
-                              </h2>
-
-                              <span
-                                className={`status ${getStatusClass(
-                                  request.status
-                                )}`}
-                              >
-                                {request.status.toUpperCase()}
-                              </span>
-                            </div>
-
-                            <p>
-                              {request.profiles?.email ||
-                                'Email байхгүй'}
-                            </p>
+                          <div className="course-title">
+                            {getCourseTitle(
+                              request.course_id
+                            )}
                           </div>
                         </div>
 
-                        <div className="amount">
-                          ₮
-                          {Number(
-                            request.amount || 0
-                          ).toLocaleString()}
-                        </div>
-                      </div>
-
-                      <div className="course-box">
-                        <span>
-                          COURSE
+                        <span
+                          className={`status ${effectiveStatus}`}
+                        >
+                          {getStatusLabel(
+                            request
+                          )}
                         </span>
-
-                        <strong>
-                          {request.courses?.title ||
-                            'Course'}
-                        </strong>
                       </div>
 
-                      <div className="info-grid">
-                        <div>
+                      <div className="request-details">
+                        <div className="detail-box">
                           <span>
-                            Төлбөр хийсэн нэр
+                            AMOUNT
                           </span>
 
                           <strong>
-                            {request.sender_name ||
-                              '—'}
+                            {formatPrice(
+                              request.amount
+                            )}
                           </strong>
                         </div>
 
-                        <div>
+                        <div className="detail-box">
                           <span>
-                            Утас
-                          </span>
-
-                          <strong>
-                            {request.sender_phone ||
-                              '—'}
-                          </strong>
-                        </div>
-
-                        <div>
-                          <span>
-                            Payment method
-                          </span>
-
-                          <strong>
-                            {request.payment_method ||
-                              '—'}
-                          </strong>
-                        </div>
-
-                        <div>
-                          <span>
-                            Илгээсэн
+                            DATE
                           </span>
 
                           <strong>
@@ -563,923 +801,649 @@ export default function AdminPaymentsPage() {
                             )}
                           </strong>
                         </div>
-                      </div>
 
-                      {request.note && (
-                        <div className="note-box">
+                        <div className="detail-box">
                           <span>
-                            NOTE
+                            STATUS
                           </span>
 
+                          <strong>
+                            {getStatusText(
+                              request
+                            )}
+                          </strong>
+                        </div>
+                      </div>
+
+                      {/* PENDING */}
+
+                      {effectiveStatus ===
+                        'pending' && (
+                        <div className="pending-box">
+                          <strong>
+                            Төлбөр шалгаж
+                            байна
+                          </strong>
+
                           <p>
-                            {request.note}
+                            Таны төлбөрийн
+                            хүсэлтийг admin
+                            шалгаж байна.
                           </p>
                         </div>
                       )}
-                    </div>
 
-                    <div className="request-footer">
-                      <div className="footer-left">
-                        {request.proof_url ? (
+                      {/* APPROVED + ENROLLMENT EXISTS */}
+
+                      {effectiveStatus ===
+                        'approved' && (
+                        <>
+                          <div className="approved-box">
+                            <strong>
+                              Төлбөр
+                              баталгаажсан
+                            </strong>
+
+                            <p>
+                              Таны
+                              сургалтын эрх
+                              нээгдсэн байна.
+                            </p>
+                          </div>
+
                           <button
                             type="button"
+                            className="course-button"
                             onClick={() =>
-                              openProof(request)
+                              router.push(
+                                `/dashboard/courses/${request.course_id}`
+                              )
                             }
-                            className="proof-button"
                           >
-                            Баримт харах
+                            Сургалт руу
+                            орох →
                           </button>
-                        ) : (
-                          <span className="no-proof">
-                            Баримт байхгүй
-                          </span>
-                        )}
+                        </>
+                      )}
 
-                        {request.reviewed_at && (
-                          <span className="reviewed">
-                            Reviewed:{' '}
-                            {formatDate(
-                              request.reviewed_at
-                            )}
-                          </span>
-                        )}
-                      </div>
+                      {/* REVOKED */}
 
-                      {request.status ===
-                        'pending' && (
-                        <div className="actions">
+                      {effectiveStatus ===
+                        'revoked' && (
+                        <div className="revoked-box">
+                          <strong>
+                            Сургалтын эрх
+                            цуцлагдсан
+                          </strong>
+
+                          <p>
+                            Энэ сургалтын
+                            access одоогоор
+                            идэвхгүй байна.
+                          </p>
+                        </div>
+                      )}
+
+                      {/* REJECTED */}
+
+                      {effectiveStatus ===
+                        'rejected' && (
+                        <div className="rejected-box">
+                          <strong>
+                            Төлбөр
+                            баталгаажаагүй
+                          </strong>
+
+                          <p>
+                            Мэдээллээ
+                            шалгаад дахин
+                            хүсэлт
+                            илгээнэ үү.
+                          </p>
+
                           <button
                             type="button"
-                            disabled={
-                              processingId ===
-                              request.id
-                            }
                             onClick={() =>
-                              rejectRequest(
+                              retryRejected(
                                 request
                               )
                             }
-                            className="reject-button"
                           >
-                            Reject
-                          </button>
-
-                          <button
-                            type="button"
-                            disabled={
-                              processingId ===
-                              request.id
-                            }
-                            onClick={() =>
-                              approveRequest(
-                                request
-                              )
-                            }
-                            className="approve-button"
-                          >
-                            {processingId ===
-                            request.id
-                              ? 'Processing...'
-                              : 'Approve + Access'}
+                            Дахин хүсэлт
+                            илгээх
                           </button>
                         </div>
                       )}
                     </div>
-                  </article>
-                )
+                  )
+                }
               )}
             </div>
           )}
-        </div>
+        </section>
       </div>
 
-      {selectedRequest && (
-        <div
-          className="modal-overlay"
-          onClick={() =>
-            setSelectedRequest(null)
-          }
-        >
-          <div
-            className="modal"
-            onClick={(event) =>
-              event.stopPropagation()
-            }
-          >
-            <div className="modal-header">
-              <div>
-                <p>
-                  PAYMENT PROOF
-                </p>
-
-                <h2>
-                  {selectedRequest.courses
-                    ?.title || 'Course'}
-                </h2>
-              </div>
-
-              <button
-                type="button"
-                onClick={() =>
-                  setSelectedRequest(null)
-                }
-                className="close-button"
-              >
-                ×
-              </button>
-            </div>
-
-            {selectedRequest.signedProofUrl ? (
-              <div className="proof-wrapper">
-                <img
-                  src={
-                    selectedRequest.signedProofUrl
-                  }
-                  alt="Payment proof"
-                />
-              </div>
-            ) : (
-              <div className="proof-error">
-                Баримтын зураг нээж чадсангүй.
-              </div>
-            )}
-
-            <div className="modal-info">
-              <div>
-                <span>
-                  Нэр
-                </span>
-
-                <strong>
-                  {selectedRequest.sender_name ||
-                    '—'}
-                </strong>
-              </div>
-
-              <div>
-                <span>
-                  Утас
-                </span>
-
-                <strong>
-                  {selectedRequest.sender_phone ||
-                    '—'}
-                </strong>
-              </div>
-
-              <div>
-                <span>
-                  Дүн
-                </span>
-
-                <strong>
-                  ₮
-                  {Number(
-                    selectedRequest.amount ||
-                      0
-                  ).toLocaleString()}
-                </strong>
-              </div>
-            </div>
-
-            {selectedRequest.signedProofUrl && (
-              <a
-                href={
-                  selectedRequest.signedProofUrl
-                }
-                target="_blank"
-                rel="noreferrer"
-                className="open-original"
-              >
-                Original зураг нээх →
-              </a>
-            )}
-
-            {selectedRequest.status ===
-              'pending' && (
-              <div className="modal-actions">
-                <button
-                  type="button"
-                  onClick={() =>
-                    rejectRequest(
-                      selectedRequest
-                    )
-                  }
-                  disabled={
-                    processingId ===
-                    selectedRequest.id
-                  }
-                  className="reject-button"
-                >
-                  Reject
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() =>
-                    approveRequest(
-                      selectedRequest
-                    )
-                  }
-                  disabled={
-                    processingId ===
-                    selectedRequest.id
-                  }
-                  className="approve-button"
-                >
-                  {processingId ===
-                  selectedRequest.id
-                    ? 'Processing...'
-                    : 'Approve + Access'}
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
       <style jsx>{`
-        .admin-payment-page {
-          min-height: 100%;
-          background: #f8f7ff;
-          padding: 40px 46px 80px;
-        }
-
-        .admin-payment-container {
+        .payment-page {
           width: 100%;
-          max-width: 1120px;
-          margin: 0 auto;
+          max-width: 1180px;
+
+          padding:
+            46px
+            34px
+            100px;
+
+          color: #302e38;
         }
 
-        .admin-payment-loading {
-          min-height: calc(100vh - 82px);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          background: #f8f7ff;
-          color: #8d8995;
+        .heading {
+          margin-bottom: 28px;
         }
 
-        .page-header {
-          display: flex;
-          align-items: flex-start;
-          justify-content: space-between;
-          gap: 20px;
-          margin-bottom: 25px;
-        }
-
-        .eyebrow {
-          margin: 0;
+        .eyebrow,
+        .section-label,
+        .course-label {
           color: #6c5ce7;
+
           font-size: 11px;
-          font-weight: 900;
-          letter-spacing: 1.6px;
+          font-weight: 800;
+
+          letter-spacing: 0.14em;
         }
 
-        .page-header h1 {
-          margin: 8px 0 6px;
-          color: #292931;
-          font-size: 38px;
-          line-height: 1.15;
+        .heading h1 {
+          margin:
+            8px
+            0
+            0;
+
+          font-size: 30px;
+
+          letter-spacing: -0.04em;
         }
 
-        .subtitle {
-          margin: 0;
-          color: #8b8993;
+        .heading p {
+          max-width: 650px;
+
+          margin:
+            10px
+            0
+            0;
+
+          color: #9692a0;
+
           font-size: 14px;
+
+          line-height: 1.7;
         }
 
-        .refresh-button {
-          border: 1px solid #ded9ed;
-          border-radius: 11px;
-          padding: 10px 14px;
-          background: #fff;
-          color: #6c5ce7;
-          font-weight: 800;
-          cursor: pointer;
-        }
-
-        .stats-grid {
+        .content-grid {
           display: grid;
+
           grid-template-columns:
-            repeat(4, minmax(0, 1fr));
-          gap: 12px;
-          margin-bottom: 20px;
+            minmax(0, 0.9fr)
+            minmax(0, 1.1fr);
+
+          gap: 20px;
+
+          align-items: start;
         }
 
-        .stat-card {
-          background: #fff;
-          border: 1px solid #ece8f7;
-          border-radius: 16px;
-          padding: 17px;
+        .form-card,
+        .history-card {
+          background: #ffffff;
+
+          border:
+            1px solid
+            #e9e5f2;
+
+          border-radius: 20px;
+
+          padding: 24px;
         }
 
-        .stat-card span {
-          display: block;
-          margin-bottom: 7px;
-          color: #9a97a2;
-          font-size: 11px;
-          font-weight: 800;
+        h2 {
+          margin:
+            7px
+            0
+            22px;
+
+          font-size: 21px;
         }
 
-        .stat-card strong {
-          color: #34323b;
-          font-size: 25px;
-        }
-
-        .pending-stat strong {
-          color: #a46b00;
-        }
-
-        .approved-stat strong {
-          color: #218647;
-        }
-
-        .rejected-stat strong {
-          color: #b94f4f;
-        }
-
-        .toolbar {
+        form {
           display: flex;
+          flex-direction: column;
+        }
+
+        label {
+          margin:
+            15px
+            0
+            7px;
+
+          font-size: 12px;
+          font-weight: 800;
+
+          color: #5e5a68;
+        }
+
+        input,
+        select,
+        textarea {
+          width: 100%;
+
+          border:
+            1px solid
+            #e2deeb;
+
+          border-radius: 11px;
+
+          padding:
+            12px
+            13px;
+
+          background: #fbfaff;
+
+          color: #37343e;
+
+          font: inherit;
+
+          outline: none;
+        }
+
+        input:focus,
+        select:focus,
+        textarea:focus {
+          border-color: #6c5ce7;
+
+          box-shadow:
+            0 0 0 3px
+            rgba(
+              108,
+              92,
+              231,
+              0.08
+            );
+        }
+
+        textarea {
+          resize: vertical;
+        }
+
+        .selected-course {
+          display: flex;
+
           align-items: center;
           justify-content: space-between;
-          gap: 15px;
-          margin-bottom: 20px;
+
+          gap: 20px;
+
+          margin-top: 12px;
+
           padding: 14px;
-          background: #fff;
-          border: 1px solid #ece8f7;
-          border-radius: 16px;
+
+          border-radius: 12px;
+
+          background: #f6f4ff;
         }
 
-        .filters {
-          display: flex;
-          gap: 7px;
-          flex-wrap: wrap;
+        .selected-course span {
+          display: block;
+
+          margin-bottom: 4px;
+
+          color: #9893a4;
+
+          font-size: 10px;
         }
 
-        .filter-button {
-          border: none;
-          border-radius: 999px;
-          padding: 8px 12px;
-          background: #f5f3f8;
-          color: #77747f;
-          font-size: 11px;
-          font-weight: 800;
-          cursor: pointer;
-        }
-
-        .filter-button.active {
-          background: #6c5ce7;
-          color: #fff;
-        }
-
-        .search-input {
-          width: 320px;
-          max-width: 100%;
-          box-sizing: border-box;
-          border: 1px solid #e2deeb;
-          border-radius: 10px;
-          padding: 10px 12px;
-          outline: none;
+        .selected-course strong {
           font-size: 13px;
         }
 
-        .requests-list {
+        .course-price {
+          color: #6c5ce7;
+
+          font-size: 15px;
+          font-weight: 800;
+
+          white-space: nowrap;
+        }
+
+        .file-name {
+          margin-top: 7px;
+
+          color: #6c5ce7;
+
+          font-size: 11px;
+        }
+
+        .info-box {
+          margin-top: 12px;
+
+          padding: 12px;
+
+          background: #faf8ff;
+
+          border-radius: 10px;
+
+          color: #898494;
+
+          font-size: 12px;
+
+          line-height: 1.5;
+        }
+
+        .submit-button {
+          margin-top: 20px;
+
+          border: 0;
+
+          border-radius: 11px;
+
+          padding:
+            13px
+            16px;
+
+          background: #6c5ce7;
+
+          color: #ffffff;
+
+          font-weight: 800;
+
+          cursor: pointer;
+        }
+
+        .submit-button:disabled {
+          opacity: 0.5;
+
+          cursor: not-allowed;
+        }
+
+        .request-list {
           display: flex;
           flex-direction: column;
-          gap: 14px;
+
+          gap: 18px;
         }
 
         .request-card {
-          overflow: hidden;
-          background: #fff;
-          border: 1px solid #ece8f7;
-          border-radius: 20px;
+          border:
+            1px solid
+            #e7e2ef;
+
+          border-radius: 18px;
+
+          padding: 24px;
         }
 
-        .request-main {
-          padding: 22px;
-        }
-
-        .request-header {
+        .request-top {
           display: flex;
-          justify-content: space-between;
+
           align-items: flex-start;
+          justify-content: space-between;
+
           gap: 20px;
+
+          margin-bottom: 22px;
         }
 
-        .student-block {
-          display: flex;
-          gap: 13px;
-          min-width: 0;
-        }
+        .course-title {
+          margin-top: 12px;
 
-        .student-avatar {
-          width: 44px;
-          height: 44px;
-          flex: 0 0 44px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          border-radius: 13px;
-          background: #f0ecff;
-          color: #6c5ce7;
-          font-size: 17px;
-          font-weight: 900;
-        }
+          font-size: 21px;
 
-        .student-info {
-          min-width: 0;
-        }
-
-        .student-topline {
-          display: flex;
-          align-items: center;
-          gap: 9px;
-          flex-wrap: wrap;
-        }
-
-        .student-topline h2 {
-          margin: 0;
-          color: #303038;
-          font-size: 18px;
-          overflow-wrap: anywhere;
-        }
-
-        .student-info p {
-          margin: 5px 0 0;
-          color: #9996a0;
-          font-size: 12px;
-          overflow-wrap: anywhere;
+          font-weight: 500;
         }
 
         .status {
           display: inline-flex;
+
+          padding:
+            9px
+            13px;
+
           border-radius: 999px;
-          padding: 5px 8px;
-          font-size: 9px;
-          font-weight: 900;
+
+          font-size: 10px;
+          font-weight: 800;
+
+          letter-spacing: 0.04em;
+
+          white-space: nowrap;
         }
 
         .status.pending {
-          background: #fff6de;
-          color: #a46b00;
+          background: #fff7df;
+          color: #b27a17;
         }
 
         .status.approved {
-          background: #eaf8ee;
-          color: #218647;
+          background: #e6f7ec;
+          color: #277d4a;
         }
 
         .status.rejected {
-          background: #fff0f0;
-          color: #b94f4f;
+          background: #fff0f1;
+          color: #c8545d;
         }
 
-        .amount {
-          flex-shrink: 0;
-          color: #6c5ce7;
-          font-size: 20px;
-          font-weight: 900;
+        .status.revoked {
+          background: #f1eff4;
+          color: #77717f;
         }
 
-        .course-box {
-          margin-top: 19px;
-          padding: 13px 15px;
-          background: #f7f5ff;
-          border-radius: 12px;
-        }
-
-        .course-box span {
-          display: block;
-          margin-bottom: 4px;
-          color: #9c98a6;
-          font-size: 9px;
-          font-weight: 900;
-          letter-spacing: 1.1px;
-        }
-
-        .course-box strong {
-          color: #4a4656;
-          font-size: 14px;
-        }
-
-        .info-grid {
+        .request-details {
           display: grid;
+
           grid-template-columns:
-            repeat(4, minmax(0, 1fr));
-          gap: 10px;
-          margin-top: 13px;
+            repeat(
+              3,
+              minmax(0, 1fr)
+            );
+
+          gap: 14px;
+
+          margin-bottom: 22px;
         }
 
-        .info-grid > div {
-          min-width: 0;
-          padding: 12px;
+        .detail-box {
+          padding:
+            18px
+            17px;
+
           background: #faf9fd;
-          border-radius: 11px;
+
+          border-radius: 15px;
         }
 
-        .info-grid span {
+        .detail-box span {
           display: block;
-          margin-bottom: 5px;
-          color: #a09eaa;
-          font-size: 9px;
-          font-weight: 800;
-        }
 
-        .info-grid strong {
-          display: block;
-          color: #55525e;
-          font-size: 12px;
-          overflow-wrap: anywhere;
-        }
+          margin-bottom: 16px;
 
-        .note-box {
-          margin-top: 13px;
-          padding: 13px;
-          border-radius: 11px;
-          background: #fffaf0;
-        }
+          color: #aaa6b1;
 
-        .note-box span {
-          color: #a59c8c;
-          font-size: 9px;
-          font-weight: 900;
-        }
-
-        .note-box p {
-          margin: 5px 0 0;
-          color: #6f675c;
-          font-size: 13px;
-          line-height: 1.5;
-        }
-
-        .request-footer {
-          padding: 14px 22px;
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          gap: 15px;
-          background: #fcfbfe;
-          border-top: 1px solid #f0edf7;
-        }
-
-        .footer-left {
-          display: flex;
-          align-items: center;
-          gap: 12px;
-          flex-wrap: wrap;
-        }
-
-        .proof-button {
-          border: none;
-          background: transparent;
-          color: #6c5ce7;
-          font-size: 12px;
-          font-weight: 900;
-          cursor: pointer;
-        }
-
-        .no-proof,
-        .reviewed {
-          color: #aaa7b0;
           font-size: 10px;
-        }
-
-        .actions {
-          display: flex;
-          gap: 8px;
-        }
-
-        .reject-button,
-        .approve-button {
-          border-radius: 10px;
-          padding: 10px 14px;
-          font-size: 11px;
-          font-weight: 900;
-          cursor: pointer;
-        }
-
-        .reject-button {
-          border: 1px solid #f0d5d5;
-          background: #fff6f6;
-          color: #ba5050;
-        }
-
-        .approve-button {
-          border: none;
-          background: #6c5ce7;
-          color: #fff;
-        }
-
-        .reject-button:disabled,
-        .approve-button:disabled {
-          opacity: 0.55;
-          cursor: default;
-        }
-
-        .empty-card,
-        .error-box {
-          padding: 30px;
-          border-radius: 18px;
-          text-align: center;
-        }
-
-        .empty-card {
-          background: #fff;
-          border: 1px solid #ece8f7;
-          color: #9997a0;
-        }
-
-        .error-box {
-          margin-bottom: 18px;
-          background: #fff1f1;
-          color: #b44c4c;
-        }
-
-        .modal-overlay {
-          position: fixed;
-          inset: 0;
-          z-index: 1000;
-          padding: 24px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          background:
-            rgba(23, 20, 34, 0.56);
-        }
-
-        .modal {
-          width: 100%;
-          max-width: 620px;
-          max-height: 90vh;
-          overflow-y: auto;
-          box-sizing: border-box;
-          padding: 22px;
-          background: #fff;
-          border-radius: 22px;
-        }
-
-        .modal-header {
-          display: flex;
-          align-items: flex-start;
-          justify-content: space-between;
-          gap: 20px;
-          margin-bottom: 17px;
-        }
-
-        .modal-header p {
-          margin: 0;
-          color: #6c5ce7;
-          font-size: 9px;
-          font-weight: 900;
-          letter-spacing: 1.3px;
-        }
-
-        .modal-header h2 {
-          margin: 5px 0 0;
-          color: #2f2d36;
-          font-size: 20px;
-        }
-
-        .close-button {
-          width: 34px;
-          height: 34px;
-          flex: 0 0 34px;
-          border: none;
-          border-radius: 10px;
-          background: #f4f2f7;
-          color: #76727e;
-          font-size: 22px;
-          cursor: pointer;
-        }
-
-        .proof-wrapper {
-          width: 100%;
-          max-height: 480px;
-          overflow: auto;
-          display: flex;
-          justify-content: center;
-          background: #f5f3f8;
-          border-radius: 15px;
-        }
-
-        .proof-wrapper img {
-          display: block;
-          width: 100%;
-          height: auto;
-          object-fit: contain;
-        }
-
-        .proof-error {
-          padding: 30px;
-          border-radius: 15px;
-          background: #fff1f1;
-          color: #b44c4c;
-          text-align: center;
-        }
-
-        .modal-info {
-          display: grid;
-          grid-template-columns:
-            repeat(3, minmax(0, 1fr));
-          gap: 9px;
-          margin-top: 14px;
-        }
-
-        .modal-info > div {
-          padding: 11px;
-          border-radius: 10px;
-          background: #faf9fd;
-        }
-
-        .modal-info span {
-          display: block;
-          margin-bottom: 4px;
-          color: #9e9ba5;
-          font-size: 9px;
-        }
-
-        .modal-info strong {
-          color: #4f4c56;
-          font-size: 12px;
-          overflow-wrap: anywhere;
-        }
-
-        .open-original {
-          display: inline-block;
-          margin-top: 14px;
-          color: #6c5ce7;
-          font-size: 12px;
           font-weight: 800;
-          text-decoration: none;
+
+          letter-spacing: 0.12em;
         }
 
-        .modal-actions {
-          display: grid;
-          grid-template-columns: 1fr 1fr;
-          gap: 8px;
+        .detail-box strong {
+          color: #58545f;
+
+          font-size: 13px;
+        }
+
+        .approved-box,
+        .pending-box,
+        .rejected-box,
+        .revoked-box {
+          padding:
+            18px
+            20px;
+
+          border-radius: 15px;
+        }
+
+        .approved-box {
+          background: #ebf8f0;
+
+          color: #2e7c4d;
+        }
+
+        .pending-box {
+          background: #fff9e8;
+
+          color: #956f22;
+        }
+
+        .rejected-box {
+          background: #fff1f2;
+
+          color: #b94d56;
+        }
+
+        .revoked-box {
+          background: #f3f1f6;
+
+          color: #706b78;
+        }
+
+        .approved-box strong,
+        .pending-box strong,
+        .rejected-box strong,
+        .revoked-box strong {
+          display: block;
+
+          margin-bottom: 8px;
+
+          font-size: 13px;
+        }
+
+        .approved-box p,
+        .pending-box p,
+        .rejected-box p,
+        .revoked-box p {
+          margin: 0;
+
+          font-size: 12px;
+
+          line-height: 1.6;
+        }
+
+        .course-button {
+          width: 100%;
+
           margin-top: 18px;
+
+          border: 0;
+
+          border-radius: 12px;
+
+          padding: 14px;
+
+          background: #6c5ce7;
+
+          color: white;
+
+          font-size: 13px;
+          font-weight: 800;
+
+          cursor: pointer;
         }
 
-        @media (max-width: 900px) {
-          .admin-payment-page {
-            padding: 30px 24px 60px;
-          }
+        .rejected-box button {
+          margin-top: 12px;
 
-          .stats-grid {
+          border:
+            1px solid
+            #efcdd0;
+
+          border-radius: 9px;
+
+          padding:
+            9px
+            12px;
+
+          background: white;
+
+          color: #bd4e57;
+
+          font-size: 11px;
+          font-weight: 800;
+
+          cursor: pointer;
+        }
+
+        .empty {
+          padding:
+            40px
+            0;
+
+          text-align: center;
+
+          color: #9995a4;
+
+          font-size: 13px;
+        }
+
+        @media (
+          max-width: 900px
+        ) {
+          .content-grid {
             grid-template-columns:
-              repeat(2, 1fr);
-          }
-
-          .toolbar {
-            align-items: stretch;
-            flex-direction: column;
-          }
-
-          .search-input {
-            width: 100%;
-          }
-
-          .info-grid {
-            grid-template-columns:
-              repeat(2, 1fr);
+              1fr;
           }
         }
 
-        @media (max-width: 640px) {
-          .admin-payment-page {
+        @media (
+          max-width: 650px
+        ) {
+          .payment-page {
             padding:
-              22px 14px
-              calc(
-                40px +
-                env(safe-area-inset-bottom)
-              );
+              28px
+              16px
+              110px;
           }
 
-          .page-header {
-            flex-direction: column;
+          .heading h1 {
+            font-size: 25px;
           }
 
-          .page-header h1 {
-            font-size: 29px;
+          .form-card,
+          .history-card {
+            padding: 18px;
           }
 
-          .refresh-button {
-            width: 100%;
+          .request-card {
+            padding: 18px;
           }
 
-          .stats-grid {
-            gap: 8px;
-          }
-
-          .stat-card {
-            padding: 14px;
-          }
-
-          .stat-card strong {
-            font-size: 21px;
-          }
-
-          .toolbar {
-            padding: 11px;
-          }
-
-          .filters {
-            display: grid;
+          .request-details {
             grid-template-columns:
-              repeat(2, 1fr);
+              1fr;
           }
 
-          .filter-button {
-            width: 100%;
+          .request-top {
+            gap: 12px;
           }
 
-          .search-input {
-            min-height: 44px;
-            font-size: 16px;
-          }
-
-          .request-main {
-            padding: 17px;
-          }
-
-          .request-header {
-            flex-direction: column;
-          }
-
-          .amount {
+          .course-title {
             font-size: 18px;
           }
 
-          .info-grid {
-            grid-template-columns: 1fr;
-          }
+          .status {
+            font-size: 9px;
 
-          .request-footer {
-            padding: 14px 17px;
-            flex-direction: column;
-            align-items: stretch;
-          }
-
-          .actions {
-            width: 100%;
-          }
-
-          .actions button {
-            flex: 1;
-            min-height: 44px;
-          }
-
-          .proof-button {
-            padding: 8px 0;
-          }
-
-          .modal-overlay {
-            padding: 10px;
-          }
-
-          .modal {
-            max-height: 95vh;
-            padding: 17px;
-            border-radius: 17px;
-          }
-
-          .modal-info {
-            grid-template-columns: 1fr;
-          }
-
-          .modal-actions {
-            grid-template-columns: 1fr;
-          }
-
-          .modal-actions button {
-            min-height: 46px;
-          }
-        }
-
-        @media (max-width: 380px) {
-          .admin-payment-page {
-            padding-left: 10px;
-            padding-right: 10px;
-          }
-
-          .stats-grid {
-            grid-template-columns: 1fr;
-          }
-
-          .student-block {
-            align-items: flex-start;
-          }
-
-          .student-avatar {
-            width: 40px;
-            height: 40px;
-            flex-basis: 40px;
+            padding:
+              7px
+              10px;
           }
         }
       `}</style>
-    </>
+    </div>
   )
 }

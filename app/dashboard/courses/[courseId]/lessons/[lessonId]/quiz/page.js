@@ -4,858 +4,1079 @@ import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { supabase } from '../../../../../../lib/supabase'
 
-export default function StudentQuizPage() {
-  const { courseId, lessonId } = useParams()
+export default function AdminQuizBuilderPage() {
   const router = useRouter()
+  const params = useParams()
+
+  const courseId = params?.courseId
+  const lessonId = params?.lessonId
 
   const [loading, setLoading] = useState(true)
+  const [savingQuiz, setSavingQuiz] = useState(false)
+  const [addingQuestion, setAddingQuestion] = useState(false)
+
+  const [lesson, setLesson] = useState(null)
   const [quiz, setQuiz] = useState(null)
-  const [answers, setAnswers] = useState({})
-  const [result, setResult] = useState(null)
-  const [submitting, setSubmitting] = useState(false)
-  const [error, setError] = useState('')
+  const [questions, setQuestions] = useState([])
+
+  const [quizTitle, setQuizTitle] = useState('')
+  const [passingScore, setPassingScore] = useState(70)
+
+  const [questionText, setQuestionText] = useState('')
+  const [explanation, setExplanation] = useState('')
+
+  const [options, setOptions] = useState([
+    { text: '', correct: true },
+    { text: '', correct: false },
+    { text: '', correct: false },
+    { text: '', correct: false },
+  ])
 
   useEffect(() => {
-    loadQuiz()
-  }, [courseId, lessonId])
-
-  async function loadQuiz() {
-    setLoading(true)
-    setError('')
-
-    const {
-      data: { session },
-    } = await supabase.auth.getSession()
-
-    if (!session) {
-      router.replace('/login')
-      return
+    if (lessonId) {
+      loadPage()
     }
+  }, [lessonId])
 
-    const {
-      data: enrollment,
-      error: enrollmentError,
-    } = await supabase
-      .from('enrollments')
-      .select('id')
-      .eq('user_id', session.user.id)
-      .eq('course_id', courseId)
-      .maybeSingle()
+  async function loadPage() {
+    try {
+      setLoading(true)
 
-    if (enrollmentError) {
-      console.error(enrollmentError)
-      setError(enrollmentError.message)
-      setLoading(false)
-      return
-    }
+      const {
+        data: { session },
+      } = await supabase.auth.getSession()
 
-    if (!enrollment) {
-      router.replace('/dashboard')
-      return
-    }
-
-    const {
-      data: lessonData,
-      error: lessonError,
-    } = await supabase
-      .from('lessons')
-      .select(`
-        id,
-        module_id,
-        published,
-        modules!inner (
-          course_id
-        )
-      `)
-      .eq('id', lessonId)
-      .eq('published', true)
-      .single()
-
-    if (lessonError) {
-      console.error(lessonError)
-      setError('Lesson нээж чадсангүй.')
-      setLoading(false)
-      return
-    }
-
-    if (
-      lessonData?.modules?.course_id !== courseId
-    ) {
-      router.replace(
-        `/dashboard/courses/${courseId}`
-      )
-      return
-    }
-
-    const {
-      data,
-      error: quizError,
-    } = await supabase.rpc(
-      'get_student_quiz',
-      {
-        target_lesson_id: lessonId,
+      if (!session?.user) {
+        router.replace('/login')
+        return
       }
+
+      const { data: profile, error: profileError } =
+        await supabase
+          .from('profiles')
+          .select('role')
+          .eq('id', session.user.id)
+          .single()
+
+      if (profileError) {
+        throw profileError
+      }
+
+      if (profile?.role !== 'admin') {
+        router.replace('/dashboard')
+        return
+      }
+
+      const { data: lessonData, error: lessonError } =
+        await supabase
+          .from('lessons')
+          .select('id, title, module_id')
+          .eq('id', lessonId)
+          .single()
+
+      if (lessonError) {
+        throw lessonError
+      }
+
+      setLesson(lessonData)
+
+      const { data: quizData, error: quizError } =
+        await supabase
+          .from('quizzes')
+          .select('*')
+          .eq('lesson_id', lessonId)
+          .maybeSingle()
+
+      if (quizError) {
+        throw quizError
+      }
+
+      if (!quizData) {
+        setQuiz(null)
+        setQuizTitle(`${lessonData.title} Quiz`)
+        setPassingScore(70)
+        setQuestions([])
+        return
+      }
+
+      setQuiz(quizData)
+      setQuizTitle(quizData.title || '')
+      setPassingScore(quizData.passing_score ?? 70)
+
+      await loadQuestions(quizData.id)
+    } catch (error) {
+      console.error('Quiz builder load error:', error)
+      alert(error?.message || 'Quiz мэдээлэл ачааллахад алдаа гарлаа.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  async function loadQuestions(quizId) {
+    const { data: questionData, error: questionError } =
+      await supabase
+        .from('quiz_questions')
+        .select('*')
+        .eq('quiz_id', quizId)
+        .order('position', {
+          ascending: true,
+        })
+
+    if (questionError) {
+      throw questionError
+    }
+
+    const questionIds = (questionData || []).map(
+      (item) => item.id
     )
 
-    if (quizError) {
-      console.error(quizError)
-      setError(quizError.message)
-      setLoading(false)
-      return
+    let optionData = []
+
+    if (questionIds.length > 0) {
+      const { data, error } = await supabase
+        .from('quiz_options')
+        .select('*')
+        .in('question_id', questionIds)
+        .order('position', {
+          ascending: true,
+        })
+
+      if (error) {
+        throw error
+      }
+
+      optionData = data || []
     }
 
-    setQuiz(data || null)
-    setLoading(false)
-  }
-
-  function selectAnswer(questionId, optionId) {
-    if (result) return
-
-    setAnswers((prev) => ({
-      ...prev,
-      [questionId]: optionId,
-    }))
-  }
-
-  async function submitQuiz() {
-    if (!quiz) return
-
-    const questions = quiz.questions || []
-
-    if (
-      Object.keys(answers).length !==
-      questions.length
-    ) {
-      alert('Бүх асуултад хариулна уу.')
-      return
-    }
-
-    setSubmitting(true)
-
-    const answerList = questions.map(
+    const combined = (questionData || []).map(
       (question) => ({
-        question_id: question.id,
-        option_id: answers[question.id],
+        ...question,
+        options: optionData.filter(
+          (option) =>
+            option.question_id === question.id
+        ),
       })
     )
 
-    const {
-      data,
-      error: submitError,
-    } = await supabase.rpc(
-      'submit_student_quiz',
-      {
-        target_quiz_id: quiz.id,
-        answers: answerList,
-      }
-    )
+    setQuestions(combined)
+  }
 
-    setSubmitting(false)
-
-    if (submitError) {
-      console.error(submitError)
-      alert(submitError.message)
+  async function saveQuiz() {
+    if (!quizTitle.trim()) {
+      alert('Quiz title оруулна уу.')
       return
     }
 
-    setResult(data)
+    const score = Number(passingScore)
+
+    if (
+      Number.isNaN(score) ||
+      score < 0 ||
+      score > 100
+    ) {
+      alert('Passing score 0–100 хооронд байна.')
+      return
+    }
+
+    try {
+      setSavingQuiz(true)
+
+      if (quiz) {
+        const { data, error } = await supabase
+          .from('quizzes')
+          .update({
+            title: quizTitle.trim(),
+            passing_score: score,
+          })
+          .eq('id', quiz.id)
+          .select()
+          .single()
+
+        if (error) {
+          throw error
+        }
+
+        setQuiz(data)
+        alert('Quiz хадгалагдлаа.')
+        return
+      }
+
+      const { data, error } = await supabase
+        .from('quizzes')
+        .insert({
+          lesson_id: lessonId,
+          title: quizTitle.trim(),
+          passing_score: score,
+        })
+        .select()
+        .single()
+
+      if (error) {
+        throw error
+      }
+
+      setQuiz(data)
+      setQuestions([])
+
+      alert('Quiz амжилттай үүслээ.')
+    } catch (error) {
+      console.error('Save quiz error:', error)
+
+      alert(
+        error?.message ||
+          'Quiz хадгалах үед алдаа гарлаа.'
+      )
+    } finally {
+      setSavingQuiz(false)
+    }
   }
 
-  function retryQuiz() {
-    setAnswers({})
-    setResult(null)
+  function updateOptionText(index, value) {
+    setOptions((current) =>
+      current.map((option, optionIndex) =>
+        optionIndex === index
+          ? {
+              ...option,
+              text: value,
+            }
+          : option
+      )
+    )
+  }
+
+  function setCorrectOption(index) {
+    setOptions((current) =>
+      current.map((option, optionIndex) => ({
+        ...option,
+        correct: optionIndex === index,
+      }))
+    )
+  }
+
+  function resetQuestionForm() {
+    setQuestionText('')
+    setExplanation('')
+
+    setOptions([
+      { text: '', correct: true },
+      { text: '', correct: false },
+      { text: '', correct: false },
+      { text: '', correct: false },
+    ])
+  }
+
+  async function addQuestion() {
+    if (!quiz?.id) {
+      alert('Эхлээд Quiz хадгална уу.')
+      return
+    }
+
+    if (!questionText.trim()) {
+      alert('Асуултаа оруулна уу.')
+      return
+    }
+
+    const cleanedOptions = options.map((option) => ({
+      ...option,
+      text: option.text.trim(),
+    }))
+
+    if (
+      cleanedOptions.some(
+        (option) => !option.text
+      )
+    ) {
+      alert('4 хариултаа бүгдийг оруулна уу.')
+      return
+    }
+
+    if (
+      cleanedOptions.filter(
+        (option) => option.correct
+      ).length !== 1
+    ) {
+      alert('Зөвхөн 1 зөв хариулт сонгоно уу.')
+      return
+    }
+
+    try {
+      setAddingQuestion(true)
+
+      const nextPosition = questions.length + 1
+
+      const {
+        data: newQuestion,
+        error: questionError,
+      } = await supabase
+        .from('quiz_questions')
+        .insert({
+          quiz_id: quiz.id,
+          question: questionText.trim(),
+          explanation:
+            explanation.trim() || null,
+          position: nextPosition,
+        })
+        .select()
+        .single()
+
+      if (questionError) {
+        throw questionError
+      }
+
+      const optionRows = cleanedOptions.map(
+        (option, index) => ({
+          question_id: newQuestion.id,
+          option_text: option.text,
+          is_correct: option.correct,
+          position: index + 1,
+        })
+      )
+
+      const { error: optionError } =
+        await supabase
+          .from('quiz_options')
+          .insert(optionRows)
+
+      if (optionError) {
+        await supabase
+          .from('quiz_questions')
+          .delete()
+          .eq('id', newQuestion.id)
+
+        throw optionError
+      }
+
+      resetQuestionForm()
+
+      await loadQuestions(quiz.id)
+    } catch (error) {
+      console.error('Add question error:', error)
+
+      alert(
+        error?.message ||
+          'Асуулт нэмэх үед алдаа гарлаа.'
+      )
+    } finally {
+      setAddingQuestion(false)
+    }
+  }
+
+  async function deleteQuestion(questionId) {
+    const confirmed = window.confirm(
+      'Энэ асуултыг устгах уу?'
+    )
+
+    if (!confirmed) {
+      return
+    }
+
+    try {
+      const { error: optionError } =
+        await supabase
+          .from('quiz_options')
+          .delete()
+          .eq('question_id', questionId)
+
+      if (optionError) {
+        throw optionError
+      }
+
+      const { error: questionError } =
+        await supabase
+          .from('quiz_questions')
+          .delete()
+          .eq('id', questionId)
+
+      if (questionError) {
+        throw questionError
+      }
+
+      await loadQuestions(quiz.id)
+    } catch (error) {
+      console.error('Delete question error:', error)
+
+      alert(
+        error?.message ||
+          'Асуулт устгахад алдаа гарлаа.'
+      )
+    }
+  }
+
+  async function deleteQuiz() {
+    if (!quiz?.id) {
+      return
+    }
+
+    const confirmed = window.confirm(
+      'Quiz болон бүх асуултыг устгах уу?'
+    )
+
+    if (!confirmed) {
+      return
+    }
+
+    try {
+      const questionIds = questions.map(
+        (question) => question.id
+      )
+
+      if (questionIds.length > 0) {
+        const { error: optionsError } =
+          await supabase
+            .from('quiz_options')
+            .delete()
+            .in('question_id', questionIds)
+
+        if (optionsError) {
+          throw optionsError
+        }
+
+        const { error: questionsError } =
+          await supabase
+            .from('quiz_questions')
+            .delete()
+            .eq('quiz_id', quiz.id)
+
+        if (questionsError) {
+          throw questionsError
+        }
+      }
+
+      const { error: quizError } =
+        await supabase
+          .from('quizzes')
+          .delete()
+          .eq('id', quiz.id)
+
+      if (quizError) {
+        throw quizError
+      }
+
+      setQuiz(null)
+      setQuestions([])
+      setQuizTitle(
+        lesson
+          ? `${lesson.title} Quiz`
+          : 'Quiz'
+      )
+      setPassingScore(70)
+      resetQuestionForm()
+    } catch (error) {
+      console.error('Delete quiz error:', error)
+
+      alert(
+        error?.message ||
+          'Quiz устгах үед алдаа гарлаа.'
+      )
+    }
   }
 
   if (loading) {
     return (
-      <div style={styles.center}>
-        Quiz ачаалж байна...
+      <div className="loading">
+        Quiz builder ачааллаж байна...
+
+        <style jsx>{`
+          .loading {
+            padding: 50px 30px;
+            color: #9995a4;
+          }
+        `}</style>
       </div>
     )
   }
-
-  if (error) {
-    return (
-      <div style={styles.center}>
-        <div style={styles.messageCard}>
-          <div style={styles.messageIcon}>!</div>
-
-          <h2 style={styles.messageTitle}>
-            Quiz нээж чадсангүй
-          </h2>
-
-          <p style={styles.messageText}>
-            {error}
-          </p>
-
-          <button
-            type="button"
-            style={styles.primaryButton}
-            onClick={() =>
-              router.push(
-                `/dashboard/courses/${courseId}`
-              )
-            }
-          >
-            Course руу буцах
-          </button>
-        </div>
-      </div>
-    )
-  }
-
-  if (!quiz) {
-    return (
-      <div style={styles.center}>
-        <div style={styles.messageCard}>
-          <div style={styles.messageIcon}>?</div>
-
-          <h2 style={styles.messageTitle}>
-            Quiz байхгүй байна
-          </h2>
-
-          <p style={styles.messageText}>
-            Энэ lesson-д одоогоор Quiz үүсгээгүй байна.
-          </p>
-
-          <button
-            type="button"
-            style={styles.primaryButton}
-            onClick={() =>
-              router.push(
-                `/dashboard/courses/${courseId}`
-              )
-            }
-          >
-            Course руу буцах
-          </button>
-        </div>
-      </div>
-    )
-  }
-
-  const questions = quiz.questions || []
-
-  const answeredCount =
-    Object.keys(answers).length
-
-  const answerProgress =
-    questions.length === 0
-      ? 0
-      : Math.round(
-          (answeredCount / questions.length) * 100
-        )
 
   return (
-    <div style={styles.page}>
-      <div style={styles.container}>
-        {!result ? (
-          <>
-            <section style={styles.hero}>
+    <main className="page">
+      <button
+        className="back"
+        onClick={() =>
+          router.push(
+            `/admin/courses/${courseId}`
+          )
+        }
+      >
+        ← Course builder
+      </button>
+
+      <header>
+        <div>
+          <div className="eyebrow">
+            QUIZ BUILDER
+          </div>
+
+          <h1>
+            {lesson?.title || 'Lesson'} Quiz
+          </h1>
+
+          <p>
+            Quiz үүсгэж, асуулт болон 4
+            сонголт нэмнэ.
+          </p>
+        </div>
+      </header>
+
+      <section className="card">
+        <div className="section-label">
+          QUIZ SETTINGS
+        </div>
+
+        <div className="settings">
+          <div>
+            <label>Quiz title</label>
+
+            <input
+              value={quizTitle}
+              onChange={(event) =>
+                setQuizTitle(event.target.value)
+              }
+              placeholder="Lesson Quiz"
+            />
+          </div>
+
+          <div>
+            <label>Passing score (%)</label>
+
+            <input
+              type="number"
+              min="0"
+              max="100"
+              value={passingScore}
+              onChange={(event) =>
+                setPassingScore(
+                  event.target.value
+                )
+              }
+            />
+          </div>
+        </div>
+
+        <div className="quiz-actions">
+          <button
+            className="primary"
+            onClick={saveQuiz}
+            disabled={savingQuiz}
+          >
+            {savingQuiz
+              ? 'Хадгалж байна...'
+              : quiz
+                ? 'Quiz хадгалах'
+                : 'Quiz үүсгэх'}
+          </button>
+
+          {quiz && (
+            <button
+              className="danger-outline"
+              onClick={deleteQuiz}
+            >
+              Quiz устгах
+            </button>
+          )}
+        </div>
+      </section>
+
+      {quiz && (
+        <>
+          <section className="card">
+            <div className="section-label">
+              ADD QUESTION
+            </div>
+
+            <h2>Шинэ асуулт</h2>
+
+            <label>Асуулт</label>
+
+            <textarea
+              rows={3}
+              value={questionText}
+              onChange={(event) =>
+                setQuestionText(
+                  event.target.value
+                )
+              }
+              placeholder="Асуултаа бичнэ үү..."
+            />
+
+            <label>Тайлбар</label>
+
+            <textarea
+              rows={2}
+              value={explanation}
+              onChange={(event) =>
+                setExplanation(
+                  event.target.value
+                )
+              }
+              placeholder="Зөв хариултын тайлбар (optional)"
+            />
+
+            <div className="options">
+              {options.map(
+                (option, index) => (
+                  <div
+                    className={`option-row ${
+                      option.correct
+                        ? 'correct'
+                        : ''
+                    }`}
+                    key={index}
+                  >
+                    <button
+                      type="button"
+                      className="radio"
+                      onClick={() =>
+                        setCorrectOption(index)
+                      }
+                    >
+                      {option.correct
+                        ? '✓'
+                        : ''}
+                    </button>
+
+                    <div className="option-letter">
+                      {String.fromCharCode(
+                        65 + index
+                      )}
+                    </div>
+
+                    <input
+                      value={option.text}
+                      onChange={(event) =>
+                        updateOptionText(
+                          index,
+                          event.target.value
+                        )
+                      }
+                      placeholder={`Хариулт ${index + 1}`}
+                    />
+
+                    {option.correct && (
+                      <span className="correct-label">
+                        CORRECT
+                      </span>
+                    )}
+                  </div>
+                )
+              )}
+            </div>
+
+            <button
+              className="primary add-button"
+              onClick={addQuestion}
+              disabled={addingQuestion}
+            >
+              {addingQuestion
+                ? 'Нэмж байна...'
+                : '+ Асуулт нэмэх'}
+            </button>
+          </section>
+
+          <section className="card">
+            <div className="list-header">
               <div>
-                <p style={styles.eyebrow}>
-                  QUIZ
-                </p>
+                <div className="section-label">
+                  QUESTIONS
+                </div>
 
-                <h1 style={styles.title}>
-                  {quiz.title || 'Lesson Quiz'}
-                </h1>
-
-                <p style={styles.subtitle}>
-                  Бүх асуултад хариулаад Quiz-ээ дуусгана.
-                </p>
+                <h2>
+                  Нийт {questions.length} асуулт
+                </h2>
               </div>
-
-              <div style={styles.passBox}>
-                <span style={styles.passLabel}>
-                  PASS
-                </span>
-
-                <strong style={styles.passScore}>
-                  {quiz.passing_score || 70}%
-                </strong>
-              </div>
-            </section>
-
-            <section style={styles.progressCard}>
-              <div style={styles.progressTop}>
-                <span>
-                  {answeredCount} / {questions.length} хариулсан
-                </span>
-
-                <strong>
-                  {answerProgress}%
-                </strong>
-              </div>
-
-              <div style={styles.track}>
-                <div
-                  style={{
-                    ...styles.bar,
-                    width: `${answerProgress}%`,
-                  }}
-                />
-              </div>
-            </section>
+            </div>
 
             {questions.length === 0 ? (
-              <div style={styles.emptyCard}>
-                Энэ Quiz асуултгүй байна.
+              <div className="empty">
+                Одоогоор асуулт байхгүй.
               </div>
             ) : (
-              <div style={styles.questionList}>
+              <div className="question-list">
                 {questions.map(
-                  (question, questionIndex) => (
-                    <section
+                  (question, index) => (
+                    <article
+                      className="question"
                       key={question.id}
-                      style={styles.questionCard}
                     >
-                      <div style={styles.questionHeader}>
-                        <span style={styles.questionNumber}>
-                          {questionIndex + 1}
-                        </span>
+                      <div className="question-top">
+                        <div>
+                          <span className="number">
+                            QUESTION {index + 1}
+                          </span>
 
-                        <span style={styles.questionCount}>
-                          QUESTION {questionIndex + 1} /{' '}
-                          {questions.length}
-                        </span>
-                      </div>
+                          <h3>
+                            {question.question}
+                          </h3>
+                        </div>
 
-                      <h2 style={styles.questionText}>
-                        {question.question}
-                      </h2>
-
-                      <div style={styles.options}>
-                        {(question.options || []).map(
-                          (option, optionIndex) => {
-                            const selected =
-                              answers[question.id] ===
-                              option.id
-
-                            return (
-                              <button
-                                type="button"
-                                key={option.id}
-                                onClick={() =>
-                                  selectAnswer(
-                                    question.id,
-                                    option.id
-                                  )
-                                }
-                                style={{
-                                  ...styles.option,
-                                  ...(selected
-                                    ? styles.optionSelected
-                                    : {}),
-                                }}
-                              >
-                                <span
-                                  style={{
-                                    ...styles.optionLetter,
-                                    ...(selected
-                                      ? styles.optionLetterSelected
-                                      : {}),
-                                  }}
-                                >
-                                  {String.fromCharCode(
-                                    65 + optionIndex
-                                  )}
-                                </span>
-
-                                <span style={styles.optionText}>
-                                  {option.option_text}
-                                </span>
-
-                                {selected && (
-                                  <span style={styles.check}>
-                                    ✓
-                                  </span>
-                                )}
-                              </button>
+                        <button
+                          className="delete"
+                          onClick={() =>
+                            deleteQuestion(
+                              question.id
                             )
                           }
+                        >
+                          Устгах
+                        </button>
+                      </div>
+
+                      <div className="saved-options">
+                        {(question.options || []).map(
+                          (option, optionIndex) => (
+                            <div
+                              className={`saved-option ${
+                                option.is_correct
+                                  ? 'correct'
+                                  : ''
+                              }`}
+                              key={option.id}
+                            >
+                              <span>
+                                {String.fromCharCode(
+                                  65 + optionIndex
+                                )}
+                              </span>
+
+                              <strong>
+                                {option.option_text}
+                              </strong>
+
+                              {option.is_correct && (
+                                <b>✓ Зөв</b>
+                              )}
+                            </div>
+                          )
                         )}
                       </div>
-                    </section>
+
+                      {question.explanation && (
+                        <div className="explanation">
+                          <span>EXPLANATION</span>
+                          {question.explanation}
+                        </div>
+                      )}
+                    </article>
                   )
                 )}
               </div>
             )}
-
-            {questions.length > 0 && (
-              <div style={styles.bottomActions}>
-                <button
-                  type="button"
-                  style={styles.secondaryButton}
-                  onClick={() =>
-                    router.push(
-                      `/dashboard/courses/${courseId}/lessons/${lessonId}`
-                    )
-                  }
-                >
-                  ← Lesson руу
-                </button>
-
-                <button
-                  type="button"
-                  disabled={submitting}
-                  onClick={submitQuiz}
-                  style={{
-                    ...styles.submitButton,
-                    opacity: submitting ? 0.6 : 1,
-                    cursor: submitting
-                      ? 'not-allowed'
-                      : 'pointer',
-                  }}
-                >
-                  {submitting
-                    ? 'Шалгаж байна...'
-                    : 'Quiz дуусгах →'}
-                </button>
-              </div>
-            )}
-          </>
-        ) : (
-          <section style={styles.resultCard}>
-            <div
-              style={{
-                ...styles.resultIcon,
-                ...(result.passed
-                  ? styles.resultPassed
-                  : styles.resultFailed),
-              }}
-            >
-              {result.passed ? '✓' : '!'}
-            </div>
-
-            <p style={styles.resultEyebrow}>
-              {result.passed
-                ? 'QUIZ PASSED'
-                : 'TRY AGAIN'}
-            </p>
-
-            <h1 style={styles.resultScore}>
-              {result.score}%
-            </h1>
-
-            <h2 style={styles.resultTitle}>
-              {result.passed
-                ? 'Амжилттай тэнцлээ'
-                : 'Дахин оролдоорой'}
-            </h2>
-
-            <div style={styles.resultStats}>
-              <div style={styles.statBox}>
-                <span>Зөв</span>
-
-                <strong>
-                  {result.correct} / {result.total}
-                </strong>
-              </div>
-
-              <div style={styles.statBox}>
-                <span>Тэнцэх оноо</span>
-
-                <strong>
-                  {result.passing_score}%
-                </strong>
-              </div>
-            </div>
-
-            <div style={styles.resultActions}>
-              {!result.passed && (
-                <button
-                  type="button"
-                  style={styles.secondaryButton}
-                  onClick={retryQuiz}
-                >
-                  Дахин оролдох
-                </button>
-              )}
-
-              <button
-                type="button"
-                style={styles.primaryButton}
-                onClick={() =>
-                  router.push(
-                    `/dashboard/courses/${courseId}`
-                  )
-                }
-              >
-                Course руу буцах →
-              </button>
-            </div>
           </section>
-        )}
-      </div>
-    </div>
+        </>
+      )}
+
+      <style jsx>{`
+        .page {
+          width: 100%;
+          max-width: 1000px;
+          padding: 42px 32px 100px;
+          color: #302e38;
+        }
+
+        .back {
+          margin-bottom: 22px;
+          padding: 0;
+          border: 0;
+          background: transparent;
+          color: #8c8794;
+          font-size: 12px;
+          font-weight: 700;
+          cursor: pointer;
+        }
+
+        header {
+          margin-bottom: 25px;
+        }
+
+        .eyebrow,
+        .section-label,
+        .number {
+          color: #6c5ce7;
+          font-size: 9px;
+          font-weight: 900;
+          letter-spacing: 0.14em;
+        }
+
+        header h1 {
+          margin: 8px 0;
+          font-size: 30px;
+        }
+
+        header p {
+          margin: 0;
+          color: #9994a1;
+          font-size: 13px;
+        }
+
+        .card {
+          margin-bottom: 20px;
+          padding: 25px;
+          border: 1px solid #e6e2ec;
+          border-radius: 19px;
+          background: white;
+        }
+
+        .card h2 {
+          margin: 8px 0 20px;
+          font-size: 19px;
+        }
+
+        .settings {
+          display: grid;
+          grid-template-columns: 1fr 180px;
+          gap: 15px;
+          margin-top: 18px;
+        }
+
+        label {
+          display: block;
+          margin: 14px 0 7px;
+          color: #67616e;
+          font-size: 11px;
+          font-weight: 800;
+        }
+
+        input,
+        textarea {
+          width: 100%;
+          padding: 12px 13px;
+          border: 1px solid #e0dce7;
+          border-radius: 10px;
+          outline: none;
+          background: #fbfaff;
+          color: #38343e;
+          font: inherit;
+        }
+
+        input:focus,
+        textarea:focus {
+          border-color: #6c5ce7;
+        }
+
+        textarea {
+          resize: vertical;
+        }
+
+        .quiz-actions {
+          display: flex;
+          gap: 9px;
+          margin-top: 18px;
+        }
+
+        .primary,
+        .danger-outline,
+        .delete {
+          border-radius: 10px;
+          font-size: 11px;
+          font-weight: 800;
+          cursor: pointer;
+        }
+
+        .primary {
+          padding: 12px 17px;
+          border: 0;
+          background: #6c5ce7;
+          color: white;
+        }
+
+        .primary:disabled {
+          opacity: 0.5;
+          cursor: not-allowed;
+        }
+
+        .danger-outline {
+          padding: 11px 15px;
+          border: 1px solid #efced1;
+          background: white;
+          color: #c2535c;
+        }
+
+        .options {
+          display: flex;
+          flex-direction: column;
+          gap: 9px;
+          margin-top: 20px;
+        }
+
+        .option-row {
+          display: grid;
+          grid-template-columns:
+            32px 30px 1fr auto;
+          align-items: center;
+          gap: 9px;
+          padding: 9px;
+          border: 1px solid #e7e2ec;
+          border-radius: 12px;
+        }
+
+        .option-row.correct {
+          border-color: #bfe3cc;
+          background: #f5fcf7;
+        }
+
+        .radio {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          width: 28px;
+          height: 28px;
+          border: 1px solid #dcd7e4;
+          border-radius: 50%;
+          background: white;
+          color: #348056;
+          font-weight: 900;
+          cursor: pointer;
+        }
+
+        .correct .radio {
+          border-color: #55a976;
+          background: #e5f6eb;
+        }
+
+        .option-letter {
+          color: #918b98;
+          font-size: 10px;
+          font-weight: 900;
+          text-align: center;
+        }
+
+        .correct-label {
+          padding: 6px 8px;
+          border-radius: 999px;
+          background: #e4f5ea;
+          color: #318052;
+          font-size: 8px;
+          font-weight: 900;
+        }
+
+        .add-button {
+          width: 100%;
+          margin-top: 18px;
+        }
+
+        .question-list {
+          display: flex;
+          flex-direction: column;
+          gap: 15px;
+        }
+
+        .question {
+          padding: 20px;
+          border: 1px solid #ebe7f0;
+          border-radius: 15px;
+          background: #fcfbfe;
+        }
+
+        .question-top {
+          display: flex;
+          align-items: flex-start;
+          justify-content: space-between;
+          gap: 20px;
+        }
+
+        .question h3 {
+          margin: 7px 0 15px;
+          font-size: 15px;
+          line-height: 1.55;
+        }
+
+        .delete {
+          flex: 0 0 auto;
+          padding: 8px 10px;
+          border: 1px solid #efd6d8;
+          background: white;
+          color: #be555d;
+        }
+
+        .saved-options {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 7px;
+        }
+
+        .saved-option {
+          display: grid;
+          grid-template-columns: 27px 1fr auto;
+          align-items: center;
+          gap: 8px;
+          padding: 10px;
+          border: 1px solid #e7e3eb;
+          border-radius: 9px;
+          background: white;
+        }
+
+        .saved-option span {
+          color: #9993a0;
+          font-size: 9px;
+          font-weight: 900;
+        }
+
+        .saved-option strong {
+          color: #5c5662;
+          font-size: 11px;
+        }
+
+        .saved-option.correct {
+          border-color: #c6e6d1;
+          background: #f2faf5;
+        }
+
+        .saved-option b {
+          color: #348056;
+          font-size: 9px;
+        }
+
+        .explanation {
+          margin-top: 12px;
+          padding: 12px;
+          border-radius: 9px;
+          background: #f4f2fa;
+          color: #77717e;
+          font-size: 11px;
+          line-height: 1.6;
+        }
+
+        .explanation span {
+          display: block;
+          margin-bottom: 5px;
+          color: #9c96a3;
+          font-size: 8px;
+          font-weight: 900;
+          letter-spacing: 0.12em;
+        }
+
+        .empty {
+          padding: 35px;
+          color: #9994a1;
+          text-align: center;
+          font-size: 12px;
+        }
+
+        @media (max-width: 650px) {
+          .page {
+            padding: 28px 16px 100px;
+          }
+
+          .card {
+            padding: 19px;
+          }
+
+          .settings {
+            grid-template-columns: 1fr;
+          }
+
+          .option-row {
+            grid-template-columns:
+              30px 25px 1fr;
+          }
+
+          .correct-label {
+            display: none;
+          }
+
+          .saved-options {
+            grid-template-columns: 1fr;
+          }
+        }
+      `}</style>
+    </main>
   )
-}
-
-const styles = {
-  page: {
-    minHeight: '100%',
-    background: '#F8F7FF',
-    padding: '40px 48px 80px',
-  },
-
-  container: {
-    maxWidth: '850px',
-    margin: '0 auto',
-  },
-
-  center: {
-    minHeight: 'calc(100vh - 76px)',
-    background: '#F8F7FF',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: '20px',
-  },
-
-  messageCard: {
-    width: '100%',
-    maxWidth: '460px',
-    background: '#FFFFFF',
-    border: '1px solid #ECE8F7',
-    borderRadius: '22px',
-    padding: '38px',
-    textAlign: 'center',
-  },
-
-  messageIcon: {
-    width: '58px',
-    height: '58px',
-    margin: '0 auto 16px',
-    borderRadius: '16px',
-    background: '#F0ECFF',
-    color: '#6C5CE7',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    fontSize: '25px',
-    fontWeight: '900',
-  },
-
-  messageTitle: {
-    margin: 0,
-    color: '#292932',
-    fontSize: '24px',
-  },
-
-  messageText: {
-    margin: '10px 0 24px',
-    color: '#8C8A94',
-    lineHeight: 1.6,
-  },
-
-  hero: {
-    background:
-      'linear-gradient(135deg, #ffffff 0%, #f6f3ff 100%)',
-    border: '1px solid #ECE8FA',
-    borderRadius: '24px',
-    padding: '28px',
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    gap: '25px',
-    marginBottom: '18px',
-  },
-
-  eyebrow: {
-    margin: 0,
-    color: '#6C5CE7',
-    fontSize: '11px',
-    fontWeight: '900',
-    letterSpacing: '1.7px',
-  },
-
-  title: {
-    margin: '8px 0 9px',
-    fontSize: '34px',
-    color: '#292932',
-  },
-
-  subtitle: {
-    margin: 0,
-    color: '#898791',
-    fontSize: '14px',
-    lineHeight: 1.6,
-  },
-
-  passBox: {
-    minWidth: '92px',
-    background: '#FFFFFF',
-    border: '1px solid #EAE6F8',
-    borderRadius: '16px',
-    padding: '14px',
-    textAlign: 'center',
-  },
-
-  passLabel: {
-    display: 'block',
-    color: '#A09EAA',
-    fontSize: '10px',
-    fontWeight: '900',
-    letterSpacing: '1.2px',
-  },
-
-  passScore: {
-    display: 'block',
-    color: '#6C5CE7',
-    fontSize: '22px',
-    marginTop: '4px',
-  },
-
-  progressCard: {
-    background: '#FFFFFF',
-    border: '1px solid #EEEAF7',
-    borderRadius: '16px',
-    padding: '16px 18px',
-    marginBottom: '22px',
-  },
-
-  progressTop: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    marginBottom: '8px',
-    color: '#77757F',
-    fontSize: '12px',
-  },
-
-  track: {
-    height: '8px',
-    background: '#EEEAF8',
-    borderRadius: '999px',
-    overflow: 'hidden',
-  },
-
-  bar: {
-    height: '100%',
-    background: '#6C5CE7',
-    borderRadius: '999px',
-    transition: 'width .2s ease',
-  },
-
-  questionList: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '18px',
-  },
-
-  questionCard: {
-    background: '#FFFFFF',
-    border: '1px solid #EEEAF7',
-    borderRadius: '20px',
-    padding: '24px',
-  },
-
-  questionHeader: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '10px',
-    marginBottom: '16px',
-  },
-
-  questionNumber: {
-    width: '36px',
-    height: '36px',
-    borderRadius: '10px',
-    background: '#F0ECFF',
-    color: '#6C5CE7',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    fontWeight: '900',
-  },
-
-  questionCount: {
-    color: '#A09EAA',
-    fontSize: '10px',
-    fontWeight: '900',
-    letterSpacing: '1.2px',
-  },
-
-  questionText: {
-    margin: '0 0 20px',
-    color: '#2D2D35',
-    fontSize: '20px',
-    lineHeight: 1.5,
-  },
-
-  options: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '10px',
-  },
-
-  option: {
-    width: '100%',
-    border: '1px solid #E9E6F1',
-    background: '#FFFFFF',
-    borderRadius: '13px',
-    padding: '13px 14px',
-    display: 'flex',
-    alignItems: 'center',
-    gap: '12px',
-    textAlign: 'left',
-    cursor: 'pointer',
-  },
-
-  optionSelected: {
-    border: '2px solid #6C5CE7',
-    background: '#F5F2FF',
-  },
-
-  optionLetter: {
-    width: '34px',
-    height: '34px',
-    borderRadius: '10px',
-    background: '#F4F3F7',
-    color: '#73717B',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    fontWeight: '800',
-    flexShrink: 0,
-  },
-
-  optionLetterSelected: {
-    background: '#6C5CE7',
-    color: '#FFFFFF',
-  },
-
-  optionText: {
-    flex: 1,
-    color: '#45444D',
-    fontSize: '14px',
-  },
-
-  check: {
-    color: '#6C5CE7',
-    fontWeight: '900',
-  },
-
-  bottomActions: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    gap: '12px',
-    marginTop: '24px',
-  },
-
-  submitButton: {
-    flex: 1,
-    border: 'none',
-    borderRadius: '13px',
-    background: '#6C5CE7',
-    color: '#FFFFFF',
-    padding: '15px 18px',
-    fontWeight: '800',
-  },
-
-  secondaryButton: {
-    border: '1px solid #E1DDF0',
-    borderRadius: '13px',
-    background: '#FFFFFF',
-    color: '#65636D',
-    padding: '14px 18px',
-    fontWeight: '700',
-    cursor: 'pointer',
-  },
-
-  primaryButton: {
-    border: 'none',
-    borderRadius: '13px',
-    background: '#6C5CE7',
-    color: '#FFFFFF',
-    padding: '14px 20px',
-    fontWeight: '800',
-    cursor: 'pointer',
-  },
-
-  emptyCard: {
-    background: '#FFFFFF',
-    border: '1px solid #EEEAF7',
-    borderRadius: '20px',
-    padding: '35px',
-    textAlign: 'center',
-    color: '#8B8993',
-  },
-
-  resultCard: {
-    background: '#FFFFFF',
-    border: '1px solid #EEEAF7',
-    borderRadius: '24px',
-    padding: '48px 32px',
-    textAlign: 'center',
-  },
-
-  resultIcon: {
-    width: '72px',
-    height: '72px',
-    borderRadius: '20px',
-    margin: '0 auto 18px',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    fontSize: '32px',
-    fontWeight: '900',
-  },
-
-  resultPassed: {
-    background: '#EAF8EE',
-    color: '#218647',
-  },
-
-  resultFailed: {
-    background: '#FFF1F1',
-    color: '#C84F4F',
-  },
-
-  resultEyebrow: {
-    margin: 0,
-    color: '#6C5CE7',
-    fontSize: '11px',
-    fontWeight: '900',
-    letterSpacing: '1.5px',
-  },
-
-  resultScore: {
-    margin: '10px 0 4px',
-    fontSize: '62px',
-    color: '#282830',
-  },
-
-  resultTitle: {
-    margin: 0,
-    color: '#424149',
-    fontSize: '22px',
-  },
-
-  resultStats: {
-    display: 'grid',
-    gridTemplateColumns: '1fr 1fr',
-    gap: '12px',
-    maxWidth: '420px',
-    margin: '30px auto 0',
-  },
-
-  statBox: {
-    background: '#F8F7FC',
-    borderRadius: '14px',
-    padding: '16px',
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '5px',
-    color: '#84828C',
-    fontSize: '12px',
-  },
-
-  resultActions: {
-    marginTop: '28px',
-    display: 'flex',
-    justifyContent: 'center',
-    gap: '10px',
-    flexWrap: 'wrap',
-  },
 }

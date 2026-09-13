@@ -1,913 +1,919 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { supabase } from '../../../../../lib/supabase'
 
-export default function LessonPage() {
-  const { courseId, lessonId } = useParams()
+export default function StudentLessonPage() {
   const router = useRouter()
+  const params = useParams()
+
+  const courseId = params?.courseId
+  const lessonId = params?.lessonId
 
   const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
+
+  const [course, setCourse] = useState(null)
   const [lesson, setLesson] = useState(null)
+  const [module, setModule] = useState(null)
+
+  const [allModules, setAllModules] = useState([])
+  const [allLessons, setAllLessons] = useState([])
+  const [progress, setProgress] = useState([])
+
   const [completed, setCompleted] = useState(false)
   const [hasQuiz, setHasQuiz] = useState(false)
-  const [userId, setUserId] = useState(null)
-  const [error, setError] = useState('')
 
   useEffect(() => {
-    initialize()
+    if (courseId && lessonId) {
+      loadLesson()
+    }
+
+    const handleFocus = () => {
+      if (courseId && lessonId) {
+        loadLesson(false)
+      }
+    }
+
+    window.addEventListener('focus', handleFocus)
+
+    return () => {
+      window.removeEventListener('focus', handleFocus)
+    }
   }, [courseId, lessonId])
 
-  async function initialize() {
-    setLoading(true)
-    setError('')
+  async function loadLesson(showLoading = true) {
+    try {
+      if (showLoading) {
+        setLoading(true)
+      }
 
-    const {
-      data: { session },
-    } = await supabase.auth.getSession()
+      const {
+        data: { session },
+      } = await supabase.auth.getSession()
 
-    if (!session) {
-      router.replace('/login')
-      return
-    }
+      if (!session?.user) {
+        router.replace('/login')
+        return
+      }
 
-    setUserId(session.user.id)
+      const userId = session.user.id
 
-    const {
-      data: enrollment,
-      error: enrollmentError,
-    } = await supabase
-      .from('enrollments')
-      .select('id')
-      .eq('user_id', session.user.id)
-      .eq('course_id', courseId)
-      .maybeSingle()
+      // LIVE ACCESS CHECK
+      const {
+        data: enrollment,
+        error: enrollmentError,
+      } = await supabase
+        .from('enrollments')
+        .select('course_id')
+        .eq('user_id', userId)
+        .eq('course_id', courseId)
+        .maybeSingle()
 
-    if (enrollmentError) {
-      setError(enrollmentError.message)
-      setLoading(false)
-      return
-    }
+      if (enrollmentError) {
+        throw enrollmentError
+      }
 
-    if (!enrollment) {
-      router.replace('/dashboard')
-      return
-    }
+      if (!enrollment) {
+        router.replace('/dashboard')
+        return
+      }
 
-    const {
-      data: lessonData,
-      error: lessonError,
-    } = await supabase
-      .from('lessons')
-      .select('*')
-      .eq('id', lessonId)
-      .eq('published', true)
-      .single()
+      const [
+        courseResult,
+        modulesResult,
+        progressResult,
+      ] = await Promise.all([
+        supabase
+          .from('courses')
+          .select(
+            'id, title, description, level, published'
+          )
+          .eq('id', courseId)
+          .eq('published', true)
+          .single(),
 
-    if (lessonError) {
-      setError('Lesson нээж чадсангүй.')
-      setLoading(false)
-      return
-    }
+        supabase
+          .from('modules')
+          .select(
+            'id, course_id, title, position'
+          )
+          .eq('course_id', courseId)
+          .order('position', {
+            ascending: true,
+          }),
 
-    const {
-      data: moduleData,
-      error: moduleError,
-    } = await supabase
-      .from('modules')
-      .select('id, course_id, title')
-      .eq('id', lessonData.module_id)
-      .single()
+        supabase
+          .from('lesson_progress')
+          .select(
+            'lesson_id, completed, completed_at'
+          )
+          .eq('user_id', userId),
+      ])
 
-    if (
-      moduleError ||
-      moduleData?.course_id !== courseId
-    ) {
-      router.replace(
-        `/dashboard/courses/${courseId}`
-      )
-      return
-    }
+      if (courseResult.error) {
+        throw courseResult.error
+      }
 
-    setLesson({
-      ...lessonData,
-      moduleTitle: moduleData?.title || '',
-    })
+      if (modulesResult.error) {
+        throw modulesResult.error
+      }
 
-    const {
-      data: progressData,
-    } = await supabase
-      .from('lesson_progress')
-      .select('completed')
-      .eq('user_id', session.user.id)
-      .eq('lesson_id', lessonId)
-      .maybeSingle()
+      if (progressResult.error) {
+        throw progressResult.error
+      }
 
-    setCompleted(
-      progressData?.completed === true
-    )
+      const moduleData =
+        modulesResult.data || []
 
-    const {
-      data: quizData,
-      error: quizError,
-    } = await supabase
-      .from('quizzes')
-      .select('id')
-      .eq('lesson_id', lessonId)
-      .maybeSingle()
+      const moduleIds =
+        moduleData.map(
+          (item) => item.id
+        )
 
-    setHasQuiz(
-      !quizError && Boolean(quizData)
-    )
+      let lessonData = []
 
-    setLoading(false)
-  }
+      if (moduleIds.length > 0) {
+        const {
+          data,
+          error,
+        } = await supabase
+          .from('lessons')
+          .select(
+            `
+            id,
+            module_id,
+            title,
+            description,
+            content,
+            video_url,
+            position,
+            published
+            `
+          )
+          .in('module_id', moduleIds)
+          .eq('published', true)
+          .order('position', {
+            ascending: true,
+          })
 
-  async function markComplete() {
-    if (!userId) return
-
-    const { error } = await supabase
-      .from('lesson_progress')
-      .upsert(
-        {
-          user_id: userId,
-          lesson_id: lessonId,
-          completed: true,
-          completed_at: new Date().toISOString(),
-        },
-        {
-          onConflict: 'user_id,lesson_id',
+        if (error) {
+          throw error
         }
+
+        lessonData = data || []
+      }
+
+      const currentLesson =
+        lessonData.find(
+          (item) =>
+            item.id === lessonId
+        )
+
+      if (!currentLesson) {
+        router.replace(
+          `/dashboard/courses/${courseId}`
+        )
+        return
+      }
+
+      const currentModule =
+        moduleData.find(
+          (item) =>
+            item.id ===
+            currentLesson.module_id
+        ) || null
+
+      const currentProgress =
+        (progressResult.data || []).find(
+          (item) =>
+            item.lesson_id ===
+            lessonId
+        )
+
+      const {
+        data: quizData,
+        error: quizError,
+      } = await supabase
+        .from('quizzes')
+        .select('id')
+        .eq('lesson_id', lessonId)
+        .maybeSingle()
+
+      if (quizError) {
+        throw quizError
+      }
+
+      setCourse(courseResult.data)
+      setAllModules(moduleData)
+      setAllLessons(lessonData)
+      setProgress(
+        progressResult.data || []
       )
 
-    if (error) {
-      alert(error.message)
-      return
-    }
+      setLesson(currentLesson)
+      setModule(currentModule)
 
-    setCompleted(true)
+      setCompleted(
+        currentProgress?.completed ===
+          true
+      )
+
+      setHasQuiz(Boolean(quizData))
+    } catch (error) {
+      console.error(
+        'Lesson load error:',
+        error
+      )
+
+      router.replace('/dashboard')
+    } finally {
+      if (showLoading) {
+        setLoading(false)
+      }
+    }
   }
 
-  function getYouTubeEmbedUrl(url) {
-    if (!url) return null
+  const orderedLessons = useMemo(() => {
+    const modulePosition = new Map(
+      allModules.map(
+        (item, index) => [
+          item.id,
+          item.position ?? index,
+        ]
+      )
+    )
+
+    return [...allLessons].sort(
+      (a, b) => {
+        const moduleA =
+          modulePosition.get(
+            a.module_id
+          ) ?? 0
+
+        const moduleB =
+          modulePosition.get(
+            b.module_id
+          ) ?? 0
+
+        if (moduleA !== moduleB) {
+          return moduleA - moduleB
+        }
+
+        return (
+          (a.position || 0) -
+          (b.position || 0)
+        )
+      }
+    )
+  }, [allLessons, allModules])
+
+  const currentIndex =
+    orderedLessons.findIndex(
+      (item) => item.id === lessonId
+    )
+
+  const previousLesson =
+    currentIndex > 0
+      ? orderedLessons[
+          currentIndex - 1
+        ]
+      : null
+
+  const nextLesson =
+    currentIndex >= 0 &&
+    currentIndex <
+      orderedLessons.length - 1
+      ? orderedLessons[
+          currentIndex + 1
+        ]
+      : null
+
+  const completedIds = useMemo(() => {
+    return new Set(
+      progress
+        .filter(
+          (item) =>
+            item.completed === true
+        )
+        .map(
+          (item) => item.lesson_id
+        )
+    )
+  }, [progress])
+
+  const courseProgress =
+    orderedLessons.length > 0
+      ? Math.round(
+          (completedIds.size /
+            orderedLessons.length) *
+            100
+        )
+      : 0
+
+  async function markCompleted() {
+    if (!lessonId) {
+      return
+    }
 
     try {
-      if (url.includes('youtube.com/watch')) {
-        const parsed = new URL(url)
-        const videoId =
-          parsed.searchParams.get('v')
+      setSaving(true)
 
-        if (videoId) {
-          return `https://www.youtube.com/embed/${videoId}`
-        }
+      const {
+        data: { session },
+      } = await supabase.auth.getSession()
+
+      if (!session?.user) {
+        router.replace('/login')
+        return
       }
 
-      if (url.includes('youtu.be/')) {
-        const videoId = url
-          .split('youtu.be/')[1]
-          ?.split('?')[0]
+      const {
+        error,
+      } = await supabase
+        .from('lesson_progress')
+        .upsert(
+          {
+            user_id:
+              session.user.id,
+            lesson_id:
+              lessonId,
+            completed: true,
+            completed_at:
+              new Date().toISOString(),
+          },
+          {
+            onConflict:
+              'user_id,lesson_id',
+          }
+        )
 
-        if (videoId) {
-          return `https://www.youtube.com/embed/${videoId}`
-        }
+      if (error) {
+        throw error
       }
 
-      if (url.includes('youtube.com/embed/')) {
-        return url
-      }
+      setCompleted(true)
 
-      return url
-    } catch {
-      return url
+      await loadLesson(false)
+    } catch (error) {
+      console.error(
+        'Complete lesson error:',
+        error
+      )
+
+      alert(
+        error?.message ||
+          'Хичээл дуусгасан төлөв хадгалах үед алдаа гарлаа.'
+      )
+    } finally {
+      setSaving(false)
     }
+  }
+
+  async function markIncomplete() {
+    try {
+      setSaving(true)
+
+      const {
+        data: { session },
+      } = await supabase.auth.getSession()
+
+      if (!session?.user) {
+        router.replace('/login')
+        return
+      }
+
+      const {
+        error,
+      } = await supabase
+        .from('lesson_progress')
+        .upsert(
+          {
+            user_id:
+              session.user.id,
+            lesson_id:
+              lessonId,
+            completed: false,
+            completed_at: null,
+          },
+          {
+            onConflict:
+              'user_id,lesson_id',
+          }
+        )
+
+      if (error) {
+        throw error
+      }
+
+      setCompleted(false)
+
+      await loadLesson(false)
+    } catch (error) {
+      console.error(
+        'Reset lesson error:',
+        error
+      )
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  function openLesson(target) {
+    if (!target) {
+      return
+    }
+
+    router.push(
+      `/dashboard/courses/${courseId}/lessons/${target.id}`
+    )
   }
 
   if (loading) {
     return (
-      <div className="lesson-center">
-        Lesson ачаалж байна...
-      </div>
-    )
-  }
-
-  if (error) {
-    return (
-      <div className="lesson-center">
-        <div className="error-card">
-          <h2>Алдаа гарлаа</h2>
-
-          <p>{error}</p>
-
-          <button
-            type="button"
-            onClick={() =>
-              router.push(
-                `/dashboard/courses/${courseId}`
-              )
-            }
-          >
-            Course руу буцах
-          </button>
-        </div>
+      <div className="loading">
+        Хичээл ачааллаж байна...
 
         <style jsx>{`
-          .lesson-center {
-            min-height: calc(100vh - 76px);
-            background: #f8f7ff;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-            box-sizing: border-box;
-          }
-
-          .error-card {
-            width: 100%;
-            max-width: 460px;
-            background: #fff;
-            border: 1px solid #eeeaf7;
-            border-radius: 20px;
-            padding: 30px;
-            box-sizing: border-box;
-            text-align: center;
-          }
-
-          .error-card h2 {
-            margin: 0;
-            color: #2b2b33;
-          }
-
-          .error-card p {
-            margin: 12px 0 22px;
-            color: #88868f;
-          }
-
-          .error-card button {
-            border: none;
-            border-radius: 11px;
-            padding: 12px 18px;
-            background: #6c5ce7;
-            color: white;
-            font-weight: 800;
-            cursor: pointer;
+          .loading {
+            padding: 50px 32px;
+            color: #9995a4;
           }
         `}</style>
       </div>
     )
   }
 
-  if (!lesson) return null
-
-  const videoUrl =
-    getYouTubeEmbedUrl(lesson.video_url)
+  if (!lesson || !course) {
+    return null
+  }
 
   return (
-    <>
-      <div className="lesson-page">
-        <div className="lesson-container">
+    <main className="lesson-page">
+      <div className="topbar">
+        <button
+          className="back"
+          onClick={() =>
+            router.push(
+              `/dashboard/courses/${courseId}`
+            )
+          }
+        >
+          ← Сургалт руу
+        </button>
 
-          {/* HEADER */}
-          <section className="lesson-header">
-            <div className="header-content">
-              <div className="header-copy">
-                <p className="eyebrow">
-                  {lesson.moduleTitle ||
-                    'LESSON'}
-                </p>
+        <div className="course-progress">
+          <span>
+            COURSE PROGRESS
+          </span>
 
-                <h1>{lesson.title}</h1>
-
-                <p className="subtitle">
-                  Хичээлээ үзээд дууссаны дараа
-                  completion-оо тэмдэглэнэ.
-                </p>
-              </div>
-
-              <div
-                className={
-                  completed
-                    ? 'status-badge completed'
-                    : 'status-badge pending'
-                }
-              >
-                {completed
-                  ? '✓ Дууссан'
-                  : 'Үзэж байна'}
-              </div>
-            </div>
-          </section>
-
-          {/* MAIN */}
-          <div className="lesson-grid">
-
-            {/* LEFT */}
-            <div className="lesson-left">
-
-              {/* VIDEO */}
-              {videoUrl ? (
-                <div className="video-wrapper">
-                  <iframe
-                    src={videoUrl}
-                    title={lesson.title}
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                    allowFullScreen
-                  />
-                </div>
-              ) : (
-                <div className="no-video">
-                  <div className="play-icon">
-                    ▶
-                  </div>
-
-                  <h3>
-                    Видео байхгүй
-                  </h3>
-
-                  <p>
-                    Энэ lesson-д одоогоор видео
-                    нэмээгүй байна.
-                  </p>
-                </div>
-              )}
-
-              {/* MOBILE STATUS */}
-              <div className="mobile-status">
-                <StatusCard
-                  completed={completed}
-                  hasQuiz={hasQuiz}
-                  markComplete={markComplete}
-                  router={router}
-                  courseId={courseId}
-                  lessonId={lessonId}
-                />
-              </div>
-
-              {/* CONTENT */}
-              {lesson.content && (
-                <section className="content-card">
-                  <p className="section-label">
-                    LESSON CONTENT
-                  </p>
-
-                  <h2>
-                    Хичээлийн агуулга
-                  </h2>
-
-                  <div className="lesson-text">
-                    {lesson.content}
-                  </div>
-                </section>
-              )}
-            </div>
-
-            {/* DESKTOP STATUS */}
-            <aside className="desktop-status">
-              <StatusCard
-                completed={completed}
-                hasQuiz={hasQuiz}
-                markComplete={markComplete}
-                router={router}
-                courseId={courseId}
-                lessonId={lessonId}
-              />
-            </aside>
-          </div>
+          <strong>
+            {courseProgress}%
+          </strong>
         </div>
       </div>
+
+      <section className="lesson-header">
+        <div className="eyebrow">
+          {module?.title ||
+            'LESSON'}
+        </div>
+
+        <div className="lesson-meta">
+          <span>
+            LESSON{' '}
+            {currentIndex + 1}
+          </span>
+
+          {completed && (
+            <span className="completed-badge">
+              ✓ COMPLETED
+            </span>
+          )}
+        </div>
+
+        <h1>
+          {lesson.title}
+        </h1>
+
+        {lesson.description && (
+          <p>
+            {lesson.description}
+          </p>
+        )}
+      </section>
+
+      {lesson.video_url && (
+        <section className="video-card">
+          <video
+            src={lesson.video_url}
+            controls
+            playsInline
+            preload="metadata"
+          />
+        </section>
+      )}
+
+      {lesson.content && (
+        <section className="content-card">
+          <div className="section-label">
+            LESSON CONTENT
+          </div>
+
+          <div className="lesson-content">
+            {lesson.content
+              .split('\n')
+              .map(
+                (line, index) => {
+                  if (!line.trim()) {
+                    return (
+                      <div
+                        key={index}
+                        className="space"
+                      />
+                    )
+                  }
+
+                  return (
+                    <p key={index}>
+                      {line}
+                    </p>
+                  )
+                }
+              )}
+          </div>
+        </section>
+      )}
+
+      <section className="action-card">
+        <div>
+          <div className="section-label">
+            PROGRESS
+          </div>
+
+          <h2>
+            {completed
+              ? 'Энэ хичээл дууссан.'
+              : 'Хичээлээ дуусгасан уу?'}
+          </h2>
+
+          <p>
+            {completed
+              ? 'Progress дээр completed гэж хадгалагдсан байна.'
+              : 'Хичээлээ үзэж дууссаны дараа completed болгоно уу.'}
+          </p>
+        </div>
+
+        {!completed ? (
+          <button
+            className="complete-button"
+            onClick={markCompleted}
+            disabled={saving}
+          >
+            {saving
+              ? 'Хадгалж байна...'
+              : '✓ Хичээл дуусгах'}
+          </button>
+        ) : (
+          <button
+            className="reset-button"
+            onClick={markIncomplete}
+            disabled={saving}
+          >
+            Completed цуцлах
+          </button>
+        )}
+      </section>
+
+      {hasQuiz && (
+        <section className="quiz-card">
+          <div>
+            <div className="section-label">
+              QUIZ
+            </div>
+
+            <h2>
+              Хичээлийн quiz
+            </h2>
+
+            <p>
+              Хичээлээ бататгах
+              quiz-аа ажиллаарай.
+            </p>
+          </div>
+
+          <button
+            onClick={() =>
+              router.push(
+                `/dashboard/courses/${courseId}/lessons/${lessonId}/quiz`
+              )
+            }
+          >
+            Quiz эхлэх →
+          </button>
+        </section>
+      )}
+
+      <section className="navigation">
+        <button
+          className="nav-button"
+          disabled={!previousLesson}
+          onClick={() =>
+            openLesson(
+              previousLesson
+            )
+          }
+        >
+          <span>
+            PREVIOUS
+          </span>
+
+          <strong>
+            {previousLesson
+              ? `← ${previousLesson.title}`
+              : 'Эхний хичээл'}
+          </strong>
+        </button>
+
+        <button
+          className="nav-button next"
+          disabled={!nextLesson}
+          onClick={() =>
+            openLesson(nextLesson)
+          }
+        >
+          <span>
+            NEXT
+          </span>
+
+          <strong>
+            {nextLesson
+              ? `${nextLesson.title} →`
+              : 'Сүүлийн хичээл'}
+          </strong>
+        </button>
+      </section>
 
       <style jsx>{`
         .lesson-page {
-          min-height: 100%;
-          background: #f8f7ff;
-          padding: 40px 48px 80px;
-          box-sizing: border-box;
-          overflow-x: hidden;
+          width: 100%;
+          max-width: 980px;
+          padding: 42px 32px 100px;
+          color: #302e38;
         }
 
-        .lesson-container {
-          width: 100%;
-          max-width: 1100px;
-          margin: 0 auto;
-          min-width: 0;
+        .topbar {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 20px;
+          margin-bottom: 28px;
+        }
+
+        .back {
+          border: 0;
+          padding: 0;
+          background: transparent;
+          color: #8d8994;
+          font-size: 12px;
+          font-weight: 700;
+          cursor: pointer;
+        }
+
+        .course-progress {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+        }
+
+        .course-progress span {
+          color: #aaa5b0;
+          font-size: 8px;
+          font-weight: 900;
+          letter-spacing: 0.12em;
+        }
+
+        .course-progress strong {
+          color: #6c5ce7;
+          font-size: 12px;
         }
 
         .lesson-header {
-          width: 100%;
-          box-sizing: border-box;
-          margin-bottom: 24px;
-          padding: 30px;
-          background:
-            linear-gradient(
-              135deg,
-              #ffffff 0%,
-              #f7f4ff 100%
-            );
-          border: 1px solid #ece8fa;
-          border-radius: 24px;
+          margin-bottom: 28px;
         }
 
-        .header-content {
-          display: flex;
-          align-items: flex-start;
-          justify-content: space-between;
-          gap: 25px;
-          min-width: 0;
-        }
-
-        .header-copy {
-          flex: 1;
-          min-width: 0;
-        }
-
-        .eyebrow {
-          margin: 0;
+        .eyebrow,
+        .section-label {
           color: #6c5ce7;
-          font-size: 11px;
+          font-size: 9px;
           font-weight: 900;
-          letter-spacing: 1.7px;
-          text-transform: uppercase;
-          overflow-wrap: anywhere;
+          letter-spacing: 0.14em;
+        }
+
+        .lesson-meta {
+          display: flex;
+          gap: 8px;
+          margin-top: 14px;
+        }
+
+        .lesson-meta span {
+          display: inline-flex;
+          padding: 7px 10px;
+          border-radius: 999px;
+          background: #efedff;
+          color: #6c5ce7;
+          font-size: 8px;
+          font-weight: 900;
+        }
+
+        .lesson-meta .completed-badge {
+          background: #e6f6ec;
+          color: #347f52;
         }
 
         .lesson-header h1 {
-          margin: 10px 0;
-          color: #282830;
-          font-size: clamp(28px, 4vw, 38px);
-          line-height: 1.2;
-          overflow-wrap: anywhere;
+          margin: 18px 0 10px;
+          font-size: 34px;
+          letter-spacing: -0.045em;
         }
 
-        .subtitle {
+        .lesson-header p {
+          max-width: 680px;
           margin: 0;
-          color: #8a8892;
-          line-height: 1.6;
+          color: #96919e;
           font-size: 14px;
+          line-height: 1.7;
         }
 
-        .status-badge {
-          flex-shrink: 0;
-          border-radius: 999px;
-          padding: 8px 13px;
-          font-size: 12px;
-          font-weight: 800;
-          white-space: nowrap;
-        }
-
-        .status-badge.completed {
-          background: #eaf8ee;
-          color: #218647;
-        }
-
-        .status-badge.pending {
-          background: #f0ecff;
-          color: #6c5ce7;
-        }
-
-        .lesson-grid {
-          width: 100%;
-          display: grid;
-          grid-template-columns:
-            minmax(0, 1fr) 290px;
-          gap: 22px;
-          align-items: start;
-          min-width: 0;
-        }
-
-        .lesson-left {
-          min-width: 0;
-          width: 100%;
-        }
-
-        .video-wrapper {
-          position: relative;
-          width: 100%;
-          aspect-ratio: 16 / 9;
+        .video-card {
           overflow: hidden;
-          margin-bottom: 22px;
+          margin-bottom: 24px;
+          border: 1px solid #e7e3ed;
+          border-radius: 20px;
           background: #111;
-          border-radius: 20px;
-          box-shadow:
-            0 12px 40px
-            rgba(30, 25, 70, 0.06);
         }
 
-        .video-wrapper iframe {
-          position: absolute;
-          inset: 0;
-          width: 100%;
-          height: 100%;
-          border: 0;
+        .video-card video {
           display: block;
-        }
-
-        .no-video {
           width: 100%;
-          min-height: 300px;
-          box-sizing: border-box;
-          margin-bottom: 22px;
-          padding: 30px;
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          justify-content: center;
-          text-align: center;
-          background: #fff;
-          border: 1px solid #eeeaf7;
+          max-height: 560px;
+          background: #111;
+        }
+
+        .content-card,
+        .action-card,
+        .quiz-card {
+          margin-bottom: 20px;
+          padding: 28px;
+          border: 1px solid #e7e3ed;
           border-radius: 20px;
+          background: white;
         }
 
-        .play-icon {
-          width: 58px;
-          height: 58px;
-          margin-bottom: 15px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          background: #f0ecff;
-          border-radius: 16px;
-          color: #6c5ce7;
-          font-size: 20px;
-        }
-
-        .no-video h3 {
-          margin: 0;
-          color: #303038;
-        }
-
-        .no-video p {
-          margin: 8px 0 0;
-          color: #94929b;
-          font-size: 14px;
-          line-height: 1.6;
-        }
-
-        .content-card {
-          width: 100%;
-          box-sizing: border-box;
-          padding: 26px;
-          background: #fff;
-          border: 1px solid #eeeaf7;
-          border-radius: 20px;
-          overflow: hidden;
-        }
-
-        .section-label {
-          margin: 0;
-          color: #a19fab;
-          font-size: 10px;
-          font-weight: 900;
-          letter-spacing: 1.4px;
-        }
-
-        .content-card h2 {
-          margin: 6px 0 18px;
-          color: #2d2d35;
-          font-size: 23px;
-        }
-
-        .lesson-text {
-          max-width: 100%;
-          white-space: pre-wrap;
-          overflow-wrap: anywhere;
-          word-break: break-word;
-          color: #55545d;
-          line-height: 1.8;
-          font-size: 15px;
-        }
-
-        .desktop-status {
-          position: sticky;
-          top: 100px;
-          min-width: 0;
-        }
-
-        .mobile-status {
-          display: none;
-        }
-
-        /* TABLET */
-        @media (max-width: 960px) {
-          .lesson-page {
-            padding: 30px 28px 60px;
-          }
-
-          .lesson-grid {
-            grid-template-columns: 1fr;
-          }
-
-          .desktop-status {
-            display: none;
-          }
-
-          .mobile-status {
-            display: block;
-            margin-bottom: 22px;
-          }
-        }
-
-        /* MOBILE */
-        @media (max-width: 640px) {
-          .lesson-page {
-            width: 100%;
-            padding:
-              18px 14px
-              calc(
-                40px +
-                env(safe-area-inset-bottom)
-              );
-          }
-
-          .lesson-header {
-            margin-bottom: 14px;
-            padding: 19px;
-            border-radius: 17px;
-          }
-
-          .header-content {
-            flex-direction: column;
-            gap: 14px;
-          }
-
-          .lesson-header h1 {
-            margin: 8px 0;
-            font-size: 26px;
-            line-height: 1.22;
-          }
-
-          .subtitle {
-            font-size: 13px;
-          }
-
-          .status-badge {
-            padding: 7px 11px;
-            font-size: 11px;
-          }
-
-          .lesson-grid {
-            display: block;
-          }
-
-          .video-wrapper {
-            margin-bottom: 14px;
-            border-radius: 14px;
-          }
-
-          .no-video {
-            min-height: 210px;
-            margin-bottom: 14px;
-            padding: 22px 16px;
-            border-radius: 14px;
-          }
-
-          .play-icon {
-            width: 50px;
-            height: 50px;
-            border-radius: 14px;
-          }
-
-          .mobile-status {
-            margin-bottom: 14px;
-          }
-
-          .content-card {
-            padding: 19px;
-            border-radius: 15px;
-          }
-
-          .content-card h2 {
-            margin-bottom: 14px;
-            font-size: 20px;
-          }
-
-          .lesson-text {
-            font-size: 14px;
-            line-height: 1.75;
-          }
-        }
-
-        /* SMALL MOBILE */
-        @media (max-width: 380px) {
-          .lesson-page {
-            padding-left: 10px;
-            padding-right: 10px;
-          }
-
-          .lesson-header {
-            padding: 16px;
-          }
-
-          .lesson-header h1 {
-            font-size: 23px;
-          }
-
-          .content-card {
-            padding: 16px;
-          }
-        }
-      `}</style>
-    </>
-  )
-}
-
-function StatusCard({
-  completed,
-  hasQuiz,
-  markComplete,
-  router,
-  courseId,
-  lessonId,
-}) {
-  return (
-    <>
-      <div className="status-card">
-        <p className="side-label">
-          LESSON STATUS
-        </p>
-
-        <h3>
-          Хичээлийн явц
-        </h3>
-
-        <div className="status-row">
-          <span>Хичээл</span>
-
-          <strong
-            className={
-              completed ? 'green' : ''
-            }
-          >
-            {completed
-              ? 'Дууссан'
-              : 'Дуусаагүй'}
-          </strong>
-        </div>
-
-        <div className="status-row">
-          <span>Quiz</span>
-
-          <strong>
-            {hasQuiz
-              ? 'Байгаа'
-              : 'Байхгүй'}
-          </strong>
-        </div>
-
-        <div className="actions">
-          {!completed ? (
-            <button
-              type="button"
-              onClick={markComplete}
-              className="complete-button"
-            >
-              ✓ Хичээл дуусгах
-            </button>
-          ) : (
-            <button
-              type="button"
-              disabled
-              className="completed-button"
-            >
-              ✓ Дууссан
-            </button>
-          )}
-
-          {hasQuiz && (
-            <button
-              type="button"
-              onClick={() =>
-                router.push(
-                  `/dashboard/courses/${courseId}/lessons/${lessonId}/quiz`
-                )
-              }
-              className="quiz-button"
-            >
-              Quiz эхлэх →
-            </button>
-          )}
-
-          <button
-            type="button"
-            onClick={() =>
-              router.push(
-                `/dashboard/courses/${courseId}`
-              )
-            }
-            className="back-button"
-          >
-            ← Course руу
-          </button>
-        </div>
-      </div>
-
-      <style jsx>{`
-        .status-card {
-          width: 100%;
-          box-sizing: border-box;
-          padding: 22px;
-          background: #fff;
-          border: 1px solid #eeeaf7;
-          border-radius: 20px;
-          overflow: hidden;
-        }
-
-        .side-label {
-          margin: 0;
-          color: #a19fab;
-          font-size: 10px;
-          font-weight: 900;
-          letter-spacing: 1.3px;
-        }
-
-        h3 {
-          margin: 6px 0 20px;
-          color: #2d2d35;
-          font-size: 20px;
-        }
-
-        .status-row {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          gap: 15px;
-          padding: 13px 0;
-          border-bottom: 1px solid #f0edf7;
-          color: #77757f;
-          font-size: 13px;
-        }
-
-        .status-row strong {
-          color: #38363f;
-          text-align: right;
-        }
-
-        .status-row strong.green {
-          color: #218647;
-        }
-
-        .actions {
-          display: flex;
-          flex-direction: column;
-          gap: 10px;
+        .lesson-content {
           margin-top: 20px;
         }
 
-        button {
-          width: 100%;
-          min-height: 44px;
-          box-sizing: border-box;
-          border-radius: 12px;
-          padding: 13px;
+        .lesson-content p {
+          margin: 0 0 12px;
+          color: #55515d;
+          font-size: 14px;
+          line-height: 1.85;
+          white-space: pre-wrap;
+        }
+
+        .space {
+          height: 12px;
+        }
+
+        .action-card,
+        .quiz-card {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 24px;
+        }
+
+        .action-card h2,
+        .quiz-card h2 {
+          margin: 8px 0 5px;
+          font-size: 18px;
+        }
+
+        .action-card p,
+        .quiz-card p {
+          margin: 0;
+          color: #9994a1;
+          font-size: 12px;
+          line-height: 1.6;
+        }
+
+        .complete-button,
+        .quiz-card button {
+          flex: 0 0 auto;
+          padding: 12px 17px;
+          border: 0;
+          border-radius: 11px;
+          background: #6c5ce7;
+          color: white;
+          font-size: 11px;
           font-weight: 800;
           cursor: pointer;
         }
 
-        .complete-button {
-          background: #fff;
-          color: #6c5ce7;
-          border: 1px solid #6c5ce7;
+        .reset-button {
+          flex: 0 0 auto;
+          padding: 12px 17px;
+          border: 1px solid #ded9e7;
+          border-radius: 11px;
+          background: white;
+          color: #797480;
+          font-size: 11px;
+          font-weight: 800;
+          cursor: pointer;
         }
 
-        .completed-button {
-          background: #eaf8ee;
-          color: #218647;
-          border: none;
-          cursor: default;
+        button:disabled {
+          opacity: 0.45;
+          cursor: not-allowed;
         }
 
-        .quiz-button {
-          background: #6c5ce7;
-          color: #fff;
-          border: none;
+        .navigation {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 12px;
+          margin-top: 28px;
         }
 
-        .back-button {
-          background: #f7f5fb;
-          color: #74727d;
-          border: none;
+        .nav-button {
+          display: flex;
+          flex-direction: column;
+          align-items: flex-start;
+          gap: 7px;
+          min-height: 78px;
+          padding: 18px;
+          border: 1px solid #e3dfea;
+          border-radius: 15px;
+          background: white;
+          text-align: left;
+          cursor: pointer;
         }
 
-        @media (max-width: 640px) {
-          .status-card {
-            padding: 18px;
-            border-radius: 15px;
+        .nav-button.next {
+          align-items: flex-end;
+          text-align: right;
+        }
+
+        .nav-button span {
+          color: #aaa5b0;
+          font-size: 8px;
+          font-weight: 900;
+          letter-spacing: 0.12em;
+        }
+
+        .nav-button strong {
+          color: #5a5561;
+          font-size: 12px;
+        }
+
+        @media (max-width: 650px) {
+          .lesson-page {
+            padding: 28px 16px 100px;
           }
 
-          h3 {
-            margin-bottom: 15px;
-            font-size: 18px;
+          .lesson-header h1 {
+            font-size: 27px;
           }
 
-          .actions {
-            margin-top: 16px;
+          .content-card,
+          .action-card,
+          .quiz-card {
+            padding: 20px;
           }
 
-          button {
-            min-height: 46px;
-            font-size: 13px;
+          .action-card,
+          .quiz-card {
+            align-items: stretch;
+            flex-direction: column;
+          }
+
+          .complete-button,
+          .reset-button,
+          .quiz-card button {
+            width: 100%;
+          }
+
+          .navigation {
+            grid-template-columns: 1fr;
+          }
+
+          .nav-button.next {
+            align-items: flex-start;
+            text-align: left;
           }
         }
       `}</style>
-    </>
+    </main>
   )
 }

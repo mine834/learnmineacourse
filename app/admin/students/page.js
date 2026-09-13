@@ -1,832 +1,1351 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { supabase } from '../../lib/supabase'
 
 export default function AdminStudentsPage() {
+  const router = useRouter()
+
   const [loading, setLoading] = useState(true)
+
   const [students, setStudents] = useState([])
   const [courses, setCourses] = useState([])
   const [enrollments, setEnrollments] = useState([])
 
   const [search, setSearch] = useState('')
+
   const [selectedStudent, setSelectedStudent] = useState(null)
   const [selectedCourseId, setSelectedCourseId] = useState('')
-  const [saving, setSaving] = useState(false)
-  const [error, setError] = useState('')
+
+  const [processing, setProcessing] = useState(false)
+  const [processingCourseId, setProcessingCourseId] = useState(null)
 
   useEffect(() => {
     loadData()
   }, [])
 
   async function loadData() {
-    setLoading(true)
-    setError('')
+    try {
+      setLoading(true)
 
-    const [
-      studentsResult,
-      coursesResult,
-      enrollmentsResult,
-    ] = await Promise.all([
-      supabase
-        .from('profiles')
-        .select('id, email, full_name, role, created_at')
-        .eq('role', 'student')
-        .order('created_at', {
-          ascending: false,
-        }),
+      const [
+        studentsResult,
+        coursesResult,
+        enrollmentsResult,
+      ] = await Promise.all([
+        supabase
+          .from('profiles')
+          .select('id, email, full_name, role, created_at')
+          .eq('role', 'student')
+          .order('created_at', {
+            ascending: false,
+          }),
 
-      supabase
-        .from('courses')
-        .select('id, title, published')
-        .order('title'),
+        supabase
+          .from('courses')
+          .select('id, title, price, published')
+          .order('created_at', {
+            ascending: true,
+          }),
 
-      supabase
-        .from('enrollments')
-        .select('id, user_id, course_id'),
-    ])
+        supabase
+          .from('enrollments')
+          .select('id, user_id, course_id'),
+      ])
 
-    if (studentsResult.error) {
-      setError(studentsResult.error.message)
+      if (studentsResult.error) {
+        throw studentsResult.error
+      }
+
+      if (coursesResult.error) {
+        throw coursesResult.error
+      }
+
+      if (enrollmentsResult.error) {
+        throw enrollmentsResult.error
+      }
+
+      setStudents(studentsResult.data || [])
+      setCourses(coursesResult.data || [])
+      setEnrollments(enrollmentsResult.data || [])
+
+      if (selectedStudent) {
+        const refreshedStudent =
+          (studentsResult.data || []).find(
+            (student) =>
+              student.id === selectedStudent.id
+          )
+
+        if (refreshedStudent) {
+          setSelectedStudent(refreshedStudent)
+        }
+      }
+    } catch (error) {
+      console.error(
+        'Load students error:',
+        error
+      )
+
+      alert(
+        error?.message ||
+          'Сурагчдын мэдээлэл ачааллахад алдаа гарлаа.'
+      )
+    } finally {
       setLoading(false)
-      return
+    }
+  }
+
+  async function refreshEnrollments() {
+    const {
+      data,
+      error,
+    } = await supabase
+      .from('enrollments')
+      .select('id, user_id, course_id')
+
+    if (error) {
+      throw error
     }
 
-    if (coursesResult.error) {
-      setError(coursesResult.error.message)
-      setLoading(false)
-      return
-    }
-
-    if (enrollmentsResult.error) {
-      setError(enrollmentsResult.error.message)
-      setLoading(false)
-      return
-    }
-
-    setStudents(studentsResult.data || [])
-    setCourses(coursesResult.data || [])
-    setEnrollments(enrollmentsResult.data || [])
-
-    setLoading(false)
+    setEnrollments(data || [])
   }
 
   const filteredStudents = useMemo(() => {
-    const query = search
-      .trim()
-      .toLowerCase()
+    const keyword =
+      search.trim().toLowerCase()
 
-    if (!query) return students
+    if (!keyword) {
+      return students
+    }
 
     return students.filter((student) => {
-      const email =
-        student.email?.toLowerCase() || ''
+      const text = [
+        student.full_name,
+        student.email,
+      ]
+        .filter(Boolean)
+        .join(' ')
+        .toLowerCase()
 
-      const name =
-        student.full_name?.toLowerCase() || ''
-
-      return (
-        email.includes(query) ||
-        name.includes(query)
-      )
+      return text.includes(keyword)
     })
   }, [students, search])
 
-  function getStudentEnrollments(userId) {
+  function getStudentEnrollments(studentId) {
     return enrollments.filter(
-      (item) => item.user_id === userId
-    )
-  }
-
-  function getCourseTitle(courseId) {
-    return (
-      courses.find(
-        (course) => course.id === courseId
-      )?.title || 'Unknown course'
-    )
-  }
-
-  function studentHasCourse(userId, courseId) {
-    return enrollments.some(
       (item) =>
-        item.user_id === userId &&
-        item.course_id === courseId
+        item.user_id === studentId
     )
   }
 
-  async function grantAccess() {
-    if (!selectedStudent) return
+  function getStudentCourses(studentId) {
+    const studentEnrollments =
+      getStudentEnrollments(studentId)
+
+    const courseIds =
+      new Set(
+        studentEnrollments.map(
+          (item) => item.course_id
+        )
+      )
+
+    return courses.filter(
+      (course) =>
+        courseIds.has(course.id)
+    )
+  }
+
+  function getAvailableCourses(studentId) {
+    const currentCourseIds =
+      new Set(
+        getStudentEnrollments(studentId).map(
+          (item) => item.course_id
+        )
+      )
+
+    return courses.filter(
+      (course) =>
+        !currentCourseIds.has(course.id)
+    )
+  }
+
+  async function grantCourseAccess() {
+    if (!selectedStudent?.id) {
+      return
+    }
 
     if (!selectedCourseId) {
       alert('Course сонгоно уу.')
       return
     }
 
-    if (
-      studentHasCourse(
-        selectedStudent.id,
-        selectedCourseId
-      )
-    ) {
+    try {
+      setProcessing(true)
+
+      const {
+        error,
+      } = await supabase
+        .from('enrollments')
+        .insert({
+          user_id:
+            selectedStudent.id,
+
+          course_id:
+            selectedCourseId,
+        })
+
+      if (error) {
+        throw error
+      }
+
+      await refreshEnrollments()
+
+      setSelectedCourseId('')
+
       alert(
-        'Энэ сурагчид уг сургалтын эрх аль хэдийн байна.'
+        'Сургалтын эрх амжилттай нээгдлээ.'
+      )
+    } catch (error) {
+      console.error(
+        'Grant course access error:',
+        error
+      )
+
+      alert(
+        error?.message ||
+          'Сургалтын эрх нээхэд алдаа гарлаа.'
+      )
+    } finally {
+      setProcessing(false)
+    }
+  }
+
+  // ==========================================
+  // REVOKE COURSE ACCESS
+  // SECURE RPC
+  // ==========================================
+
+  async function revokeCourseAccess(course) {
+    if (!selectedStudent?.id) {
+      return
+    }
+
+    if (!course?.id) {
+      return
+    }
+
+    const confirmed =
+      window.confirm(
+        `${course.title} сургалтын эрхийг цуцлах уу?`
+      )
+
+    if (!confirmed) {
+      return
+    }
+
+    try {
+      setProcessingCourseId(
+        course.id
+      )
+
+      const {
+        data,
+        error,
+      } = await supabase.rpc(
+        'revoke_course_access',
+        {
+          target_user_id:
+            selectedStudent.id,
+
+          target_course_id:
+            course.id,
+        }
+      )
+
+      if (error) {
+        throw error
+      }
+
+      console.log(
+        'Revoke result:',
+        data
+      )
+
+      await refreshEnrollments()
+
+      alert(
+        'Сургалтын эрх амжилттай цуцлагдлаа.'
+      )
+    } catch (error) {
+      console.error(
+        'Revoke course access error:',
+        error
+      )
+
+      alert(
+        error?.message ||
+          'Сургалтын эрх цуцлахад алдаа гарлаа.'
+      )
+    } finally {
+      setProcessingCourseId(null)
+    }
+  }
+
+  function prepareEmail(student) {
+    if (!student?.email) {
+      alert(
+        'Student email олдсонгүй.'
       )
       return
     }
 
-    setSaving(true)
-
-    const { error } = await supabase
-      .from('enrollments')
-      .insert({
-        user_id: selectedStudent.id,
-        course_id: selectedCourseId,
-      })
-
-    setSaving(false)
-
-    if (error) {
-      alert(error.message)
-      return
-    }
-
-    setSelectedCourseId('')
-    await loadData()
-  }
-
-  async function revokeAccess(
-    userId,
-    courseId
-  ) {
-    const confirmed = window.confirm(
-      'Энэ сургалтын эрхийг цуцлах уу?'
-    )
-
-    if (!confirmed) return
-
-    const { error } = await supabase
-      .from('enrollments')
-      .delete()
-      .eq('user_id', userId)
-      .eq('course_id', courseId)
-
-    if (error) {
-      alert(error.message)
-      return
-    }
-
-    await loadData()
-  }
-
-  function openStudent(student) {
-    setSelectedStudent(student)
-    setSelectedCourseId('')
-  }
-
-  function closeStudent() {
-    setSelectedStudent(null)
-    setSelectedCourseId('')
-  }
-
-  if (loading) {
-    return (
-      <div style={styles.loading}>
-        Students ачаалж байна...
-      </div>
+    router.push(
+      `/admin/email?to=${encodeURIComponent(
+        student.email
+      )}`
     )
   }
+
+  function formatDate(value) {
+    if (!value) {
+      return '—'
+    }
+
+    return new Date(
+      value
+    ).toLocaleDateString('mn-MN')
+  }
+
+  const selectedStudentCourses =
+    selectedStudent
+      ? getStudentCourses(
+          selectedStudent.id
+        )
+      : []
+
+  const availableCourses =
+    selectedStudent
+      ? getAvailableCourses(
+          selectedStudent.id
+        )
+      : []
 
   return (
-    <div style={styles.page}>
-      <div style={styles.container}>
-        <header style={styles.header}>
-          <div>
-            <p style={styles.eyebrow}>
-              USERS
-            </p>
-
-            <h1 style={styles.title}>
-              Students
-            </h1>
-
-            <p style={styles.subtitle}>
-              Сурагч болон сургалтын эрхүүдийг
-              эндээс удирдана.
-            </p>
+    <div className="students-page">
+      <div className="page-heading">
+        <div>
+          <div className="eyebrow">
+            STUDENT MANAGEMENT
           </div>
 
-          <div style={styles.studentCount}>
-            <strong>{students.length}</strong>
-            <span>students</span>
-          </div>
-        </header>
+          <h1>
+            Сурагчид
+          </h1>
 
-        {error && (
-          <div style={styles.error}>
-            {error}
-          </div>
-        )}
+          <p>
+            Сурагчийн сургалтын эрх,
+            email болон account
+            мэдээллийг удирдана.
+          </p>
+        </div>
 
-        <div style={styles.searchCard}>
-          <input
-            type="text"
-            value={search}
-            onChange={(event) =>
-              setSearch(event.target.value)
-            }
-            placeholder="Нэр эсвэл email-аар хайх..."
-            style={styles.searchInput}
-          />
+        <div className="student-count">
+          <strong>
+            {students.length}
+          </strong>
 
-          <span style={styles.searchResult}>
-            {filteredStudents.length} үр дүн
+          <span>
+            STUDENTS
           </span>
         </div>
+      </div>
 
-        <div style={styles.tableCard}>
-          <div style={styles.tableHeader}>
-            <span>STUDENT</span>
-            <span>COURSES</span>
-            <span>STATUS</span>
-            <span></span>
-          </div>
+      <div className="search-bar">
+        <span className="search-icon">
+          ⌕
+        </span>
 
-          {filteredStudents.length === 0 ? (
-            <div style={styles.empty}>
-              Student олдсонгүй.
-            </div>
-          ) : (
-            filteredStudents.map(
-              (student) => {
-                const studentEnrollments =
-                  getStudentEnrollments(
-                    student.id
-                  )
+        <input
+          type="text"
+          placeholder="Нэр эсвэл email хайх..."
+          value={search}
+          onChange={(event) =>
+            setSearch(
+              event.target.value
+            )
+          }
+        />
+      </div>
 
-                return (
-                  <div
-                    key={student.id}
-                    style={styles.studentRow}
-                  >
-                    <div style={styles.studentInfo}>
-                      <div style={styles.avatar}>
-                        {(
-                          student.full_name ||
-                          student.email ||
-                          'S'
-                        )
-                          .charAt(0)
-                          .toUpperCase()}
-                      </div>
+      {loading ? (
+        <div className="empty-card">
+          Сурагчдын мэдээлэл
+          ачааллаж байна...
+        </div>
+      ) : filteredStudents.length ===
+        0 ? (
+        <div className="empty-card">
+          Сурагч олдсонгүй.
+        </div>
+      ) : (
+        <div className="students-list">
+          {filteredStudents.map(
+            (student) => {
+              const studentCourses =
+                getStudentCourses(
+                  student.id
+                )
 
-                      <div style={styles.studentText}>
-                        <strong>
-                          {student.full_name ||
-                            'Нэр оруулаагүй'}
-                        </strong>
+              return (
+                <button
+                  type="button"
+                  className="student-card"
+                  key={student.id}
+                  onClick={() => {
+                    setSelectedStudent(
+                      student
+                    )
 
-                        <span>
-                          {student.email}
-                        </span>
-                      </div>
+                    setSelectedCourseId(
+                      ''
+                    )
+                  }}
+                >
+                  <div className="student-left">
+                    <div className="avatar">
+                      {(
+                        student.full_name ||
+                        student.email ||
+                        'S'
+                      )
+                        .charAt(0)
+                        .toUpperCase()}
                     </div>
 
-                    <div style={styles.courseCount}>
+                    <div>
+                      <div className="student-name">
+                        {student.full_name ||
+                          student.email ||
+                          'Student'}
+                      </div>
+
+                      <div className="student-email">
+                        {student.email ||
+                          'Email байхгүй'}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="student-meta">
+                    <div>
+                      <span>
+                        COURSE ACCESS
+                      </span>
+
                       <strong>
                         {
-                          studentEnrollments.length
+                          studentCourses.length
                         }
                       </strong>
-                      <span>
-                        сургалтын эрх
-                      </span>
                     </div>
 
-                    <span style={styles.activeBadge}>
-                      ACTIVE
-                    </span>
+                    <div>
+                      <span>
+                        JOINED
+                      </span>
 
-                    <button
-                      type="button"
-                      onClick={() =>
-                        openStudent(student)
-                      }
-                      style={styles.manageButton}
-                    >
+                      <strong>
+                        {formatDate(
+                          student.created_at
+                        )}
+                      </strong>
+                    </div>
+
+                    <div className="manage">
                       Удирдах →
-                    </button>
+                    </div>
                   </div>
-                )
-              }
-            )
+                </button>
+              )
+            }
           )}
         </div>
+      )}
 
-        {selectedStudent && (
-          <div style={styles.overlay}>
-            <div style={styles.modal}>
-              <div style={styles.modalHeader}>
+      {selectedStudent && (
+        <div
+          className="modal-backdrop"
+          onClick={() =>
+            setSelectedStudent(
+              null
+            )
+          }
+        >
+          <aside
+            className="student-panel"
+            onClick={(event) =>
+              event.stopPropagation()
+            }
+          >
+            <div className="panel-header">
+              <div className="panel-person">
+                <div className="large-avatar">
+                  {(
+                    selectedStudent.full_name ||
+                    selectedStudent.email ||
+                    'S'
+                  )
+                    .charAt(0)
+                    .toUpperCase()}
+                </div>
+
                 <div>
-                  <p style={styles.modalLabel}>
-                    STUDENT
-                  </p>
-
-                  <h2 style={styles.modalTitle}>
+                  <h2>
                     {selectedStudent.full_name ||
-                      selectedStudent.email}
+                      selectedStudent.email ||
+                      'Student'}
                   </h2>
 
-                  <p style={styles.modalEmail}>
+                  <p>
                     {selectedStudent.email}
                   </p>
                 </div>
-
-                <button
-                  type="button"
-                  onClick={closeStudent}
-                  style={styles.closeButton}
-                >
-                  ×
-                </button>
               </div>
 
-              <section style={styles.accessSection}>
-                <p style={styles.sectionLabel}>
-                  COURSE ACCESS
-                </p>
+              <button
+                type="button"
+                className="close-button"
+                onClick={() =>
+                  setSelectedStudent(
+                    null
+                  )
+                }
+              >
+                ×
+              </button>
+            </div>
 
-                <h3 style={styles.sectionTitle}>
+            <div className="panel-content">
+              <section>
+                <div className="section-label">
+                  COURSE ACCESS
+                </div>
+
+                <h3>
                   Одоогийн сургалтууд
                 </h3>
 
-                {getStudentEnrollments(
-                  selectedStudent.id
-                ).length === 0 ? (
-                  <div style={styles.noAccess}>
-                    Одоогоор сургалтын эрхгүй.
+                {selectedStudentCourses.length ===
+                0 ? (
+                  <div className="no-access">
+                    Одоогоор сургалтын
+                    эрхгүй.
                   </div>
                 ) : (
-                  <div style={styles.accessList}>
-                    {getStudentEnrollments(
-                      selectedStudent.id
-                    ).map((enrollment) => (
-                      <div
-                        key={enrollment.id}
-                        style={styles.accessRow}
-                      >
-                        <div>
-                          <strong
-                            style={
-                              styles.accessTitle
-                            }
-                          >
-                            {getCourseTitle(
-                              enrollment.course_id
-                            )}
-                          </strong>
-
-                          <p
-                            style={
-                              styles.accessStatus
-                            }
-                          >
-                            Access granted
-                          </p>
-                        </div>
-
-                        <button
-                          type="button"
-                          onClick={() =>
-                            revokeAccess(
-                              selectedStudent.id,
-                              enrollment.course_id
-                            )
+                  <div className="access-list">
+                    {selectedStudentCourses.map(
+                      (course) => (
+                        <div
+                          className="access-card"
+                          key={
+                            course.id
                           }
-                          style={styles.revokeButton}
                         >
-                          Эрх цуцлах
-                        </button>
-                      </div>
-                    ))}
+                          <div>
+                            <strong>
+                              {
+                                course.title
+                              }
+                            </strong>
+
+                            <span>
+                              ACTIVE
+                            </span>
+                          </div>
+
+                          <button
+                            type="button"
+                            className="revoke-button"
+                            disabled={
+                              processingCourseId ===
+                              course.id
+                            }
+                            onClick={() =>
+                              revokeCourseAccess(
+                                course
+                              )
+                            }
+                          >
+                            {processingCourseId ===
+                            course.id
+                              ? 'Цуцалж байна...'
+                              : 'Эрх цуцлах'}
+                          </button>
+                        </div>
+                      )
+                    )}
                   </div>
                 )}
               </section>
 
-              <section style={styles.grantSection}>
-                <p style={styles.sectionLabel}>
+              <section className="add-access-section">
+                <div className="section-label">
                   ADD ACCESS
-                </p>
+                </div>
 
-                <h3 style={styles.sectionTitle}>
+                <h3>
                   Шинэ сургалтын эрх
                 </h3>
 
-                <div style={styles.grantRow}>
-                  <select
-                    value={selectedCourseId}
-                    onChange={(event) =>
-                      setSelectedCourseId(
-                        event.target.value
-                      )
-                    }
-                    style={styles.select}
-                  >
-                    <option value="">
-                      Course сонгох
-                    </option>
+                {availableCourses.length >
+                0 ? (
+                  <div className="grant-row">
+                    <select
+                      value={
+                        selectedCourseId
+                      }
+                      onChange={(
+                        event
+                      ) =>
+                        setSelectedCourseId(
+                          event.target
+                            .value
+                        )
+                      }
+                    >
+                      <option value="">
+                        Course сонгох
+                      </option>
 
-                    {courses
-                      .filter(
-                        (course) =>
-                          !studentHasCourse(
-                            selectedStudent.id,
-                            course.id
-                          )
-                      )
-                      .map((course) => (
-                        <option
-                          key={course.id}
-                          value={course.id}
-                        >
-                          {course.title}
-                        </option>
-                      ))}
-                  </select>
+                      {availableCourses.map(
+                        (course) => (
+                          <option
+                            key={
+                              course.id
+                            }
+                            value={
+                              course.id
+                            }
+                          >
+                            {
+                              course.title
+                            }
+                          </option>
+                        )
+                      )}
+                    </select>
 
-                  <button
-                    type="button"
-                    disabled={saving}
-                    onClick={grantAccess}
-                    style={styles.grantButton}
-                  >
-                    {saving
-                      ? 'Нээж байна...'
-                      : 'Эрх нээх'}
-                  </button>
-                </div>
+                    <button
+                      type="button"
+                      className="grant-button"
+                      onClick={
+                        grantCourseAccess
+                      }
+                      disabled={
+                        processing ||
+                        !selectedCourseId
+                      }
+                    >
+                      {processing
+                        ? 'Нээж байна...'
+                        : 'Эрх нээх'}
+                    </button>
+                  </div>
+                ) : (
+                  <div className="no-access">
+                    Нэмэх боломжтой
+                    course байхгүй.
+                  </div>
+                )}
               </section>
 
               <button
                 type="button"
+                className="email-button"
                 onClick={() =>
-                  window.location.href =
-                    `/admin/email?to=${encodeURIComponent(
-                      selectedStudent.email
-                    )}`
+                  prepareEmail(
+                    selectedStudent
+                  )
                 }
-                style={styles.emailButton}
               >
-                ✉ Email бэлдэх
+                <span>
+                  ✉
+                </span>
+
+                Email бэлдэх
               </button>
             </div>
-          </div>
-        )}
-      </div>
+          </aside>
+        </div>
+      )}
+
+      <style jsx>{`
+        .students-page {
+          width: 100%;
+          max-width: 1180px;
+
+          padding:
+            46px
+            34px
+            90px;
+
+          color: #302e38;
+        }
+
+        .page-heading {
+          display: flex;
+          align-items: flex-start;
+          justify-content: space-between;
+
+          gap: 24px;
+
+          margin-bottom: 26px;
+        }
+
+        .eyebrow,
+        .section-label {
+          color: #6c5ce7;
+
+          font-size: 11px;
+          font-weight: 800;
+
+          letter-spacing: 0.14em;
+        }
+
+        .page-heading h1 {
+          margin:
+            8px
+            0
+            0;
+
+          font-size: 30px;
+
+          letter-spacing: -0.04em;
+        }
+
+        .page-heading p {
+          margin:
+            9px
+            0
+            0;
+
+          color: #9995a3;
+
+          font-size: 14px;
+
+          line-height: 1.6;
+        }
+
+        .student-count {
+          min-width: 105px;
+
+          padding:
+            14px
+            16px;
+
+          border:
+            1px solid
+            #e9e5f2;
+
+          border-radius: 14px;
+
+          background: white;
+
+          text-align: center;
+        }
+
+        .student-count strong {
+          display: block;
+
+          font-size: 24px;
+
+          color: #6c5ce7;
+        }
+
+        .student-count span {
+          display: block;
+
+          margin-top: 4px;
+
+          color: #a19ca9;
+
+          font-size: 9px;
+          font-weight: 800;
+
+          letter-spacing: 0.1em;
+        }
+
+        .search-bar {
+          display: flex;
+          align-items: center;
+
+          gap: 10px;
+
+          margin-bottom: 18px;
+
+          padding:
+            0
+            14px;
+
+          border:
+            1px solid
+            #e6e2ed;
+
+          border-radius: 13px;
+
+          background: white;
+        }
+
+        .search-icon {
+          color: #9994a4;
+
+          font-size: 18px;
+        }
+
+        .search-bar input {
+          width: 100%;
+
+          border: 0;
+          outline: none;
+
+          padding:
+            13px
+            0;
+
+          background: transparent;
+
+          font-size: 13px;
+        }
+
+        .students-list {
+          display: flex;
+          flex-direction: column;
+
+          gap: 11px;
+        }
+
+        .student-card {
+          width: 100%;
+
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+
+          gap: 20px;
+
+          padding: 18px;
+
+          border:
+            1px solid
+            #e9e5f1;
+
+          border-radius: 16px;
+
+          background: white;
+
+          color: inherit;
+
+          text-align: left;
+
+          cursor: pointer;
+
+          transition:
+            border-color 0.16s ease,
+            transform 0.16s ease,
+            background 0.16s ease;
+        }
+
+        .student-card:hover {
+          border-color: #cfc8f3;
+
+          background: #fdfcff;
+
+          transform:
+            translateY(-1px);
+        }
+
+        .student-left {
+          display: flex;
+          align-items: center;
+
+          gap: 12px;
+
+          min-width: 0;
+        }
+
+        .avatar,
+        .large-avatar {
+          flex-shrink: 0;
+
+          display: flex;
+          align-items: center;
+          justify-content: center;
+
+          background: #eeebff;
+          color: #6c5ce7;
+
+          font-weight: 800;
+        }
+
+        .avatar {
+          width: 42px;
+          height: 42px;
+
+          border-radius: 13px;
+        }
+
+        .large-avatar {
+          width: 52px;
+          height: 52px;
+
+          border-radius: 15px;
+
+          font-size: 18px;
+        }
+
+        .student-name {
+          color: #34313b;
+
+          font-size: 14px;
+          font-weight: 800;
+        }
+
+        .student-email {
+          margin-top: 4px;
+
+          color: #a29eaa;
+
+          font-size: 12px;
+        }
+
+        .student-meta {
+          display: flex;
+          align-items: center;
+
+          gap: 30px;
+        }
+
+        .student-meta > div:not(.manage) {
+          min-width: 75px;
+        }
+
+        .student-meta span {
+          display: block;
+
+          margin-bottom: 5px;
+
+          color: #aaa5b1;
+
+          font-size: 8px;
+          font-weight: 800;
+
+          letter-spacing: 0.1em;
+        }
+
+        .student-meta strong {
+          color: #5d5864;
+
+          font-size: 12px;
+        }
+
+        .manage {
+          color: #6c5ce7;
+
+          font-size: 12px;
+          font-weight: 800;
+        }
+
+        .empty-card,
+        .no-access {
+          padding:
+            30px
+            18px;
+
+          border-radius: 13px;
+
+          background: #f9f8fc;
+
+          color: #9e99a7;
+
+          text-align: center;
+
+          font-size: 13px;
+        }
+
+        .modal-backdrop {
+          position: fixed;
+
+          inset: 0;
+
+          z-index: 9999;
+
+          display: flex;
+          justify-content: flex-end;
+
+          background:
+            rgba(
+              30,
+              27,
+              42,
+              0.32
+            );
+
+          backdrop-filter:
+            blur(3px);
+        }
+
+        .student-panel {
+          width:
+            min(
+              500px,
+              100%
+            );
+
+          height: 100vh;
+
+          overflow-y: auto;
+
+          background: white;
+
+          box-shadow:
+            -18px
+            0
+            50px
+            rgba(
+              40,
+              30,
+              80,
+              0.13
+            );
+        }
+
+        .panel-header {
+          display: flex;
+          align-items: flex-start;
+          justify-content: space-between;
+
+          gap: 20px;
+
+          padding:
+            26px
+            26px
+            22px;
+
+          border-bottom:
+            1px solid
+            #eeeaf4;
+        }
+
+        .panel-person {
+          display: flex;
+          align-items: center;
+
+          gap: 13px;
+
+          min-width: 0;
+        }
+
+        .panel-person h2 {
+          margin: 0;
+
+          color: #34313a;
+
+          font-size: 19px;
+
+          word-break: break-word;
+        }
+
+        .panel-person p {
+          margin:
+            5px
+            0
+            0;
+
+          color: #9994a2;
+
+          font-size: 12px;
+
+          word-break: break-all;
+        }
+
+        .close-button {
+          width: 36px;
+          height: 36px;
+
+          flex-shrink: 0;
+
+          border: 0;
+
+          border-radius: 999px;
+
+          background: #f4f2f8;
+
+          color: #595461;
+
+          font-size: 22px;
+
+          cursor: pointer;
+        }
+
+        .panel-content {
+          padding:
+            28px
+            26px
+            40px;
+        }
+
+        .panel-content section + section {
+          margin-top: 34px;
+        }
+
+        .panel-content h3 {
+          margin:
+            10px
+            0
+            16px;
+
+          font-size: 20px;
+
+          font-weight: 500;
+        }
+
+        .access-list {
+          display: flex;
+          flex-direction: column;
+
+          gap: 9px;
+        }
+
+        .access-card {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+
+          gap: 15px;
+
+          padding:
+            14px
+            15px;
+
+          border:
+            1px solid
+            #e9e5f1;
+
+          border-radius: 12px;
+
+          background: #faf9fd;
+        }
+
+        .access-card strong {
+          display: block;
+
+          color: #45414b;
+
+          font-size: 13px;
+        }
+
+        .access-card span {
+          display: inline-block;
+
+          margin-top: 5px;
+
+          color: #398259;
+
+          font-size: 9px;
+          font-weight: 800;
+
+          letter-spacing: 0.08em;
+        }
+
+        .revoke-button {
+          border:
+            1px solid
+            #efcfd2;
+
+          border-radius: 8px;
+
+          padding:
+            8px
+            10px;
+
+          background: white;
+
+          color: #c3545d;
+
+          font-size: 10px;
+          font-weight: 800;
+
+          cursor: pointer;
+        }
+
+        .revoke-button:disabled {
+          opacity: 0.55;
+
+          cursor: wait;
+        }
+
+        .grant-row {
+          display: grid;
+
+          grid-template-columns:
+            minmax(0, 1fr)
+            auto;
+
+          gap: 10px;
+        }
+
+        .grant-row select {
+          width: 100%;
+
+          border:
+            1px solid
+            #dfdae9;
+
+          border-radius: 11px;
+
+          padding:
+            11px
+            12px;
+
+          background: white;
+
+          color: #3e3a46;
+
+          outline: none;
+        }
+
+        .grant-row select:focus {
+          border-color: #6c5ce7;
+
+          box-shadow:
+            0 0 0 3px
+            rgba(
+              108,
+              92,
+              231,
+              0.08
+            );
+        }
+
+        .grant-button {
+          border: 0;
+
+          border-radius: 11px;
+
+          padding:
+            0
+            18px;
+
+          background: #6c5ce7;
+
+          color: white;
+
+          font-weight: 800;
+
+          cursor: pointer;
+        }
+
+        .grant-button:disabled {
+          opacity: 0.5;
+
+          cursor: not-allowed;
+        }
+
+        .email-button {
+          width: 100%;
+
+          margin-top: 36px;
+
+          border:
+            1px solid
+            #d9d1ff;
+
+          border-radius: 13px;
+
+          padding:
+            13px
+            16px;
+
+          background: #f8f6ff;
+
+          color: #6c5ce7;
+
+          font-size: 13px;
+          font-weight: 800;
+
+          cursor: pointer;
+        }
+
+        .email-button span {
+          margin-right: 7px;
+        }
+
+        @media (
+          max-width: 760px
+        ) {
+          .students-page {
+            padding:
+              28px
+              16px
+              100px;
+          }
+
+          .page-heading {
+            align-items: flex-start;
+          }
+
+          .page-heading h1 {
+            font-size: 25px;
+          }
+
+          .student-meta {
+            gap: 12px;
+          }
+
+          .student-meta > div:not(.manage) {
+            display: none;
+          }
+
+          .student-card {
+            padding: 14px;
+          }
+
+          .student-panel {
+            width: 100%;
+          }
+        }
+
+        @media (
+          max-width: 480px
+        ) {
+          .student-count {
+            display: none;
+          }
+
+          .grant-row {
+            grid-template-columns:
+              1fr;
+          }
+
+          .grant-button {
+            min-height: 44px;
+          }
+
+          .panel-header {
+            padding:
+              20px
+              18px;
+          }
+
+          .panel-content {
+            padding:
+              24px
+              18px
+              36px;
+          }
+        }
+      `}</style>
     </div>
   )
-}
-
-const styles = {
-  page: {
-    minHeight: '100%',
-    background: '#F8F7FF',
-    padding: '40px 46px 80px',
-  },
-
-  container: {
-    maxWidth: '1100px',
-    margin: '0 auto',
-  },
-
-  loading: {
-    minHeight: 'calc(100vh - 82px)',
-    background: '#F8F7FF',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    color: '#888',
-  },
-
-  header: {
-    display: 'flex',
-    alignItems: 'flex-start',
-    justifyContent: 'space-between',
-    gap: '20px',
-    marginBottom: '27px',
-  },
-
-  eyebrow: {
-    margin: 0,
-    color: '#6C5CE7',
-    fontSize: '11px',
-    fontWeight: '900',
-    letterSpacing: '1.6px',
-  },
-
-  title: {
-    margin: '8px 0 7px',
-    color: '#292931',
-    fontSize: '38px',
-  },
-
-  subtitle: {
-    margin: 0,
-    color: '#898791',
-  },
-
-  studentCount: {
-    minWidth: '105px',
-    background: '#FFFFFF',
-    border: '1px solid #ECE8F7',
-    borderRadius: '16px',
-    padding: '13px 18px',
-    display: 'flex',
-    flexDirection: 'column',
-    textAlign: 'center',
-  },
-
-  error: {
-    background: '#FFF1F1',
-    color: '#B74B4B',
-    borderRadius: '12px',
-    padding: '13px',
-    marginBottom: '18px',
-  },
-
-  searchCard: {
-    background: '#FFFFFF',
-    border: '1px solid #ECE8F7',
-    borderRadius: '17px',
-    padding: '14px',
-    display: 'flex',
-    alignItems: 'center',
-    gap: '15px',
-    marginBottom: '18px',
-  },
-
-  searchInput: {
-    flex: 1,
-    border: 'none',
-    outline: 'none',
-    fontSize: '14px',
-    padding: '7px',
-  },
-
-  searchResult: {
-    color: '#9996A0',
-    fontSize: '12px',
-  },
-
-  tableCard: {
-    background: '#FFFFFF',
-    border: '1px solid #ECE8F7',
-    borderRadius: '20px',
-    overflow: 'hidden',
-  },
-
-  tableHeader: {
-    display: 'grid',
-    gridTemplateColumns:
-      'minmax(260px, 2fr) 1fr 120px 120px',
-    gap: '20px',
-    padding: '14px 20px',
-    background: '#FAF9FD',
-    color: '#A09EAA',
-    fontSize: '10px',
-    fontWeight: '900',
-    letterSpacing: '1px',
-  },
-
-  studentRow: {
-    display: 'grid',
-    gridTemplateColumns:
-      'minmax(260px, 2fr) 1fr 120px 120px',
-    gap: '20px',
-    alignItems: 'center',
-    padding: '18px 20px',
-    borderTop: '1px solid #F0EDF6',
-  },
-
-  studentInfo: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '12px',
-    minWidth: 0,
-  },
-
-  avatar: {
-    width: '42px',
-    height: '42px',
-    minWidth: '42px',
-    borderRadius: '12px',
-    background: '#F0ECFF',
-    color: '#6C5CE7',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    fontWeight: '900',
-  },
-
-  studentText: {
-    display: 'flex',
-    flexDirection: 'column',
-    minWidth: 0,
-    gap: '4px',
-  },
-
-  courseCount: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '3px',
-    color: '#77757F',
-    fontSize: '11px',
-  },
-
-  activeBadge: {
-    width: 'fit-content',
-    borderRadius: '999px',
-    background: '#EAF8EE',
-    color: '#218647',
-    padding: '6px 9px',
-    fontSize: '9px',
-    fontWeight: '900',
-  },
-
-  manageButton: {
-    border: '1px solid #DCD6F3',
-    background: '#F7F4FF',
-    color: '#6C5CE7',
-    borderRadius: '10px',
-    padding: '9px 11px',
-    fontWeight: '800',
-    cursor: 'pointer',
-  },
-
-  empty: {
-    padding: '50px',
-    textAlign: 'center',
-    color: '#9997A0',
-  },
-
-  overlay: {
-    position: 'fixed',
-    inset: 0,
-    background: 'rgba(25, 22, 40, .28)',
-    display: 'flex',
-    justifyContent: 'flex-end',
-    zIndex: 100,
-  },
-
-  modal: {
-    width: '480px',
-    maxWidth: '100%',
-    height: '100vh',
-    overflowY: 'auto',
-    background: '#FFFFFF',
-    padding: '28px',
-    boxShadow:
-      '-20px 0 50px rgba(30, 25, 70, .12)',
-  },
-
-  modalHeader: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    gap: '20px',
-    paddingBottom: '22px',
-    borderBottom: '1px solid #EEEAF6',
-  },
-
-  modalLabel: {
-    margin: 0,
-    color: '#6C5CE7',
-    fontSize: '10px',
-    fontWeight: '900',
-    letterSpacing: '1.4px',
-  },
-
-  modalTitle: {
-    margin: '6px 0 4px',
-    color: '#2C2C34',
-  },
-
-  modalEmail: {
-    margin: 0,
-    color: '#94919B',
-    fontSize: '13px',
-  },
-
-  closeButton: {
-    width: '38px',
-    height: '38px',
-    border: 'none',
-    borderRadius: '11px',
-    background: '#F5F3F8',
-    fontSize: '23px',
-    cursor: 'pointer',
-  },
-
-  accessSection: {
-    marginTop: '26px',
-  },
-
-  grantSection: {
-    marginTop: '30px',
-  },
-
-  sectionLabel: {
-    margin: 0,
-    color: '#A09EAA',
-    fontSize: '10px',
-    fontWeight: '900',
-    letterSpacing: '1.2px',
-  },
-
-  sectionTitle: {
-    margin: '5px 0 14px',
-    color: '#313139',
-    fontSize: '18px',
-  },
-
-  accessList: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '9px',
-  },
-
-  accessRow: {
-    border: '1px solid #EEEAF6',
-    borderRadius: '13px',
-    padding: '13px',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: '12px',
-  },
-
-  accessTitle: {
-    color: '#3B3942',
-    fontSize: '13px',
-  },
-
-  accessStatus: {
-    margin: '4px 0 0',
-    color: '#218647',
-    fontSize: '10px',
-  },
-
-  revokeButton: {
-    border: 'none',
-    background: '#FFF1F1',
-    color: '#BC5252',
-    borderRadius: '9px',
-    padding: '8px 9px',
-    cursor: 'pointer',
-    fontSize: '11px',
-    fontWeight: '700',
-  },
-
-  noAccess: {
-    background: '#F8F7FB',
-    color: '#92909A',
-    borderRadius: '12px',
-    padding: '18px',
-    textAlign: 'center',
-    fontSize: '13px',
-  },
-
-  grantRow: {
-    display: 'flex',
-    gap: '9px',
-  },
-
-  select: {
-    flex: 1,
-    minWidth: 0,
-    border: '1px solid #E2DEEB',
-    borderRadius: '11px',
-    padding: '12px',
-    background: '#FFFFFF',
-  },
-
-  grantButton: {
-    border: 'none',
-    borderRadius: '11px',
-    background: '#6C5CE7',
-    color: '#FFFFFF',
-    padding: '12px 15px',
-    fontWeight: '800',
-    cursor: 'pointer',
-  },
-
-  emailButton: {
-    marginTop: '30px',
-    width: '100%',
-    border: '1px solid #DCD6F3',
-    background: '#F7F4FF',
-    color: '#6C5CE7',
-    borderRadius: '12px',
-    padding: '13px',
-    fontWeight: '800',
-    cursor: 'pointer',
-  },
 }

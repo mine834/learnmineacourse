@@ -789,7 +789,7 @@ export default function AdminQuizBuilderPage() {
         .eyebrow,
         .section-label,
         .number {
-          color: #6c5ce7;
+          color: #0879D1;
           font-size: 9px;
           font-weight: 900;
           letter-spacing: 0.14em;
@@ -848,7 +848,7 @@ export default function AdminQuizBuilderPage() {
 
         input:focus,
         textarea:focus {
-          border-color: #6c5ce7;
+          border-color: #0879D1;
         }
 
         textarea {
@@ -873,7 +873,7 @@ export default function AdminQuizBuilderPage() {
         .primary {
           padding: 12px 17px;
           border: 0;
-          background: #6c5ce7;
+          background: #0879D1;
           color: white;
         }
 

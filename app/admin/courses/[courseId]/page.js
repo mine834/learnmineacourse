@@ -920,7 +920,7 @@ const styles = {
 
   eyebrow: {
     margin: 0,
-    color: '#6C5CE7',
+    color: '#0879D1',
     fontSize: '11px',
     fontWeight: '900',
     letterSpacing: '1.6px',
@@ -996,7 +996,7 @@ const styles = {
   primaryButton: {
     border: 'none',
     borderRadius: '11px',
-    background: '#6C5CE7',
+    background: '#0879D1',
     color: '#FFFFFF',
     padding: '12px 18px',
     fontWeight: '800',
@@ -1029,7 +1029,7 @@ const styles = {
     height: '46px',
     borderRadius: '13px',
     background: '#F0ECFF',
-    color: '#6C5CE7',
+    color: '#0879D1',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
@@ -1092,7 +1092,7 @@ const styles = {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    color: '#6C5CE7',
+    color: '#0879D1',
     fontWeight: '900',
   },
 
@@ -1134,7 +1134,7 @@ const styles = {
     fontWeight: '900',
     letterSpacing: '.7px',
     background: '#F0ECFF',
-    color: '#6C5CE7',
+    color: '#0879D1',
   },
 
   smallDelete: {
@@ -1153,7 +1153,7 @@ const styles = {
   },
 
   uploadButton: {
-    background: '#6C5CE7',
+    background: '#0879D1',
     color: '#FFFFFF',
     borderRadius: '10px',
     padding: '10px 13px',
@@ -1176,7 +1176,7 @@ const styles = {
   quizButton: {
     border: '1px solid #D9D3F2',
     background: '#F6F3FF',
-    color: '#6C5CE7',
+    color: '#0879D1',
     borderRadius: '10px',
     padding: '10px 13px',
     fontSize: '12px',

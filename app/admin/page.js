@@ -1,3 +1,4 @@
+
 'use client'
 
 import { useEffect, useState } from 'react'
@@ -22,6 +23,22 @@ function Icon({ name, size = 20 }) {
         <path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z" />
         <path d="m3.3 7 8.7 5 8.7-5" />
         <path d="M12 22V12" />
+      </svg>
+    ),
+
+    books: (
+      <svg {...common}>
+        <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
+        <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2Z" />
+        <path d="M9 7h7" />
+        <path d="M9 11h5" />
+      </svg>
+    ),
+
+    editor: (
+      <svg {...common}>
+        <path d="M12 20h9" />
+        <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L8 18l-4 1 1-4Z" />
       </svg>
     ),
 
@@ -75,6 +92,27 @@ function Icon({ name, size = 20 }) {
   return icons[name] || null
 }
 
+function StatCard({ title, value, description, icon }) {
+  return (
+    <article className="stat-card">
+      <div className="stat-top">
+        <div className="stat-icon">
+          <Icon name={icon} size={18} />
+        </div>
+        <span className="stat-title">{title}</span>
+      </div>
+
+      <div className="stat-value">
+        {value === null ? '—' : value}
+      </div>
+
+      <div className="stat-description">
+        {description}
+      </div>
+    </article>
+  )
+}
+
 export default function AdminDashboardPage() {
   const router = useRouter()
 
@@ -85,228 +123,228 @@ export default function AdminDashboardPage() {
   })
 
   useEffect(() => {
+    async function loadStats() {
+      try {
+        const [
+          studentsResult,
+          coursesResult,
+          productsResult,
+        ] = await Promise.all([
+          supabase
+            .from('profiles')
+            .select('*', { count: 'exact', head: true })
+            .eq('role', 'student'),
+
+          supabase
+            .from('courses')
+            .select('*', { count: 'exact', head: true }),
+
+          supabase
+            .from('products')
+            .select('*', { count: 'exact', head: true }),
+        ])
+
+        setStats({
+          students: studentsResult.count ?? 0,
+          courses: coursesResult.count ?? 0,
+          products: productsResult.count ?? 0,
+        })
+      } catch (error) {
+        console.error('Dashboard stats error:', error)
+      }
+    }
+
     loadStats()
   }, [])
 
-  async function loadStats() {
-    try {
-      const [
-        studentsResult,
-        coursesResult,
-        productsResult,
-      ] = await Promise.all([
-        supabase
-          .from('profiles')
-          .select('*', { count: 'exact', head: true })
-          .eq('role', 'student'),
-
-        supabase
-          .from('courses')
-          .select('*', { count: 'exact', head: true }),
-
-        supabase
-          .from('products')
-          .select('*', { count: 'exact', head: true }),
-      ])
-
-      setStats({
-        students: studentsResult.count ?? 0,
-        courses: coursesResult.count ?? 0,
-        products: productsResult.count ?? 0,
-      })
-    } catch (error) {
-      console.error('Dashboard stats error:', error)
-    }
-  }
-
   const actions = [
     {
+      title: 'Номын удирдлага',
+      description:
+        'Ном нэмэх, хавтасны зураг болон эхний 5–10 хуудасны PDF Preview оруулах.',
+      path: '/admin/books',
+      icon: 'books',
+      featured: true,
+    },
+    {
+      title: 'Сайтын редактор',
+      description:
+        'Нүүр хуудасны текст, зураг, фонт, өнгө болон ticket-ийн тохиргоо.',
+      path: '/admin/editor',
+      icon: 'editor',
+      featured: true,
+    },
+    {
       title: 'Бүтээгдэхүүн',
-      description: 'Ном нэмэх, зураг солих, үнэ болон тайлбар засах',
+      description:
+        'Ном нэмэх, зураг солих, үнэ болон тайлбар засах',
       path: '/admin/products',
       icon: 'products',
     },
     {
       title: 'Сургалт',
-      description: 'Course, module, lesson болон quiz нэмэх',
+      description:
+        'Course, module, lesson болон quiz нэмэх',
       path: '/admin/courses',
       icon: 'courses',
     },
     {
       title: 'Сурагчид',
-      description: 'Сурагчийн course access нэмэх, хаах',
+      description:
+        'Сурагчийн course access нэмэх, хаах',
       path: '/admin/students',
       icon: 'students',
     },
     {
       title: 'Website Content',
-      description: 'Нүүр хуудасны контент, FAQ засах',
+      description:
+        'Нүүр хуудасны контент, FAQ засах',
       path: '/admin/content',
       icon: 'content',
     },
     {
       title: 'Email',
-      description: 'Хэрэглэгчдэд announcement болон email илгээх',
+      description:
+        'Хэрэглэгчдэд announcement болон email илгээх',
       path: '/admin/email',
       icon: 'email',
     },
     {
       title: 'Payments',
-      description: 'Төлбөрийн хүсэлтүүдийг шалгаж, зөвшөөрөх',
+      description:
+        'Төлбөрийн хүсэлтүүдийг шалгаж, зөвшөөрөх',
       path: '/admin/payments',
       icon: 'payments',
     },
   ]
 
   return (
-    <>
-      <main className="dashboard-page">
-        <div className="dashboard-inner">
-          <section className="hero">
-            <div className="eyebrow">
-              ADMIN DASHBOARD
-            </div>
+    <main className="dashboard-page">
+      <div className="dashboard-inner">
+        <section className="dashboard-hero">
+          <div className="eyebrow">
+            ADMIN DASHBOARD
+          </div>
 
-            <h1>
-              Сайн байна уу <span>👋</span>
-            </h1>
+          <h1>
+            Сайн байна уу <span>👋</span>
+          </h1>
 
-            <p>
-              Learn Minea сайтын арын удирдлага
-            </p>
-          </section>
+          <p>
+            Learn Minea сайтын арын удирдлага
+          </p>
+        </section>
 
-          <section className="stats-grid">
-            <StatCard
-              title="Students"
-              value={stats.students}
-              description="Бүртгэлтэй сурагчид"
-              icon="students"
-            />
+        <section className="stats-grid">
+          <StatCard
+            title="Students"
+            value={stats.students}
+            description="Бүртгэлтэй сурагчид"
+            icon="students"
+          />
 
-            <StatCard
-              title="Courses"
-              value={stats.courses}
-              description="Нийт сургалт"
-              icon="courses"
-            />
+          <StatCard
+            title="Courses"
+            value={stats.courses}
+            description="Нийт сургалт"
+            icon="courses"
+          />
 
-            <StatCard
-              title="Products"
-              value={stats.products}
-              description="Ном, цахим материал"
-              icon="products"
-            />
-          </section>
+          <StatCard
+            title="Products"
+            value={stats.products}
+            description="Ном, цахим материал"
+            icon="products"
+          />
+        </section>
 
-          <section className="quick-panel">
-            <div className="section-eyebrow">
-              QUICK ACTIONS
-            </div>
+        <section className="quick-panel">
+          <div className="section-eyebrow">
+            QUICK ACTIONS
+          </div>
 
-            <h2>
-              Хурдан удирдлага
-            </h2>
+          <h2>Хурдан удирдлага</h2>
 
-            <div className="actions-grid">
-              {actions.map((action) => (
-                <button
-                  key={action.path}
-                  type="button"
-                  className="action-card"
-                  onClick={() => router.push(action.path)}
-                >
-                  <div className="action-top">
-                    <div className="action-icon">
-                      <Icon
-                        name={action.icon}
-                        size={19}
-                      />
-                    </div>
-
-                    <div className="action-arrow">
-                      <Icon
-                        name="arrow"
-                        size={17}
-                      />
-                    </div>
+          <div className="actions-grid">
+            {actions.map(action => (
+              <button
+                key={action.path}
+                type="button"
+                className={
+                  action.featured
+                    ? 'action-card featured'
+                    : 'action-card'
+                }
+                onClick={() =>
+                  router.push(action.path)
+                }
+              >
+                <div className="action-top">
+                  <div className="action-icon">
+                    <Icon
+                      name={action.icon}
+                      size={19}
+                    />
                   </div>
 
-                  <h3>
-                    {action.title}
-                  </h3>
+                  <div className="action-arrow">
+                    <Icon
+                      name="arrow"
+                      size={17}
+                    />
+                  </div>
+                </div>
 
-                  <p>
-                    {action.description}
-                  </p>
-                </button>
-              ))}
-            </div>
-          </section>
-        </div>
-      </main>
+                <h3>{action.title}</h3>
+                <p>{action.description}</p>
+              </button>
+            ))}
+          </div>
+        </section>
+      </div>
 
       <style jsx>{`
         .dashboard-page {
           width: 100%;
           min-height: 100%;
-          background: #f8f7ff;
-          padding: 0;
+          background: #f5f8fc;
         }
 
         .dashboard-inner {
           width: 100%;
           max-width: 1180px;
-
-          /*
-            ӨМНӨ:
-            margin: 0 auto;
-
-            ОДОО:
-            content зүүн тийш татагдана.
-          */
           margin: 0;
-
-          padding:
-            58px
-            34px
-            80px
-            42px;
+          padding: 58px 34px 80px 42px;
         }
 
-        .hero {
+        .dashboard-hero {
           margin-bottom: 38px;
         }
 
         .eyebrow,
         .section-eyebrow {
           font-size: 13px;
-          line-height: 1;
           font-weight: 800;
           letter-spacing: 0.09em;
-          color: #6c5ce7;
+          color: #0879d1;
         }
 
-        .hero h1 {
-          margin:
-            17px
-            0
-            8px;
-
+        .dashboard-hero h1 {
+          margin: 17px 0 8px;
           font-size: clamp(34px, 4vw, 46px);
           line-height: 1.12;
           letter-spacing: -0.035em;
           font-weight: 500;
-          color: #24242e;
+          color: #292521;
         }
 
-        .hero h1 span {
+        .dashboard-hero h1 span {
           font-size: 0.8em;
         }
 
-        .hero p {
+        .dashboard-hero p {
           margin: 0;
-          color: #8d8d96;
+          color: #818793;
           font-size: 17px;
           line-height: 1.6;
         }
@@ -319,26 +357,69 @@ export default function AdminDashboardPage() {
           margin-bottom: 34px;
         }
 
+        .stat-card {
+          min-height: 174px;
+          padding: 25px 27px;
+          display: flex;
+          flex-direction: column;
+          background: #fff;
+          border: 1px solid #dfe7f0;
+          border-radius: 21px;
+          box-shadow: 0 7px 24px rgba(0,0,0,0.025);
+        }
+
+        .stat-top {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+        }
+
+        .stat-icon {
+          width: 32px;
+          height: 32px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          background: #e7f2ff;
+          border-radius: 9px;
+          color: #0879d1;
+        }
+
+        .stat-title {
+          color: #858b95;
+          font-size: 14px;
+          font-weight: 500;
+        }
+
+        .stat-value {
+          margin-top: 20px;
+          color: #292521;
+          font-size: 29px;
+          line-height: 1;
+          font-weight: 650;
+          letter-spacing: -0.03em;
+        }
+
+        .stat-description {
+          margin-top: auto;
+          padding-top: 19px;
+          color: #9299a3;
+          font-size: 13px;
+        }
+
         .quick-panel {
           width: 100%;
-          background: #ffffff;
-          border: 1px solid #efedf8;
+          background: #fff;
+          border: 1px solid #dfe7f0;
           border-radius: 22px;
           padding: 31px 34px 35px;
-          box-shadow:
-            0 8px 30px
-            rgba(80, 64, 150, 0.04);
+          box-shadow: 0 8px 30px rgba(0,0,0,0.025);
         }
 
         .quick-panel h2 {
-          margin:
-            10px
-            0
-            25px;
-
-          color: #2c2c34;
+          margin: 10px 0 25px;
+          color: #292521;
           font-size: 20px;
-          line-height: 1.3;
           font-weight: 650;
           letter-spacing: -0.02em;
         }
@@ -354,26 +435,13 @@ export default function AdminDashboardPage() {
           appearance: none;
           width: 100%;
           min-height: 164px;
-
-          border:
-            1px solid
-            #e9e7f1;
-
+          border: 1px solid #e1e7ed;
           border-radius: 17px;
-
-          background:
-            #ffffff;
-
-          padding:
-            20px
-            20px
-            19px;
-
+          background: #fff;
+          padding: 20px;
           text-align: left;
           font-family: inherit;
-
           cursor: pointer;
-
           transition:
             transform 0.18s ease,
             border-color 0.18s ease,
@@ -383,16 +451,18 @@ export default function AdminDashboardPage() {
 
         .action-card:hover {
           transform: translateY(-2px);
+          border-color: #7db7f7;
+          background: #f8fbff;
+          box-shadow: 0 10px 24px rgba(8,121,209,0.07);
+        }
 
-          border-color:
-            rgba(108, 92, 231, 0.24);
+        .action-card.featured {
+          background: #f0f7ff;
+          border-color: #b9dcff;
+        }
 
-          background:
-            #fdfcff;
-
-          box-shadow:
-            0 10px 24px
-            rgba(61, 48, 120, 0.07);
+        .action-card.featured:hover {
+          background: #e7f2ff;
         }
 
         .action-top {
@@ -405,53 +475,35 @@ export default function AdminDashboardPage() {
         .action-icon {
           width: 38px;
           height: 38px;
-
           display: flex;
           align-items: center;
           justify-content: center;
-
-          border:
-            1px solid
-            #e8e5f8;
-
+          border: 1px solid #d6e8fa;
           border-radius: 10px;
-
-          background:
-            #f8f7ff;
-
-          color:
-            #6c5ce7;
+          background: #e7f2ff;
+          color: #0879d1;
         }
 
         .action-arrow {
           display: flex;
           align-items: center;
           justify-content: center;
-
-          color: #bbb8c8;
-
+          color: #0879d1;
           opacity: 0;
-          transform:
-            translateX(-5px);
-
+          transform: translateX(-5px);
           transition:
             opacity 0.18s ease,
             transform 0.18s ease;
         }
 
-        .action-card:hover
-        .action-arrow {
+        .action-card:hover .action-arrow {
           opacity: 1;
           transform: translateX(0);
         }
 
         .action-card h3 {
-          margin:
-            0
-            0
-            7px;
-
-          color: #292933;
+          margin: 0 0 7px;
+          color: #292521;
           font-size: 17px;
           line-height: 1.35;
           font-weight: 700;
@@ -459,10 +511,8 @@ export default function AdminDashboardPage() {
 
         .action-card p {
           margin: 0;
-
           max-width: 250px;
-
-          color: #96949e;
+          color: #818793;
           font-size: 13.5px;
           line-height: 1.55;
         }
@@ -470,10 +520,7 @@ export default function AdminDashboardPage() {
         @media (max-width: 1100px) {
           .dashboard-inner {
             max-width: 100%;
-            padding:
-              46px
-              28px
-              70px;
+            padding: 46px 28px 70px;
           }
 
           .actions-grid {
@@ -484,21 +531,18 @@ export default function AdminDashboardPage() {
 
         @media (max-width: 760px) {
           .dashboard-inner {
-            padding:
-              32px
-              18px
-              60px;
+            padding: 32px 18px 60px;
           }
 
-          .hero {
+          .dashboard-hero {
             margin-bottom: 28px;
           }
 
-          .hero h1 {
+          .dashboard-hero h1 {
             font-size: 34px;
           }
 
-          .hero p {
+          .dashboard-hero p {
             font-size: 15px;
           }
 
@@ -509,10 +553,7 @@ export default function AdminDashboardPage() {
 
           .quick-panel {
             border-radius: 18px;
-            padding:
-              24px
-              18px
-              25px;
+            padding: 24px 18px 25px;
           }
 
           .actions-grid {
@@ -525,104 +566,6 @@ export default function AdminDashboardPage() {
           }
         }
       `}</style>
-    </>
-  )
-}
-
-function StatCard({
-  title,
-  value,
-  description,
-  icon,
-}) {
-  return (
-    <article className="stat-card">
-      <div className="stat-top">
-        <div className="stat-icon">
-          <Icon
-            name={icon}
-            size={18}
-          />
-        </div>
-
-        <span className="stat-title">
-          {title}
-        </span>
-      </div>
-
-      <div className="stat-value">
-        {value === null ? '—' : value}
-      </div>
-
-      <div className="stat-description">
-        {description}
-      </div>
-
-      <style jsx>{`
-        .stat-card {
-          min-height: 174px;
-          padding: 25px 27px;
-
-          display: flex;
-          flex-direction: column;
-
-          background: #ffffff;
-
-          border:
-            1px solid
-            #efedf7;
-
-          border-radius: 21px;
-
-          box-shadow:
-            0 7px 24px
-            rgba(72, 56, 130, 0.035);
-        }
-
-        .stat-top {
-          display: flex;
-          align-items: center;
-          gap: 10px;
-        }
-
-        .stat-icon {
-          width: 32px;
-          height: 32px;
-
-          display: flex;
-          align-items: center;
-          justify-content: center;
-
-          background: #f8f7ff;
-          border-radius: 9px;
-
-          color: #6c5ce7;
-        }
-
-        .stat-title {
-          color: #85838c;
-          font-size: 14px;
-          font-weight: 500;
-        }
-
-        .stat-value {
-          margin-top: 20px;
-
-          color: #292933;
-          font-size: 29px;
-          line-height: 1;
-          font-weight: 650;
-          letter-spacing: -0.03em;
-        }
-
-        .stat-description {
-          margin-top: auto;
-          padding-top: 19px;
-
-          color: #aaa8af;
-          font-size: 13px;
-        }
-      `}</style>
-    </article>
+    </main>
   )
 }

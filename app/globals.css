@@ -1,8 +1,45 @@
+
 @import "tailwindcss";
+
+/* =========================================
+   LEARN MINEA — GLOBAL THEME
+   Blue / Brown / White
+========================================= */
 
 :root {
   --background: #ffffff;
-  --foreground: #171717;
+  --foreground: #1b1c20;
+
+  --primary: #0879d1;
+  --primary-color: #0879d1;
+  --accent: #7db7f7;
+  --accent-color: #7db7f7;
+  --brand: #0879d1;
+  --purple: #0879d1;
+
+  --lm-blue: #7db7f7;
+  --lm-blue-dark: #0879d1;
+  --lm-blue-light: #e7f2ff;
+
+  --lm-brown: #592d1f;
+  --lm-brown-light: #fbe2d2;
+
+  --lm-white: #ffffff;
+  --lm-background: #f5f7fa;
+  --lm-text: #1b1c20;
+  --lm-muted: #818793;
+  --lm-border: #dfe5ed;
+
+  --admin-primary: #0879d1;
+  --admin-primary-light: #e7f2ff;
+  --admin-brown: #592d1f;
+  --admin-bg: #f5f7fa;
+
+  --bg: #ffffff;
+  --surface: #ffffff;
+  --text: #1b1c20;
+  --muted: #818793;
+  --border: #dfe5ed;
 }
 
 @theme inline {
@@ -12,15 +49,221 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  min-height: 100%;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+}
+
+/* =========================================
+   HOMEPAGE — TEXT SIZES
+========================================= */
+
+.hero h1 {
+  font-size: clamp(50px, 5.2vw, 86px) !important;
+  line-height: 1.05 !important;
+}
+
+.heroText > p {
+  font-size: 17px !important;
+  line-height: 1.6 !important;
+}
+
+.section h2 {
+  font-size: clamp(36px, 3.4vw, 58px) !important;
+  line-height: 1.12 !important;
+}
+
+.section .sub,
+.section .splitCopy > p,
+.section .method .split > div > p {
+  font-size: 18px !important;
+  line-height: 1.6 !important;
+}
+
+.studyCard h3,
+.reason h3 {
+  font-size: 29px !important;
+}
+
+.studyCard p,
+.reason p {
+  font-size: 16px !important;
+}
+
+.talkCard h2 {
+  font-size: clamp(35px, 3.5vw, 57px) !important;
+}
+
+.talkCard > p {
+  font-size: 18px !important;
+}
+
+.bookCover strong {
+  font-size: clamp(23px, 2vw, 34px) !important;
+}
+
+.bookItem h3 {
+  font-size: 21px !important;
+}
+
+.bookItem p {
+  font-size: 15px !important;
+}
+
+.testimonial p {
+  font-size: 21px !important;
+}
+
+.faqItem button {
+  font-size: 25px !important;
+}
+
+.faqItem p {
+  font-size: 17px !important;
+}
+
+.nav {
+  font-size: 14px !important;
+}
+
+/* =========================================
+   HOMEPAGE — FLOATING TICKET
+   Final approved position
+========================================= */
+
+.hero .floating .ticket {
+  position: absolute !important;
+  top: 44% !important;
+  left: 58% !important;
+  width: 300px !important;
+
+  transform:
+    translate(-50%, -50%)
+    rotate(5deg)
+    scale(0.68) !important;
+
+  transform-origin: center center !important;
+  z-index: 5 !important;
+}
+
+/* =========================================
+   BOOKS
+========================================= */
+
+.book-card,
+.bookCard {
+  background: #ffffff;
+  border: 1px solid var(--lm-border);
+  border-radius: 18px;
+}
+
+.site-footer {
+  background: var(--lm-brown);
+  color: #ffffff;
+}
+
+/* =========================================
+   ADMIN — SHARED STYLING
+========================================= */
+
+body:has(a[href="/admin"]) {
+  --background: #f5f7fa;
+  --foreground: #1b1c20;
+  --primary: #0879d1;
+  --primary-color: #0879d1;
+  --accent: #7db7f7;
+  --purple: #0879d1;
+
+  background: var(--lm-background);
+}
+
+body:has(a[href="/admin"]) main {
+  background-color: var(--lm-background);
+}
+
+body:has(a[href="/admin"]) h1,
+body:has(a[href="/admin"]) h2 {
+  color: var(--lm-text);
+}
+
+body:has(a[href="/admin"]) input,
+body:has(a[href="/admin"]) textarea,
+body:has(a[href="/admin"]) select {
+  background-color: #ffffff;
+  color: var(--lm-text);
+}
+
+body:has(a[href="/admin"]) input:focus,
+body:has(a[href="/admin"]) textarea:focus,
+body:has(a[href="/admin"]) select:focus {
+  border-color: var(--lm-blue-dark) !important;
+  outline-color: var(--lm-blue-dark);
+}
+
+body:has(a[href="/admin"]) a[href^="/admin"]:hover {
+  color: var(--lm-blue-dark);
+}
+
+/* =========================================
+   RESPONSIVE
+========================================= */
+
+@media (max-width: 700px) {
+  .hero h1 {
+    font-size: clamp(46px, 11vw, 68px) !important;
+  }
+
+  .hero .floating .ticket {
+    top: 42% !important;
+    left: 56% !important;
+
+    transform:
+      translate(-50%, -50%)
+      rotate(5deg)
+      scale(0.55) !important;
+  }
+
+  .section h2 {
+    font-size: clamp(33px, 8vw, 46px) !important;
+  }
+
+  .faqItem button {
+    font-size: 21px !important;
+  }
+}
+.product-rich-editor {
+  margin-top: 10px;
+  margin-bottom: 28px;
+  background: white;
+}
+
+.product-rich-editor .ql-toolbar {
+  border: 1px solid #d5dce5;
+  border-radius: 12px 12px 0 0;
+  padding: 12px;
+}
+
+.product-rich-editor .ql-container {
+  min-height: 300px;
+  border: 1px solid #d5dce5;
+  border-top: 0;
+  border-radius: 0 0 12px 12px;
+  font-size: 16px;
+}
+
+.product-rich-editor .ql-editor {
+  min-height: 300px;
+  line-height: 1.8;
+  font-family: Arial, "Apple Color Emoji", "Segoe UI Emoji", sans-serif;
 }

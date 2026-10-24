@@ -1,3 +1,4 @@
+
 'use client'
 
 import { useEffect, useState } from 'react'
@@ -18,16 +19,23 @@ export default function LoginPage() {
   }, [])
 
   async function checkExistingSession() {
-    const {
-      data: { session },
-    } = await supabase.auth.getSession()
+    try {
+      const {
+        data: { session },
+        error: sessionError,
+      } = await supabase.auth.getSession()
 
-    if (!session) {
+      if (sessionError) throw sessionError
+
+      if (!session?.user) return
+
+      await redirectByRole(session.user.id)
+    } catch (err) {
+      console.error('Session check error:', err)
+      setError('Нэвтрэлтийг шалгахад алдаа гарлаа.')
+    } finally {
       setChecking(false)
-      return
     }
-
-    await redirectByRole(session.user.id)
   }
 
   async function redirectByRole(userId) {
@@ -41,16 +49,11 @@ export default function LoginPage() {
       .single()
 
     if (profileError) {
-      console.error(profileError)
+      console.error('Profile error:', profileError)
 
-      setError(
+      throw new Error(
         'Хэрэглэгчийн мэдээлэл уншиж чадсангүй.'
       )
-
-      setChecking(false)
-      setLoading(false)
-
-      return
     }
 
     if (profile?.role === 'admin') {
@@ -58,36 +61,45 @@ export default function LoginPage() {
       return
     }
 
-    router.replace('/dashboard')
+    if (profile?.role === 'student') {
+      router.replace('/dashboard')
+      return
+    }
+
+    throw new Error(
+      'Хэрэглэгчийн эрхийн мэдээлэл тодорхойгүй байна.'
+    )
   }
 
   async function handleLogin(event) {
     event.preventDefault()
 
-    setLoading(true)
-    setError('')
+    try {
+      setLoading(true)
+      setError('')
 
-    const {
-      data,
-      error: loginError,
-    } = await supabase.auth.signInWithPassword({
-      email: email.trim(),
-      password,
-    })
+      const { data, error: loginError } =
+        await supabase.auth.signInWithPassword({
+          email: email.trim(),
+          password,
+        })
 
-    if (loginError) {
-      setError(loginError.message)
+      if (loginError) throw loginError
+
+      if (!data?.user) {
+        throw new Error('Нэвтрэхэд алдаа гарлаа.')
+      }
+
+      await redirectByRole(data.user.id)
+    } catch (err) {
+      console.error('Login error:', err)
+
+      setError(
+        err?.message || 'Нэвтрэхэд алдаа гарлаа.'
+      )
+    } finally {
       setLoading(false)
-      return
     }
-
-    if (!data?.user) {
-      setError('Нэвтрэхэд алдаа гарлаа.')
-      setLoading(false)
-      return
-    }
-
-    await redirectByRole(data.user.id)
   }
 
   if (checking) {
@@ -223,12 +235,12 @@ const styles = {
   },
 
   dot: {
-    color: '#6C5CE7',
+    color: '#0879D1',
   },
 
   label: {
     margin: 0,
-    color: '#6C5CE7',
+    color: '#0879D1',
     fontSize: '10px',
     fontWeight: '900',
     letterSpacing: '1.7px',
@@ -274,7 +286,7 @@ const styles = {
   button: {
     border: 'none',
     borderRadius: '13px',
-    background: '#6C5CE7',
+    background: '#0879D1',
     color: '#FFFFFF',
     padding: '14px 18px',
     fontWeight: '800',

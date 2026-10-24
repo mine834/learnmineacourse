@@ -1019,7 +1019,7 @@ export default function StudentPaymentsPage() {
         .eyebrow,
         .section-label,
         .course-label {
-          color: #6c5ce7;
+          color: #0879D1;
 
           font-size: 11px;
           font-weight: 800;
@@ -1066,7 +1066,7 @@ export default function StudentPaymentsPage() {
 
           background: #ffffff;
 
-          color: #6c5ce7;
+          color: #0879D1;
 
           font-size: 12px;
           font-weight: 800;
@@ -1152,7 +1152,7 @@ export default function StudentPaymentsPage() {
         input:focus,
         select:focus,
         textarea:focus {
-          border-color: #6c5ce7;
+          border-color: #0879D1;
 
           box-shadow:
             0 0 0 3px
@@ -1199,7 +1199,7 @@ export default function StudentPaymentsPage() {
         }
 
         .selected-course b {
-          color: #6c5ce7;
+          color: #0879D1;
 
           font-size: 14px;
         }
@@ -1207,7 +1207,7 @@ export default function StudentPaymentsPage() {
         .file-name {
           margin-top: 7px;
 
-          color: #6c5ce7;
+          color: #0879D1;
 
           font-size: 11px;
         }
@@ -1238,7 +1238,7 @@ export default function StudentPaymentsPage() {
           border: 0;
           border-radius: 11px;
 
-          background: #6c5ce7;
+          background: #0879D1;
 
           color: #ffffff;
 
@@ -1421,7 +1421,7 @@ export default function StudentPaymentsPage() {
           border: 0;
           border-radius: 12px;
 
-          background: #6c5ce7;
+          background: #0879D1;
 
           color: #ffffff;
 

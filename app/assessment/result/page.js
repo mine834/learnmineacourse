@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 
-const PURPLE = "#6C5CE7";
+const PURPLE = "#0879D1";
 const STORAGE_KEY = "learn-minea-assessment";
 
 const styles = {

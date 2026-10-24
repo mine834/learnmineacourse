@@ -1,10 +1,11 @@
+
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import { supabase } from '../lib/supabase'
 
-function NavIcon({ name, size = 20 }) {
+function NavIcon({ name, size = 21 }) {
   const common = {
     width: size,
     height: size,
@@ -23,6 +24,15 @@ function NavIcon({ name, size = 20 }) {
         <rect x="14" y="3" width="7" height="7" rx="1.5" />
         <rect x="3" y="14" width="7" height="7" rx="1.5" />
         <rect x="14" y="14" width="7" height="7" rx="1.5" />
+      </svg>
+    ),
+
+    books: (
+      <svg {...common}>
+        <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
+        <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2Z" />
+        <path d="M9 7h7" />
+        <path d="M9 11h5" />
       </svg>
     ),
 
@@ -59,10 +69,20 @@ function NavIcon({ name, size = 20 }) {
       </svg>
     ),
 
-    content: (
+    editor: (
       <svg {...common}>
         <path d="M12 20h9" />
         <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L8 18l-4 1 1-4Z" />
+      </svg>
+    ),
+
+    survey: (
+      <svg {...common}>
+        <rect x="5" y="4" width="14" height="17" rx="2" />
+        <path d="M9 4.5V3h6v1.5" />
+        <path d="M9 10h6" />
+        <path d="M9 14h6" />
+        <path d="M9 18h3" />
       </svg>
     ),
 
@@ -70,6 +90,15 @@ function NavIcon({ name, size = 20 }) {
       <svg {...common}>
         <rect x="3" y="5" width="18" height="14" rx="2" />
         <path d="m3 7 9 6 9-6" />
+      </svg>
+    ),
+
+    website: (
+      <svg {...common}>
+        <circle cx="12" cy="12" r="9" />
+        <path d="M3 12h18" />
+        <path d="M12 3a15 15 0 0 1 0 18" />
+        <path d="M12 3a15 15 0 0 0 0 18" />
       </svg>
     ),
 
@@ -85,44 +114,59 @@ function NavIcon({ name, size = 20 }) {
   return icons[name] || null
 }
 
-export default function AdminLayout({ children }) {
-  const pathname = usePathname()
-  const router = useRouter()
-
-  const [loading, setLoading] = useState(true)
-  const [email, setEmail] = useState('')
-
-  const navItems = useMemo(
-    () => [
+const menuGroups = [
+  {
+    title: 'ҮНДСЭН УДИРДЛАГА',
+    items: [
       {
-        label: 'Dashboard',
+        label: 'Хянах самбар',
         path: '/admin',
         icon: 'dashboard',
       },
       {
-        label: 'Products',
+        label: 'Номын удирдлага',
+        path: '/admin/books',
+        icon: 'books',
+      },
+      {
+        label: 'Сайтын редактор',
+        path: '/admin/editor',
+        icon: 'editor',
+      },
+      {
+        label: 'Судалгаа',
+        path: '/admin/survey',
+        icon: 'survey',
+      },
+    ],
+  },
+  {
+    title: 'БУСАД УДИРДЛАГА',
+    items: [
+      {
+        label: 'Бүтээгдэхүүн',
         path: '/admin/products',
         icon: 'products',
       },
       {
-        label: 'Courses',
+        label: 'Сургалт',
         path: '/admin/courses',
         icon: 'courses',
       },
       {
-        label: 'Students',
+        label: 'Сурагчид',
         path: '/admin/students',
         icon: 'students',
       },
       {
-        label: 'Payments',
+        label: 'Төлбөр',
         path: '/admin/payments',
         icon: 'payments',
       },
       {
         label: 'Website Content',
         path: '/admin/content',
-        icon: 'content',
+        icon: 'editor',
       },
       {
         label: 'Email',
@@ -130,38 +174,60 @@ export default function AdminLayout({ children }) {
         icon: 'email',
       },
     ],
-    []
-  )
+  },
+]
+
+const allItems = menuGroups.flatMap(group => group.items)
+
+export default function AdminLayout({ children }) {
+  const pathname = usePathname()
+  const router = useRouter()
+
+  const [loading, setLoading] = useState(true)
+  const [email, setEmail] = useState('')
 
   useEffect(() => {
+    let mounted = true
+
+    async function checkAdmin() {
+      try {
+        const {
+          data: { session },
+          error: sessionError,
+        } = await supabase.auth.getSession()
+
+        if (sessionError || !session?.user) {
+          router.replace('/login')
+          return
+        }
+
+        const { data: profile, error } = await supabase
+          .from('profiles')
+          .select('role')
+          .eq('id', session.user.id)
+          .single()
+
+        if (error || profile?.role !== 'admin') {
+          router.replace('/dashboard')
+          return
+        }
+
+        if (mounted) {
+          setEmail(session.user.email || '')
+          setLoading(false)
+        }
+      } catch (error) {
+        console.error('Admin auth error:', error)
+        router.replace('/login')
+      }
+    }
+
     checkAdmin()
-  }, [])
 
-  async function checkAdmin() {
-    const {
-      data: { session },
-    } = await supabase.auth.getSession()
-
-    if (!session?.user) {
-      router.replace('/login')
-      return
+    return () => {
+      mounted = false
     }
-
-    setEmail(session.user.email || '')
-
-    const { data: profile, error } = await supabase
-      .from('profiles')
-      .select('role')
-      .eq('id', session.user.id)
-      .single()
-
-    if (error || profile?.role !== 'admin') {
-      router.replace('/dashboard')
-      return
-    }
-
-    setLoading(false)
-  }
+  }, [router])
 
   async function logout() {
     await supabase.auth.signOut()
@@ -173,54 +239,31 @@ export default function AdminLayout({ children }) {
       return pathname === '/admin'
     }
 
-    return pathname?.startsWith(path)
+    return (
+      pathname === path ||
+      pathname?.startsWith(path + '/')
+    )
   }
 
-  function getPageTitle() {
-    if (pathname === '/admin') {
-      return 'Dashboard'
-    }
+  const currentItem = allItems.find(item =>
+    isActive(item.path)
+  )
 
-    if (pathname?.startsWith('/admin/products')) {
-      return 'Products'
-    }
-
-    if (pathname?.startsWith('/admin/courses')) {
-      return 'Courses'
-    }
-
-    if (pathname?.startsWith('/admin/students')) {
-      return 'Students'
-    }
-
-    if (pathname?.startsWith('/admin/payments')) {
-      return 'Payments'
-    }
-
-    if (pathname?.startsWith('/admin/content')) {
-      return 'Website Content'
-    }
-
-    if (pathname?.startsWith('/admin/email')) {
-      return 'Email'
-    }
-
-    return 'Admin'
-  }
+  const pageTitle = currentItem?.label || 'Удирдлага'
 
   if (loading) {
     return (
-      <div className="loading-screen">
+      <div className="admin-loading">
         Admin эрхийг шалгаж байна...
 
         <style jsx>{`
-          .loading-screen {
+          .admin-loading {
             min-height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
-            background: #f8f7ff;
-            color: #8b8799;
+            background: #f5f8fc;
+            color: #7186a6;
             font-size: 14px;
           }
         `}</style>
@@ -230,95 +273,113 @@ export default function AdminLayout({ children }) {
 
   return (
     <div className="admin-shell">
-      <aside className="sidebar">
+      <aside className="admin-sidebar">
         <button
           type="button"
-          className="brand"
+          className="admin-brand"
           onClick={() => router.push('/admin')}
-          aria-label="LEARN MINEA Admin"
         >
-          <span className="brand-dot" />
-          <span className="brand-letter">M</span>
+          <span className="brand-logo">M</span>
+
+          <span className="brand-text">
+            <strong>LEARN·MINEA</strong>
+            <small>ADMIN PANEL</small>
+          </span>
         </button>
 
-        <nav className="nav">
-          {navItems.map((item) => (
-            <div
-              className="nav-item-wrap"
-              key={item.path}
+        <nav className="admin-navigation">
+          {menuGroups.map(group => (
+            <section
+              className="menu-group"
+              key={group.title}
             >
-              <button
-                type="button"
-                className={`nav-button ${
-                  isActive(item.path) ? 'active' : ''
-                }`}
-                onClick={() => router.push(item.path)}
-                aria-label={item.label}
-              >
-                <NavIcon
-                  name={item.icon}
-                  size={20}
-                />
-              </button>
-
-              <div className="tooltip">
-                {item.label}
+              <div className="menu-heading">
+                {group.title}
               </div>
-            </div>
+
+              {group.items.map(item => (
+                <button
+                  key={item.path}
+                  type="button"
+                  className={`menu-link ${
+                    isActive(item.path) ? 'active' : ''
+                  }`}
+                  onClick={() => router.push(item.path)}
+                >
+                  <span className="menu-icon">
+                    <NavIcon name={item.icon} size={21} />
+                  </span>
+
+                  <span className="menu-label">
+                    {item.label}
+                  </span>
+                </button>
+              ))}
+            </section>
           ))}
         </nav>
 
-        <div className="sidebar-bottom">
-          <div className="admin-avatar">
-            A
+        <div className="sidebar-footer">
+          <button
+            type="button"
+            className="menu-link"
+            onClick={() => router.push('/')}
+          >
+            <span className="menu-icon">
+              <NavIcon name="website" size={21} />
+            </span>
+
+            <span className="menu-label">
+              Сайт руу очих
+            </span>
+          </button>
+
+          <div className="sidebar-user">
+            <span className="user-avatar">A</span>
+
+            <span className="user-details">
+              <strong>Admin</strong>
+              <small title={email}>{email}</small>
+            </span>
           </div>
 
-          <div className="nav-item-wrap">
-            <button
-              type="button"
-              className="nav-button logout-button"
-              onClick={logout}
-              aria-label="Logout"
-            >
-              <NavIcon
-                name="logout"
-                size={19}
-              />
-            </button>
+          <button
+            type="button"
+            className="menu-link logout-link"
+            onClick={logout}
+          >
+            <span className="menu-icon">
+              <NavIcon name="logout" size={21} />
+            </span>
 
-            <div className="tooltip tooltip-bottom">
-              Logout
-            </div>
-          </div>
+            <span className="menu-label">
+              Гарах
+            </span>
+          </button>
         </div>
       </aside>
 
       <div className="admin-main">
-        <header className="topbar">
-          <div>
+        <header className="admin-topbar">
+          <div className="topbar-title">
             <div className="top-label">
-              ADMIN
+              LEARN·MINEA / ADMIN
             </div>
 
-            <h1>
-              {getPageTitle()}
-            </h1>
+            <h1>{pageTitle}</h1>
           </div>
 
-          <div className="topbar-right">
-            <div className="admin-info">
-              <div className="admin-name">
-                Admin
-              </div>
+          <div className="topbar-user">
+            <span className="topbar-avatar">A</span>
 
-              <div className="admin-email">
-                {email}
-              </div>
+            <div>
+              <strong>Admin</strong>
+              <small>{email}</small>
             </div>
           </div>
         </header>
 
-        <main className="page-content">
+        <main className="admin-page-content">
           {children}
         </main>
       </div>
@@ -326,386 +387,335 @@ export default function AdminLayout({ children }) {
       <style jsx>{`
         .admin-shell {
           min-height: 100vh;
-          background: #f8f7ff;
-          color: #292933;
+          background: #f5f8fc;
+          color: #292521;
         }
 
-        .sidebar {
+        .admin-sidebar {
           position: fixed;
-          left: 0;
           top: 0;
+          left: 0;
           bottom: 0;
-
-          width: 72px;
-
           z-index: 100;
-
+          width: 260px;
           display: flex;
           flex-direction: column;
-          align-items: center;
-
           background: #ffffff;
-
-          border-right:
-            1px solid
-            #ece9f5;
-
-          padding:
-            18px
-            11px;
+          border-right: 1px solid #e3eaf2;
+          overflow-y: auto;
+          overflow-x: hidden;
         }
 
-        .brand {
+        .admin-brand {
           appearance: none;
-          width: 44px;
-          height: 44px;
-
+          width: 100%;
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          padding: 25px 19px 23px;
           border: 0;
-          border-radius: 13px;
-
-          display: flex;
-          align-items: center;
-          justify-content: center;
-
-          position: relative;
-
-          background: #6c5ce7;
-          color: white;
-
+          border-bottom: 1px solid #edf1f5;
+          background: #ffffff;
+          text-align: left;
           cursor: pointer;
-
-          margin-bottom: 30px;
         }
 
-        .brand-letter {
-          font-size: 16px;
-          font-weight: 800;
-          letter-spacing: -0.02em;
-        }
-
-        .brand-dot {
-          position: absolute;
-
-          width: 6px;
-          height: 6px;
-
-          right: 7px;
-          top: 7px;
-
-          border-radius: 999px;
-
-          background: rgba(255, 255, 255, 0.75);
-        }
-
-        .nav {
-          width: 100%;
-
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-
-          gap: 8px;
-        }
-
-        .nav-item-wrap {
-          width: 100%;
-
-          display: flex;
-          justify-content: center;
-
-          position: relative;
-        }
-
-        .nav-button {
-          appearance: none;
-
-          width: 46px;
-          height: 46px;
-
+        .brand-logo {
+          width: 42px;
+          height: 42px;
           flex-shrink: 0;
-
-          border: 0;
-          border-radius: 13px;
-
           display: flex;
           align-items: center;
           justify-content: center;
-
-          color: #9995a8;
-          background: transparent;
-
-          cursor: pointer;
-
-          transition:
-            background 0.16s ease,
-            color 0.16s ease,
-            transform 0.16s ease;
-        }
-
-        .nav-button:hover {
-          background: #f4f2ff;
-          color: #6c5ce7;
-        }
-
-        .nav-button.active {
-          background: #6c5ce7;
+          background: #0879d1;
           color: #ffffff;
-
-          box-shadow:
-            0 8px 20px
-            rgba(108, 92, 231, 0.2);
+          border-radius: 12px;
+          font-size: 19px;
+          font-weight: 800;
         }
 
-        .tooltip {
-          pointer-events: none;
-
-          position: absolute;
-
-          left: 58px;
-          top: 50%;
-
-          transform:
-            translateY(-50%)
-            translateX(-4px);
-
-          white-space: nowrap;
-
-          opacity: 0;
-          visibility: hidden;
-
-          background: #28272f;
-          color: #ffffff;
-
-          font-size: 12px;
-          font-weight: 600;
-
-          padding: 8px 10px;
-
-          border-radius: 8px;
-
-          box-shadow:
-            0 8px 24px
-            rgba(0, 0, 0, 0.12);
-
-          transition:
-            opacity 0.15s ease,
-            transform 0.15s ease,
-            visibility 0.15s ease;
-        }
-
-        .nav-item-wrap:hover
-        .tooltip {
-          opacity: 1;
-          visibility: visible;
-
-          transform:
-            translateY(-50%)
-            translateX(0);
-        }
-
-        .sidebar-bottom {
-          margin-top: auto;
-
-          width: 100%;
-
+        .brand-text {
+          min-width: 0;
           display: flex;
           flex-direction: column;
-          align-items: center;
-
-          gap: 11px;
+          gap: 5px;
         }
 
-        .admin-avatar {
+        .brand-text strong {
+          font-size: 15px;
+          letter-spacing: -0.02em;
+          color: #592d1f;
+          white-space: nowrap;
+        }
+
+        .brand-text small {
+          font-size: 10px;
+          letter-spacing: 0.13em;
+          color: #95a5bb;
+          font-weight: 700;
+        }
+
+        .admin-navigation {
+          flex: 1;
+          padding: 20px 12px 16px;
+        }
+
+        .menu-group {
+          margin-bottom: 24px;
+        }
+
+        .menu-heading {
+          padding: 0 13px;
+          margin: 0 0 11px;
+          font-size: 11px;
+          font-weight: 800;
+          letter-spacing: 0.075em;
+          color: #93a6c0;
+        }
+
+        .menu-link {
+          appearance: none;
+          width: 100%;
+          display: flex;
+          align-items: center;
+          gap: 13px;
+          min-height: 45px;
+          padding: 10px 12px;
+          margin-bottom: 4px;
+          border: 0;
+          border-radius: 10px;
+          background: transparent;
+          color: #7186a6;
+          font-family: inherit;
+          font-size: 14px;
+          font-weight: 600;
+          text-align: left;
+          cursor: pointer;
+          transition:
+            background 0.18s ease,
+            color 0.18s ease;
+        }
+
+        .menu-link:hover {
+          background: #f0f7ff;
+          color: #0879d1;
+        }
+
+        .menu-link.active {
+          background: #e7f2ff;
+          color: #0879d1;
+          font-weight: 750;
+        }
+
+        .menu-icon {
+          width: 24px;
+          flex-shrink: 0;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+        }
+
+        .menu-label {
+          flex: 1;
+          white-space: nowrap;
+        }
+
+        .sidebar-footer {
+          padding: 13px 12px 20px;
+          border-top: 1px solid #edf1f5;
+        }
+
+        .sidebar-user {
+          display: flex;
+          align-items: center;
+          gap: 11px;
+          margin: 12px 2px;
+          padding: 12px 8px;
+          border-top: 1px solid #edf1f5;
+          border-bottom: 1px solid #edf1f5;
+        }
+
+        .user-avatar,
+        .topbar-avatar {
           width: 36px;
           height: 36px;
-
-          border-radius: 999px;
-
+          flex-shrink: 0;
           display: flex;
           align-items: center;
           justify-content: center;
-
-          background: #f0edff;
-          color: #6c5ce7;
-
-          font-size: 13px;
+          border-radius: 50%;
+          background: #e7f2ff;
+          color: #0879d1;
+          font-size: 14px;
           font-weight: 800;
         }
 
-        .logout-button {
-          color: #aaa6b6;
+        .user-details {
+          min-width: 0;
+          display: flex;
+          flex-direction: column;
+          gap: 4px;
         }
 
-        .logout-button:hover {
-          background: #fff2f3;
-          color: #df6671;
+        .user-details strong {
+          color: #292521;
+          font-size: 13px;
+        }
+
+        .user-details small {
+          max-width: 170px;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+          color: #929eae;
+          font-size: 11px;
+        }
+
+        .logout-link:hover {
+          background: #fff1f1;
+          color: #d64d57;
         }
 
         .admin-main {
-          margin-left: 72px;
+          margin-left: 260px;
           min-height: 100vh;
+          min-width: 0;
         }
 
-        .topbar {
-          height: 94px;
-
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-
-          padding:
-            0
-            34px;
-
-          background: #ffffff;
-
-          border-bottom:
-            1px solid
-            #ece9f5;
-
+        .admin-topbar {
           position: sticky;
           top: 0;
           z-index: 50;
+          min-height: 88px;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 20px;
+          padding: 16px 34px;
+          background: #ffffff;
+          border-bottom: 1px solid #e3eaf2;
         }
 
         .top-label {
           margin-bottom: 6px;
-
-          color: #6c5ce7;
-
-          font-size: 11px;
+          color: #0879d1;
+          font-size: 10px;
           font-weight: 800;
-
-          letter-spacing: 0.16em;
+          letter-spacing: 0.13em;
         }
 
-        .topbar h1 {
+        .topbar-title h1 {
           margin: 0;
-
+          color: #292521;
           font-size: 21px;
-          line-height: 1.2;
-
+          line-height: 1.25;
           font-weight: 700;
-
-          letter-spacing: -0.025em;
-
-          color: #292933;
         }
 
-        .topbar-right {
+        .topbar-user {
           display: flex;
           align-items: center;
+          gap: 10px;
         }
 
-        .admin-info {
+        .topbar-user > div {
+          display: flex;
+          flex-direction: column;
+          gap: 4px;
           text-align: right;
         }
 
-        .admin-name {
-          color: #34333c;
-
+        .topbar-user strong {
+          color: #292521;
           font-size: 13px;
-          font-weight: 700;
         }
 
-        .admin-email {
-          margin-top: 3px;
-
-          color: #aaa7b3;
-
+        .topbar-user small {
+          color: #929eae;
           font-size: 11px;
         }
 
-        .page-content {
+        .admin-page-content {
           width: 100%;
-          min-height: calc(100vh - 94px);
-
-          /*
-            ЭНЭ НЬ ӨМНӨХ ТОМ SIDEBAR-ААС
-            CONTENT-ИЙГ ЗҮҮН ТИЙШ ТАТНА.
-          */
+          min-height: calc(100vh - 88px);
           padding: 0;
         }
 
-        @media (max-width: 760px) {
-          .sidebar {
-            position: fixed;
-
-            left: 10px;
-            right: 10px;
-            bottom: 10px;
-            top: auto;
-
-            width: auto;
-            height: 64px;
-
-            flex-direction: row;
-
-            justify-content: center;
-
-            padding:
-              8px
-              10px;
-
-            border:
-              1px solid
-              #ebe8f5;
-
-            border-radius: 18px;
-
-            box-shadow:
-              0 10px 30px
-              rgba(50, 40, 100, 0.12);
-          }
-
-          .brand {
-            display: none;
-          }
-
-          .nav {
-            width: auto;
-
-            flex-direction: row;
-
-            gap: 3px;
-
-            overflow-x: auto;
-          }
-
-          .nav-button {
-            width: 42px;
-            height: 42px;
-
-            border-radius: 11px;
-          }
-
-          .tooltip {
-            display: none;
-          }
-
-          .sidebar-bottom {
-            display: none;
+        @media (max-width: 900px) {
+          .admin-sidebar {
+            width: 225px;
           }
 
           .admin-main {
-            margin-left: 0;
-
-            padding-bottom: 84px;
+            margin-left: 225px;
           }
 
-          .topbar {
-            height: 78px;
-
-            padding:
-              0
-              18px;
+          .admin-topbar {
+            padding: 16px 22px;
           }
 
-          .topbar h1 {
-            font-size: 18px;
+          .menu-link {
+            font-size: 13px;
+            gap: 9px;
+          }
+        }
+
+        @media (max-width: 600px) {
+          .admin-sidebar {
+            width: 190px;
           }
 
-          .admin-email {
+          .admin-main {
+            margin-left: 190px;
+          }
+
+          .admin-brand {
+            padding: 18px 10px;
+            gap: 8px;
+          }
+
+          .brand-logo {
+            width: 34px;
+            height: 34px;
+          }
+
+          .brand-text strong {
+            font-size: 11px;
+          }
+
+          .brand-text small {
+            font-size: 8px;
+          }
+
+          .admin-navigation {
+            padding: 15px 7px;
+          }
+
+          .menu-heading {
+            font-size: 9px;
+            padding: 0 8px;
+          }
+
+          .menu-link {
+            font-size: 11px;
+            gap: 7px;
+            padding: 9px 7px;
+          }
+
+          .menu-icon {
+            width: 21px;
+          }
+
+          .admin-topbar {
+            padding: 12px;
+            min-height: 72px;
+          }
+
+          .topbar-title h1 {
+            font-size: 16px;
+          }
+
+          .topbar-user {
             display: none;
           }
         }

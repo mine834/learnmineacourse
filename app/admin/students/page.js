@@ -705,7 +705,7 @@ export default function AdminStudentsPage() {
 
         .eyebrow,
         .section-label {
-          color: #6c5ce7;
+          color: #0879D1;
 
           font-size: 11px;
           font-weight: 800;
@@ -760,7 +760,7 @@ export default function AdminStudentsPage() {
 
           font-size: 24px;
 
-          color: #6c5ce7;
+          color: #0879D1;
         }
 
         .student-count span {
@@ -883,7 +883,7 @@ export default function AdminStudentsPage() {
           justify-content: center;
 
           background: #eeebff;
-          color: #6c5ce7;
+          color: #0879D1;
 
           font-weight: 800;
         }
@@ -950,7 +950,7 @@ export default function AdminStudentsPage() {
         }
 
         .manage {
-          color: #6c5ce7;
+          color: #0879D1;
 
           font-size: 12px;
           font-weight: 800;
@@ -1216,7 +1216,7 @@ export default function AdminStudentsPage() {
         }
 
         .grant-row select:focus {
-          border-color: #6c5ce7;
+          border-color: #0879D1;
 
           box-shadow:
             0 0 0 3px
@@ -1237,7 +1237,7 @@ export default function AdminStudentsPage() {
             0
             18px;
 
-          background: #6c5ce7;
+          background: #0879D1;
 
           color: white;
 
@@ -1269,7 +1269,7 @@ export default function AdminStudentsPage() {
 
           background: #f8f6ff;
 
-          color: #6c5ce7;
+          color: #0879D1;
 
           font-size: 13px;
           font-weight: 800;

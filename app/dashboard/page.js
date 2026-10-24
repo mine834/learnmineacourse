@@ -629,7 +629,7 @@ export default function StudentDashboardPage() {
         }
 
         .eyebrow {
-          color: #6c5ce7;
+          color: #0879D1;
           font-size: 10px;
           font-weight: 900;
           letter-spacing: 0.15em;
@@ -666,7 +666,7 @@ export default function StudentDashboardPage() {
         }
 
         .refresh {
-          color: #6c5ce7;
+          color: #0879D1;
         }
 
         .logout {
@@ -742,7 +742,7 @@ export default function StudentDashboardPage() {
           padding: 7px 10px;
           border-radius: 999px;
           background: #efedff;
-          color: #6c5ce7;
+          color: #0879D1;
           font-size: 9px;
           font-weight: 900;
           letter-spacing: 0.08em;
@@ -795,7 +795,7 @@ export default function StudentDashboardPage() {
         }
 
         .progress-info b {
-          color: #6c5ce7;
+          color: #0879D1;
           font-size: 14px;
         }
 
@@ -810,7 +810,7 @@ export default function StudentDashboardPage() {
         .progress-fill {
           height: 100%;
           border-radius: inherit;
-          background: #6c5ce7;
+          background: #0879D1;
           transition: width 0.25s ease;
         }
 
@@ -877,7 +877,7 @@ export default function StudentDashboardPage() {
 
         .primary {
           border: 0;
-          background: #6c5ce7;
+          background: #0879D1;
           color: white;
         }
 
@@ -898,12 +898,12 @@ export default function StudentDashboardPage() {
           margin: 0 auto 18px;
           border-radius: 17px;
           background: #f0edff;
-          color: #6c5ce7;
+          color: #0879D1;
           font-size: 25px;
         }
 
         .empty-label {
-          color: #6c5ce7;
+          color: #0879D1;
           font-size: 9px;
           font-weight: 900;
           letter-spacing: 0.14em;
@@ -927,7 +927,7 @@ export default function StudentDashboardPage() {
           padding: 12px 18px;
           border: 0;
           border-radius: 11px;
-          background: #6c5ce7;
+          background: #0879D1;
           color: white;
           font-weight: 800;
           cursor: pointer;

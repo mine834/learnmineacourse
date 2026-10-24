@@ -148,14 +148,14 @@ export default function DashboardLayout({ children }) {
   }
 
   function handleCourseClick() {
-    if (!coursePath) return
+  setCourseMenuOpen((current) => !current)
 
-    setCourseMenuOpen((current) => !current)
-
-    if (!currentCourseId) {
-      router.push(coursePath)
-    }
+  if (coursePath) {
+    router.push(coursePath)
+  } else {
+    router.push('/dashboard/courses')
   }
+}
 
   function getPageTitle() {
     if (pathname === '/dashboard/payments') {
@@ -272,7 +272,6 @@ export default function DashboardLayout({ children }) {
             {/* COURSE */}
             <button
               type="button"
-              disabled={!coursePath}
               onClick={handleCourseClick}
               style={{
                 ...styles.navButton,
@@ -281,9 +280,7 @@ export default function DashboardLayout({ children }) {
                   ? styles.navButtonActive
                   : {}),
 
-                ...(!coursePath
-                  ? styles.navButtonDisabled
-                  : {}),
+              
               }}
             >
               <span
@@ -308,8 +305,7 @@ export default function DashboardLayout({ children }) {
             </button>
 
             {/* COURSE SUB MENU */}
-            {courseMenuOpen &&
-              coursePath && (
+            {courseMenuOpen && (
                 <div style={styles.subMenu}>
                   <button
                     type="button"
@@ -484,7 +480,7 @@ const styles = {
   },
 
   logoDot: {
-    color: '#6C5CE7',
+    color: '#0879D1',
   },
 
   sectionLabel: {
@@ -532,7 +528,7 @@ const styles = {
 
   navButtonActive: {
     background: '#F2EFFF',
-    color: '#6C5CE7',
+    color: '#0879D1',
   },
 
   navButtonDisabled: {
@@ -552,7 +548,7 @@ const styles = {
   },
 
   navIndicatorActive: {
-    background: '#6C5CE7',
+    background: '#0879D1',
   },
 
   arrow: {
@@ -607,7 +603,7 @@ const styles = {
 
   subButtonActive: {
     background: '#F7F5FF',
-    color: '#6C5CE7',
+    color: '#0879D1',
   },
 
   subButtonDisabled: {
@@ -627,7 +623,7 @@ const styles = {
   },
 
   subLineDotActive: {
-    background: '#6C5CE7',
+    background: '#0879D1',
   },
 
   sidebarBottom: {
@@ -741,7 +737,7 @@ const styles = {
 
     background: '#FFFFFF',
 
-    color: '#6C5CE7',
+    color: '#0879D1',
 
     fontSize: '11px',
     fontWeight: '850',

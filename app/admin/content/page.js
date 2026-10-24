@@ -297,7 +297,7 @@ const styles = {
 
   eyebrow: {
     margin: 0,
-    color: '#6C5CE7',
+    color: '#0879D1',
     fontSize: '11px',
     fontWeight: '900',
     letterSpacing: '1.6px',
@@ -363,7 +363,7 @@ const styles = {
     display: 'flex',
     gap: '8px',
     alignItems: 'center',
-    color: '#6C5CE7',
+    color: '#0879D1',
     fontWeight: '800',
     fontSize: '12px',
   },
@@ -412,7 +412,7 @@ const styles = {
   saveButton: {
     border: 'none',
     borderRadius: '11px',
-    background: '#6C5CE7',
+    background: '#0879D1',
     color: '#FFFFFF',
     padding: '12px 18px',
     fontWeight: '800',

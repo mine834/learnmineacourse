@@ -457,7 +457,7 @@ const styles = {
   },
 
   eyebrow: {
-    color: '#6c5ce7',
+    color: '#0879D1',
     fontSize: '12px',
     fontWeight: '800',
     letterSpacing: '1px',
@@ -535,7 +535,7 @@ const styles = {
 
   saveButton: {
     border: 'none',
-    background: '#6c5ce7',
+    background: '#0879D1',
     color: '#fff',
     padding: '14px 24px',
     borderRadius: '11px',
@@ -615,7 +615,7 @@ const styles = {
 
   levelBadge: {
     background: '#f1efff',
-    color: '#6c5ce7',
+    color: '#0879D1',
     padding: '5px 9px',
     borderRadius: '20px',
     fontSize: '11px',
@@ -647,7 +647,7 @@ const styles = {
 
   editButton: {
     border: 'none',
-    background: '#6c5ce7',
+    background: '#0879D1',
     color: '#fff',
     padding: '10px 14px',
     borderRadius: '9px',
@@ -655,9 +655,9 @@ const styles = {
   },
 
   manageButton: {
-    border: '1px solid #6c5ce7',
+    border: '1px solid #0879D1',
     background: '#fff',
-    color: '#6c5ce7',
+    color: '#0879D1',
     padding: '10px 14px',
     borderRadius: '9px',
     cursor: 'pointer',

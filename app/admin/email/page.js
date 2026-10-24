@@ -542,7 +542,7 @@ const styles = {
 
   eyebrow: {
     margin: 0,
-    color: '#6C5CE7',
+    color: '#0879D1',
     fontSize: '11px',
     fontWeight: '900',
     letterSpacing: '1.6px',
@@ -647,7 +647,7 @@ const styles = {
 
   sendButton: {
     border: 'none',
-    background: '#6C5CE7',
+    background: '#0879D1',
     color: '#FFFFFF',
     borderRadius: '12px',
     padding: '14px',
@@ -665,7 +665,7 @@ const styles = {
     width: '36px',
     height: '36px',
     background: '#F0ECFF',
-    color: '#6C5CE7',
+    color: '#0879D1',
     borderRadius: '10px',
     display: 'flex',
     alignItems: 'center',
@@ -705,7 +705,7 @@ const styles = {
 
   draftStatus: {
     background: '#F0ECFF',
-    color: '#6C5CE7',
+    color: '#0879D1',
   },
 
   deleteButton: {

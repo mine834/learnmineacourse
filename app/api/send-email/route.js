@@ -234,7 +234,7 @@ export async function POST(request) {
                 >
                   LEARN<span
                     style="
-                      color: #6C5CE7;
+                      color: #0879D1;
                     "
                   >·</span>MINEA
                 </div>

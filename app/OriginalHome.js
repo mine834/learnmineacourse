@@ -1,4 +1,5 @@
 'use client'
+import './site-compact.css'
 import './method-compact.css'
 import Link from 'next/link'
 import { useState } from 'react'
@@ -54,7 +55,34 @@ export default function Home({ books = [], homeContent = null, editorSettings = 
   }}
 ><div className="ticketName">LEARN <b>✦</b> MINEA</div><div className="ticketSub">KOREAN LEARNING · STUDENT PASS</div><div className="ticketLine"/><div className="ticketRows"><span>Суралцагч<br/>Сургалт<br/>Систем<br/>Ахиц</span><strong>Таны нэр<br/>Таны сонголт<br/>Видео + Quiz<br/>Progress tracking</strong></div><div className="ticketLine"/><div className="ticketBottom">START LEARNING →</div></div></div></div></section>
   <section className="section"><div className="wrap"><div className="eyebrow">ЭХЛЭХ ХЭСЭГ</div><h2>Өнөөдөр юу сурах вэ?</h2><p className="sub">Өнөөдөр танд хэрэгтэй нэг жижиг сэдвээс эхлээд тогтвортой урагшлаарай.</p><div className="studyGrid">{study.map(x=><Link href={x.href} className="studyCard" key={x.title}><span className="sy">{x.sy}</span><div><h3>{x.title}</h3><p>{x.desc}</p></div><span className="arrow">→</span></Link>)}</div></div></section>
-  <section className="section conversation" id="conversation"><div className="wrap split"><div className="talkCard"><div className="talkTop"><span>ӨНӨӨДРИЙН ЯРИА</span><button onClick={()=>speak('아이스 아메리카노 한 잔 주세요.')} aria-label="Солонгос дуудлага сонсох">{playing?'Ⅱ':'▶'}</button></div><h2 lang="ko">아이스 아메리카노 한 잔 주세요.</h2><p>Нэг мөстэй американо өгнө үү.</p><div className="tip">♧ &nbsp; 한 잔 нь аяга уух зүйл тоолох хэллэг. 주세요-г хүсэлтээ эелдгээр хэлэхдээ ашиглана.</div></div><div className="splitCopy"><div className="eyebrow">АМЬД ХЭРЭГЛЭЭНИЙ СОЛОНГОС ХЭЛ</div><h2>Солонгос хэлийг амьд хэрэглээнээс сур</h2><p>Дүрмийг дангаар нь бус, яг хэрэглэх нөхцөл, өнгө аяс, богино жишээтэй нь ойлгоно.</p><Link className="textLink" href="/k-drama">Дэлгэрэнгүй үзэх &nbsp; →</Link></div></div></section>
+  <section className="section conversation" id="conversation">
+    <div className="wrap split">
+      <div className="talkCard">
+        <div className="talkTop">
+          <span>{homeContent?.conversation?.eyebrow ?? 'ӨНӨӨДРИЙН ЯРИА'}</span>
+          <button
+            onClick={() => speak(homeContent?.conversation?.korean ?? '아이스 아메리카노 한 잔 주세요.')}
+            aria-label="Солонгос дуудлага сонсох"
+          >
+            {playing ? 'Ⅱ' : '▶'}
+          </button>
+        </div>
+        <h2 lang="ko">{homeContent?.conversation?.korean ?? '아이스 아메리카노 한 잔 주세요.'}</h2>
+        <p>{homeContent?.conversation?.translation ?? 'Нэг мөстэй американо өгнө үү.'}</p>
+        <div className="tip">
+          {homeContent?.conversation?.tip ?? '📌 한 잔 нь аяга уух зүйл тоолох хэллэг. 주세요-г хүсэлтээ эелдгээр хэлэхдээ ашиглана.'}
+        </div>
+      </div>
+      <div className="splitCopy">
+        <div className="eyebrow">{homeContent?.conversation?.side_eyebrow ?? 'АМЬД ХЭРЭГЛЭЭНИЙ СОЛОНГОС ХЭЛ'}</div>
+        <h2>{homeContent?.conversation?.side_title ?? 'Солонгос хэлийг амьд хэрэглээнээс сур'}</h2>
+        <p>{homeContent?.conversation?.side_body ?? 'Дүрмийг дангаар нь бус, яг хэрэглэх нөхцөл, өнгө аяс, богино жишээтэй нь ойлгоно.'}</p>
+        <Link className="textLink" href={homeContent?.conversation?.button_url || '/k-drama'}>
+          {homeContent?.conversation?.button_text ?? 'Дэлгэрэнгүй үзэх →'}
+        </Link>
+      </div>
+    </div>
+  </section>
   <section className="section" id="books"><div className="wrap"><div className="booksHead"><div><div className="eyebrow">ЦАХИМ НОМЫН САН</div><h2>Хаана ч авч явах сурах<br/>материал</h2></div><p>Татаж аваад өөрийн хурдаар ажиллах, тодорхой зорилготой таван цуглуулга.</p></div><div className="booksGrid">
   {books.slice(0, 4).map((book, i) => {
     const image = book.cover_url || book.image_url || book.cover_image_url || ''

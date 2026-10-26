@@ -1,0 +1,134 @@
+
+/* LEARNMINEA COMPACT SIZES */
+
+/* Ерөнхий гарчиг, тайлбар */
+.site .section h2 {
+  font-size: clamp(34px, 3.5vw, 56px);
+}
+
+.site .sub {
+  font-size: 18px;
+}
+
+.site .studyCard h3 {
+  font-size: 29px;
+}
+
+.site .studyCard p {
+  font-size: 15px;
+}
+
+.site .splitCopy > p,
+.site .method .split > div > p {
+  font-size: 18px;
+}
+
+.site .talkCard > p {
+  font-size: 19px;
+}
+
+.site .tip {
+  font-size: 15px;
+}
+
+.site .booksHead > p {
+  font-size: 16px;
+}
+
+.site .bookItem h3 {
+  font-size: 21px;
+}
+
+.site .bookItem p {
+  font-size: 14px;
+}
+
+.site .reason h3 {
+  font-size: 29px;
+}
+
+.site .reason p {
+  font-size: 15px;
+}
+
+.site .faqItem button {
+  font-size: 25px;
+}
+
+.site .faqItem p {
+  font-size: 16px;
+}
+
+/* FOOTER — бүхэлд нь жижигрүүлэх */
+.site .footer {
+  padding: 34px 0 18px !important;
+}
+
+.site .footerGrid {
+  gap: 24px;
+}
+
+.site .footer .logo {
+  font-size: 27px;
+}
+
+.site .footerGrid p {
+  font-size: 13px;
+  line-height: 1.5;
+  max-width: 260px;
+  margin: 12px 0;
+}
+
+.site .footerGrid > div:not(:first-child) {
+  gap: 10px;
+}
+
+.site .footerGrid strong {
+  font-size: 10px;
+}
+
+.site .footerGrid a:not(.logo) {
+  font-size: 13px;
+}
+
+.site .footerSocials {
+  gap: 12px;
+}
+
+.site .footerSocials svg {
+  width: 18px;
+  height: 18px;
+}
+
+.site .footerBottom {
+  margin-top: 28px;
+  padding-top: 14px;
+  font-size: 10px;
+}
+
+/* Утасны харагдац */
+@media (max-width: 700px) {
+  .site .section h2 {
+    font-size: clamp(29px, 7vw, 40px);
+  }
+
+  .site .studyCard h3 {
+    font-size: 24px;
+  }
+
+  .site .footer {
+    padding: 28px 0 16px !important;
+  }
+
+  .site .footer .logo {
+    font-size: 25px;
+  }
+
+  .site .footerGrid {
+    gap: 20px;
+  }
+
+  .site .footerBottom {
+    margin-top: 22px;
+  }
+}

@@ -47,7 +47,8 @@ export default async function BooksPage({ searchParams }) {
   return (
     <main className="booksPage">
       <PublicHeader active="/books" />
-      {/* LEARNMINEA BOOKS SUPER INTRO */}
+      {
+/* LEARNMINEA BOOKS SUPER INTRO */}
       <section className="mineabooksIntro">
         <div className="mineabooksIntroInner">
           <div className="mineabooksIntroCopy">
@@ -182,14 +183,16 @@ export default async function BooksPage({ searchParams }) {
       {/* BOTTOM CTA */}
       <section className="booksBottom">
         <div className="bottomInner">
-          <p>LEARNMINEA</p>
-          <h2>
-            Хэл сурах нь ихийг биш,
-            <br />
-            зөвийг сурахаас эхэлнэ.
-          </h2>
-          <Link href="/assessment/questions">
-            Өөрийн сурах аргаа олох →
+          <div className="booksCtaCopy">
+            <p className="booksCtaEyebrow">ЭХЛЭХЭД БЭЛЭН ҮҮ?</p>
+            <h2>Өөрт тохирох аргаар өнөөдөр эхэл.</h2>
+            <p className="booksCtaDescription">
+              Таны сурах зорилго, түвшин, боломжит цагт тохирсон
+              эхний алхмаа олоорой.
+            </p>
+          </div>
+          <Link href="/assessment/questions" className="booksCtaButton">
+            Сурах аргаа тодорхойлох →
           </Link>
         </div>
       </section>
@@ -222,6 +225,90 @@ export default async function BooksPage({ searchParams }) {
       </footer>
 
       <style>{`
+/* BOOKS BOTTOM CTA — BROWN CARD */
+.booksPage .booksBottom {
+  background: #F5FAFF !important;
+  padding: 55px 32px 75px;
+}
+
+.booksPage .booksBottom .bottomInner {
+  max-width: 1176px;
+  margin: 0 auto;
+  padding: 56px 48px;
+  border-radius: 28px;
+  background: #592D1F !important;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 35px;
+}
+
+.booksPage .booksCtaCopy {
+  flex: 1;
+  min-width: 0;
+}
+
+.booksPage .booksCtaEyebrow {
+  color: #E9C9BB !important;
+  font: 700 12px Arial, sans-serif;
+  letter-spacing: 3px;
+  margin: 0 0 20px;
+}
+
+.booksPage .booksBottom .bottomInner h2 {
+  color: #FFFFFF !important;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(32px, 3.5vw, 54px);
+  font-weight: 400;
+  line-height: 1.15;
+  margin: 0 0 12px;
+}
+
+.booksPage .booksCtaDescription {
+  color: #E9C9BB !important;
+  font: 16px/1.65 Arial, sans-serif;
+  max-width: 600px;
+  margin: 0;
+}
+
+.booksPage .booksBottom .booksCtaButton {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 18px 28px;
+  border-radius: 100px;
+  background: #FFFFFF !important;
+  color: #18191B !important;
+  font: 700 15px Arial, sans-serif;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+@media (max-width: 768px) {
+  .booksPage .booksBottom {
+    padding: 35px 18px 55px;
+  }
+
+  .booksPage .booksBottom .bottomInner {
+    padding: 38px 25px;
+    border-radius: 22px;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 26px;
+  }
+
+  .booksPage .booksBottom .bottomInner h2 {
+    font-size: clamp(30px, 8vw, 42px);
+  }
+
+  .booksPage .booksBottom .booksCtaButton {
+    white-space: normal;
+    text-align: center;
+  }
+}
+
+
 .mineabooksCategoryNav{display:flex;flex-wrap:wrap;gap:10px;margin:0 0 28px}
 .mineabooksCategoryNav a{padding:11px 19px;border:1px solid #c9dbea;border-radius:100px;background:white;color:#253b50;text-decoration:none;font-weight:600}
 .mineabooksCategoryNav a.selected,.mineabooksCategoryNav a:hover{background:#009dff;color:white;border-color:#009dff}

@@ -378,3 +378,47 @@ body:has(a[href="/admin"]) a[href^="/admin"]:hover {
     /* Existing layout preserved */
   }
 }
+
+
+/* LearnMinea footer: light blue background, readable text */
+.site-footer {
+  background: #f0f6ff;
+  color: #1b1c20;
+}
+
+.site-footer a,
+.site-footer strong {
+  color: #1b1c20;
+}
+
+.site-footer p,
+.site-footer small,
+.site-footer .footerBottom {
+  color: #657184;
+}
+
+.site-footer .footer-socials a {
+  color: #1b1c20;
+}
+
+
+/* LearnMinea footer — dark theme */
+.site-footer {
+  background: #191919 !important;
+  color: #ffffff !important;
+}
+
+.site-footer a,
+.site-footer strong {
+  color: #ffffff !important;
+}
+
+.site-footer p,
+.site-footer small,
+.site-footer .footerBottom {
+  color: #b6b8bf !important;
+}
+
+.site-footer .footer-socials a {
+  color: #b6b8bf !important;
+}

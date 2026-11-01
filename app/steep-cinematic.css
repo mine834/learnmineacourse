@@ -1,0 +1,42 @@
+
+/* LearnMinea — Steep-inspired cinematic motion.
+   Existing brand colors, fonts and layout stay unchanged. */
+
+@media (min-width: 768px) and (prefers-reduced-motion: no-preference) {
+  .site > section.hero {
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+  }
+
+  .site > section.hero .heroInner {
+    transform-origin: center center;
+  }
+
+  .site > section.hero .floating {
+    will-change: transform, opacity;
+    transform-origin: center center;
+  }
+
+  .site #books .booksGrid > *,
+  .site .reason {
+    backface-visibility: hidden;
+  }
+
+  .site #books .booksGrid > * {
+    transition: box-shadow 350ms ease;
+  }
+
+  .site #books .booksGrid > *:hover {
+    box-shadow:
+      0 0 0 1px rgba(4, 23, 43, .04),
+      0 20px 25px -5px rgba(0, 0, 0, .08),
+      0 8px 10px -6px rgba(0, 0, 0, .06);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .site > section.hero .floating {
+    will-change: auto;
+  }
+}

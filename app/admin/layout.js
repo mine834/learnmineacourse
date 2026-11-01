@@ -143,11 +143,7 @@ const menuGroups = [
   {
     title: 'БУСАД УДИРДЛАГА',
     items: [
-      {
-        label: 'Бүтээгдэхүүн',
-        path: '/admin/products',
-        icon: 'products',
-      },
+
       {
         label: 'Сургалт',
         path: '/admin/courses',
@@ -163,12 +159,7 @@ const menuGroups = [
         path: '/admin/payments',
         icon: 'payments',
       },
-      {
-        label: 'Website Content',
-        path: '/admin/content',
-        icon: 'editor',
-      },
-      {
+{
         label: 'Email',
         path: '/admin/email',
         icon: 'email',
@@ -176,6 +167,17 @@ const menuGroups = [
     ],
   },
 ]
+
+const sectionItems = [
+  ['hero','Эхний нүүр / Hero'], ['study','Сурах хэсэг'], ['topikInfo','TOPIK мэдээлэл'],
+  ['gksInfo','GKS мэдээлэл'], ['conversation','Харилцан яриа'], ['books','Цахим номын хэсэг'],
+  ['why','Бидний тухай'], ['lifestyle','Бодит хэрэглээ'], ['testimonials','Сэтгэгдэл'],
+  ['registration','Сургалтын бүртгэл'], ['faq','Түгээмэл асуулт'],
+  ['finalCta','Сүүлийн уриалга / CTA'], ['footer','Footer / Холбоо барих'],
+  ['social','Сошиал хаягууд'],
+].map(([key,label]) => ({label, path:`/admin/sections/${key}`,icon:'editor'}))
+
+menuGroups.push({title:'САЙТЫН ХЭСГҮҮД',items:sectionItems})
 
 const allItems = menuGroups.flatMap(group => group.items)
 

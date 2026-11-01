@@ -1,0 +1,123 @@
+
+/* LearnMinea pastel illustrations */
+
+.site .lmIllustrationHolder {
+  font-size: 0 !important;
+  line-height: 0 !important;
+}
+
+.site .lmIllustrationImage {
+  display: block !important;
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: contain !important;
+  pointer-events: none;
+}
+
+/* Small decorative illustrations */
+.site .mineacourseDecor .lmIllustrationHolder {
+  width: 54px !important;
+  height: 54px !important;
+  max-width: 54px !important;
+  max-height: 54px !important;
+}
+
+/* Stars */
+.site .mineacourseDecor
+.lmIllustrationHolder[data-lm-illustration="star"] {
+  width: 24px !important;
+  height: 24px !important;
+}
+
+/* Mobile */
+@media (max-width: 700px) {
+  .site .mineacourseDecor .lmIllustrationHolder {
+    width: 38px !important;
+    height: 38px !important;
+  }
+}
+
+
+/* LEARNMINEA REGISTRATION ICONS V4 START */
+
+.site section.registration .mineacourseEmoji {
+  width: 56px !important;
+  height: 56px !important;
+  font-size: 0 !important;
+  line-height: 0 !important;
+  padding: 0 !important;
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+}
+
+.site section.registration .mineacourseEmoji .lmIllustrationImage {
+  width: 100% !important;
+  height: 100% !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  max-width: 100% !important;
+  max-height: 100% !important;
+  object-fit: contain !important;
+}
+
+/* Дүрс бүрийн хэмжээ, байрлал */
+.site section.registration .courseCloud {
+  width: 86px !important;
+  height: 86px !important;
+  top: 10%;
+  right: 12%;
+}
+
+.site section.registration .coursePencil {
+  width: 54px !important;
+  height: 54px !important;
+  bottom: 17%;
+  right: 29%;
+}
+
+.site section.registration .courseLetter {
+  width: 48px !important;
+  height: 48px !important;
+  top: 27%;
+  right: 5%;
+}
+
+.site section.registration .courseStar {
+  width: 24px !important;
+  height: 24px !important;
+  bottom: 18%;
+  left: 7%;
+}
+
+.site section.registration .courseSmile {
+  width: 52px !important;
+  height: 52px !important;
+  bottom: 10%;
+  right: 9%;
+}
+
+@media (max-width: 700px) {
+  .site section.registration .courseCloud {
+    width: 56px !important;
+    height: 56px !important;
+  }
+
+  .site section.registration .coursePencil,
+  .site section.registration .courseSmile {
+    width: 36px !important;
+    height: 36px !important;
+  }
+
+  .site section.registration .courseLetter {
+    width: 32px !important;
+    height: 32px !important;
+  }
+
+  .site section.registration .courseStar {
+    width: 18px !important;
+    height: 18px !important;
+  }
+}
+
+/* LEARNMINEA REGISTRATION ICONS V4 END */

@@ -1,421 +1,144 @@
+
 'use client'
 
-import { useEffect, useState } from 'react'
-import { supabase } from '../../lib/supabase'
+import Link from 'next/link'
+import HomeSectionsEditor from './HomeSectionsEditor'
 
 export default function AdminContentPage() {
-  const [loading, setLoading] = useState(true)
-  const [savingId, setSavingId] = useState(null)
-  const [items, setItems] = useState([])
-  const [error, setError] = useState('')
-
-  useEffect(() => {
-    loadContent()
-  }, [])
-
-  async function loadContent() {
-    setLoading(true)
-    setError('')
-
-    const {
-      data,
-      error,
-    } = await supabase
-      .from('site_content')
-      .select('*')
-      .order('content_key')
-
-    if (error) {
-      setError(error.message)
-      setLoading(false)
-      return
-    }
-
-    setItems(data || [])
-    setLoading(false)
-  }
-
-  function updateLocal(id, field, value) {
-    setItems((prev) =>
-      prev.map((item) =>
-        item.id === id
-          ? {
-              ...item,
-              [field]: value,
-            }
-          : item
-      )
-    )
-  }
-
-  async function saveItem(item) {
-    setSavingId(item.id)
-
-    const { error } = await supabase
-      .from('site_content')
-      .update({
-        title: item.title || null,
-        body: item.body || null,
-        button_text:
-          item.button_text || null,
-        button_url:
-          item.button_url || null,
-        image_url:
-          item.image_url || null,
-        published: item.published,
-        updated_at:
-          new Date().toISOString(),
-      })
-      .eq('id', item.id)
-
-    setSavingId(null)
-
-    if (error) {
-      alert(error.message)
-      return
-    }
-
-    alert('Хадгалагдлаа.')
-  }
-
-  if (loading) {
-    return (
-      <div style={styles.loading}>
-        Content ачаалж байна...
-      </div>
-    )
-  }
-
   return (
-    <div style={styles.page}>
-      <div style={styles.container}>
-        <header style={styles.header}>
+    <main className="contentAdmin">
+      <div className="contentWrap">
+        <div className="top">
           <div>
-            <p style={styles.eyebrow}>
-              WEBSITE
+            <p className="eyebrow">
+              LEARN·MINEA / ADMIN
             </p>
-
-            <h1 style={styles.title}>
-              Website Content
-            </h1>
-
-            <p style={styles.subtitle}>
-              Нүүр хуудасны текст болон
-              холбоосуудыг эндээс удирдана.
+            <h1>Нүүр хуудасны удирдлага</h1>
+            <p className="description">
+              Сайтын хэсэг бүрийг жижиг харагдацаар
+              шалгаж, текст, зураг, товч, холбоос болон
+              MN / EN / 한국 орчуулгыг засна.
             </p>
           </div>
-        </header>
 
-        {error && (
-          <div style={styles.error}>
-            {error}
-          </div>
-        )}
-
-        <div style={styles.list}>
-          {items.map((item) => (
-            <section
-              key={item.id}
-              style={styles.card}
-            >
-              <div style={styles.cardHeader}>
-                <div>
-                  <p style={styles.keyLabel}>
-                    CONTENT KEY
-                  </p>
-
-                  <h2 style={styles.key}>
-                    {item.content_key}
-                  </h2>
-                </div>
-
-                <label style={styles.switchRow}>
-                  <input
-                    type="checkbox"
-                    checked={item.published}
-                    onChange={(event) =>
-                      updateLocal(
-                        item.id,
-                        'published',
-                        event.target.checked
-                      )
-                    }
-                  />
-
-                  <span>
-                    {item.published
-                      ? 'Published'
-                      : 'Hidden'}
-                  </span>
-                </label>
-              </div>
-
-              <div style={styles.field}>
-                <label style={styles.label}>
-                  Title
-                </label>
-
-                <input
-                  value={item.title || ''}
-                  onChange={(event) =>
-                    updateLocal(
-                      item.id,
-                      'title',
-                      event.target.value
-                    )
-                  }
-                  style={styles.input}
-                />
-              </div>
-
-              <div style={styles.field}>
-                <label style={styles.label}>
-                  Body
-                </label>
-
-                <textarea
-                  value={item.body || ''}
-                  onChange={(event) =>
-                    updateLocal(
-                      item.id,
-                      'body',
-                      event.target.value
-                    )
-                  }
-                  rows={5}
-                  style={styles.textarea}
-                />
-              </div>
-
-              <div style={styles.twoColumn}>
-                <div style={styles.field}>
-                  <label style={styles.label}>
-                    Button text
-                  </label>
-
-                  <input
-                    value={
-                      item.button_text || ''
-                    }
-                    onChange={(event) =>
-                      updateLocal(
-                        item.id,
-                        'button_text',
-                        event.target.value
-                      )
-                    }
-                    style={styles.input}
-                  />
-                </div>
-
-                <div style={styles.field}>
-                  <label style={styles.label}>
-                    Button URL
-                  </label>
-
-                  <input
-                    value={
-                      item.button_url || ''
-                    }
-                    onChange={(event) =>
-                      updateLocal(
-                        item.id,
-                        'button_url',
-                        event.target.value
-                      )
-                    }
-                    style={styles.input}
-                  />
-                </div>
-              </div>
-
-              <div style={styles.field}>
-                <label style={styles.label}>
-                  Image URL
-                </label>
-
-                <input
-                  value={item.image_url || ''}
-                  onChange={(event) =>
-                    updateLocal(
-                      item.id,
-                      'image_url',
-                      event.target.value
-                    )
-                  }
-                  placeholder="https://..."
-                  style={styles.input}
-                />
-              </div>
-
-              <button
-                type="button"
-                disabled={
-                  savingId === item.id
-                }
-                onClick={() =>
-                  saveItem(item)
-                }
-                style={styles.saveButton}
-              >
-                {savingId === item.id
-                  ? 'Хадгалж байна...'
-                  : 'Хадгалах'}
-              </button>
-            </section>
-          ))}
+          <Link
+            href="/"
+            target="_blank"
+            className="viewSite"
+          >
+            Сайтыг нээх ↗
+          </Link>
         </div>
+
+        <div className="info">
+          <span>✓</span>
+          <p>
+            Энд зассан мэдээлэл нүүр хуудсанд
+            харагдана. Судалгааны өнгө, хэмжээ болон
+            Google Form-ийн тохиргоо
+            <Link href="/admin/survey">
+              {' '}Судалгаа{' '}
+            </Link>
+            хэсэгт тусдаа байна.
+          </p>
+        </div>
+
+        <HomeSectionsEditor />
       </div>
-    </div>
+
+      <style jsx>{`
+        .contentAdmin {
+          min-height: 100vh;
+          background: #f5f7fb;
+          padding: 34px 24px 100px;
+        }
+
+        .contentWrap {
+          max-width: 1100px;
+          margin: 0 auto;
+        }
+
+        .top {
+          display: flex;
+          justify-content: space-between;
+          align-items: flex-start;
+          gap: 24px;
+          margin-bottom: 24px;
+        }
+
+        .eyebrow {
+          color: #0879d1;
+          font-size: 12px;
+          font-weight: 800;
+          letter-spacing: 1.7px;
+          margin: 0 0 12px;
+        }
+
+        h1 {
+          font-size: clamp(27px, 4vw, 38px);
+          color: #1d2939;
+          margin: 0 0 12px;
+        }
+
+        .description {
+          color: #718096;
+          font-size: 15px;
+          line-height: 1.8;
+          max-width: 700px;
+          margin: 0;
+        }
+
+        .viewSite {
+          white-space: nowrap;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          background: #0879d1;
+          color: white;
+          text-decoration: none;
+          padding: 13px 18px;
+          border-radius: 12px;
+          font-size: 13px;
+          font-weight: 800;
+        }
+
+        .info {
+          display: flex;
+          gap: 12px;
+          padding: 16px 18px;
+          border: 1px solid #d6e8fa;
+          border-radius: 14px;
+          background: #edf6ff;
+          color: #37516c;
+          margin-bottom: 24px;
+        }
+
+        .info span {
+          color: #0879d1;
+          font-weight: 900;
+        }
+
+        .info p {
+          margin: 0;
+          line-height: 1.7;
+          font-size: 13px;
+        }
+
+        .info :global(a) {
+          color: #0879d1;
+          font-weight: 800;
+        }
+
+        @media (max-width: 650px) {
+          .contentAdmin {
+            padding: 20px 12px 90px;
+          }
+
+          .top {
+            flex-direction: column;
+          }
+        }
+      `}</style>
+    </main>
   )
-}
-
-const styles = {
-  page: {
-    minHeight: '100%',
-    background: '#F8F7FF',
-    padding: '40px 46px 80px',
-  },
-
-  container: {
-    maxWidth: '1000px',
-    margin: '0 auto',
-  },
-
-  loading: {
-    minHeight: 'calc(100vh - 82px)',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    background: '#F8F7FF',
-    color: '#888',
-  },
-
-  header: {
-    marginBottom: '28px',
-  },
-
-  eyebrow: {
-    margin: 0,
-    color: '#0879D1',
-    fontSize: '11px',
-    fontWeight: '900',
-    letterSpacing: '1.6px',
-  },
-
-  title: {
-    margin: '8px 0 7px',
-    color: '#292931',
-    fontSize: '38px',
-  },
-
-  subtitle: {
-    margin: 0,
-    color: '#8A8892',
-  },
-
-  error: {
-    background: '#FFF0F0',
-    color: '#B24A4A',
-    padding: '14px',
-    borderRadius: '12px',
-    marginBottom: '18px',
-  },
-
-  list: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '20px',
-  },
-
-  card: {
-    background: '#FFFFFF',
-    border: '1px solid #ECE8F7',
-    borderRadius: '20px',
-    padding: '24px',
-  },
-
-  cardHeader: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    gap: '20px',
-    alignItems: 'flex-start',
-    paddingBottom: '20px',
-    marginBottom: '20px',
-    borderBottom: '1px solid #F0EDF6',
-  },
-
-  keyLabel: {
-    margin: 0,
-    color: '#A09EAA',
-    fontSize: '10px',
-    fontWeight: '900',
-    letterSpacing: '1.3px',
-  },
-
-  key: {
-    margin: '5px 0 0',
-    color: '#303038',
-    fontSize: '20px',
-  },
-
-  switchRow: {
-    display: 'flex',
-    gap: '8px',
-    alignItems: 'center',
-    color: '#0879D1',
-    fontWeight: '800',
-    fontSize: '12px',
-  },
-
-  field: {
-    marginBottom: '17px',
-  },
-
-  label: {
-    display: 'block',
-    marginBottom: '7px',
-    color: '#62606A',
-    fontSize: '12px',
-    fontWeight: '800',
-  },
-
-  input: {
-    width: '100%',
-    boxSizing: 'border-box',
-    border: '1px solid #E2DEEB',
-    borderRadius: '11px',
-    padding: '12px 13px',
-    fontSize: '14px',
-    outline: 'none',
-  },
-
-  textarea: {
-    width: '100%',
-    boxSizing: 'border-box',
-    border: '1px solid #E2DEEB',
-    borderRadius: '11px',
-    padding: '12px 13px',
-    fontSize: '14px',
-    lineHeight: 1.6,
-    resize: 'vertical',
-    outline: 'none',
-  },
-
-  twoColumn: {
-    display: 'grid',
-    gridTemplateColumns:
-      'repeat(2, minmax(0, 1fr))',
-    gap: '14px',
-  },
-
-  saveButton: {
-    border: 'none',
-    borderRadius: '11px',
-    background: '#0879D1',
-    color: '#FFFFFF',
-    padding: '12px 18px',
-    fontWeight: '800',
-    cursor: 'pointer',
-  },
 }

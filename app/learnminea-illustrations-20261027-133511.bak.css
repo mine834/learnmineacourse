@@ -1,0 +1,34 @@
+/* LearnMinea pastel illustration assets. No theme or layout overrides. */
+.site .lmIllustrationHolder { font-size: 0 !important; line-height: 0 !important; }
+.site .lmIllustrationImage { display: block; width: 100%; height: 100%; max-width: 100%; object-fit: contain; pointer-events: none; user-select: none; }
+.site .floating .lmIllustrationHolder { display: inline-flex; align-items: center; justify-content: center; }
+.site .floating .lmIllustrationImage { min-width: 28px; min-height: 28px; }
+.site .mineacourseDecor .lmIllustrationImage { min-width: 20px; min-height: 20px; }
+@media (prefers-reduced-motion: reduce) { .site .lmIllustrationImage { animation: none !important; } }
+
+
+/* LEARNMINEA ICON SIZE FIX START */
+
+/* Hero-ийн чимэглэлийн дүрсүүд */
+.site > section.hero .floating img,
+.site > section.hero .floating svg,
+.site > section.hero .floating picture {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: contain;
+}
+
+.site > section.hero .floating {
+  width: clamp(38px, 5vw, 78px) !important;
+  height: clamp(38px, 5vw, 78px) !important;
+}
+
+/* Жижиг дэлгэц */
+@media (max-width: 768px) {
+  .site > section.hero .floating {
+    width: 40px !important;
+    height: 40px !important;
+  }
+}
+
+/* LEARNMINEA ICON SIZE FIX END */

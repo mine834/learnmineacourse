@@ -100,11 +100,14 @@ export default function AdminPaymentsPage() {
     loadPage(true)
   }, [loadPage])
 
-  const counts = useMemo(() => ({
-    pending: requests.filter(r => r.status === 'pending').length,
-    approved: requests.filter(r => r.status === 'approved').length,
-    rejected: requests.filter(r => r.status === 'rejected').length,
-  }), [requests])
+  const counts = useMemo(
+    () => ({
+      pending: requests.filter(r => r.status === 'pending').length,
+      approved: requests.filter(r => r.status === 'approved').length,
+      rejected: requests.filter(r => r.status === 'rejected').length,
+    }),
+    [requests]
+  )
 
   const visibleRequests = useMemo(
     () => requests.filter(r => r.status === tab),
@@ -137,7 +140,6 @@ export default function AdminPaymentsPage() {
       setProcessingId(request.id)
       setError('')
 
-      // Үйлдэл хийхээс өмнө Admin эрхийг дахин шалгана.
       const { data: isAdmin, error: adminError } =
         await supabase.rpc('is_admin')
 
@@ -147,7 +149,6 @@ export default function AdminPaymentsPage() {
         throw new Error('Admin эрх байхгүй байна.')
       }
 
-      // Хүсэлт pending хэвээр эсэхийг шалгана.
       const { data: current, error: requestError } =
         await supabase
           .from('payment_requests')
@@ -174,7 +175,6 @@ export default function AdminPaymentsPage() {
 
       if (rpcError) throw rpcError
 
-      // RPC jsonb үр дүнд алдаа буцаасан эсэхийг шалгана.
       if (
         data &&
         typeof data === 'object' &&
@@ -188,7 +188,6 @@ export default function AdminPaymentsPage() {
         )
       }
 
-      // Бодит төлөвийг дахин уншиж баталгаажуулна.
       const { data: updated, error: verifyError } =
         await supabase
           .from('payment_requests')
@@ -207,10 +206,9 @@ export default function AdminPaymentsPage() {
       }
 
       await loadPage(false)
-
       setTab(expectedStatus)
 
-      alert(
+      window.alert(
         approving
           ? 'Төлбөр баталгаажлаа. Сургалтын эрх олгогдсон эсэхийг Enrollments хэсэгт шалгана уу.'
           : 'Төлбөрийн хүсэлтээс татгалзлаа.'
@@ -218,7 +216,7 @@ export default function AdminPaymentsPage() {
     } catch (err) {
       console.error('Process payment error:', err)
 
-      alert(
+      window.alert(
         err?.message ||
           'Төлбөрийн хүсэлтийг шийдвэрлэхэд алдаа гарлаа.'
       )
@@ -231,6 +229,10 @@ export default function AdminPaymentsPage() {
 
   async function openProof(path) {
     try {
+      if (!path) {
+        throw new Error('Баримтын зам олдсонгүй.')
+      }
+
       const { data, error: proofError } =
         await supabase.storage
           .from('payment-proofs')
@@ -248,7 +250,9 @@ export default function AdminPaymentsPage() {
         'noopener,noreferrer'
       )
     } catch (err) {
-      alert(err?.message || 'Баримтыг нээж чадсангүй.')
+      window.alert(
+        err?.message || 'Баримтыг нээж чадсангүй.'
+      )
     }
   }
 
@@ -270,6 +274,7 @@ export default function AdminPaymentsPage() {
         </div>
 
         <button
+          type="button"
           className="refresh"
           disabled={refreshing || Boolean(processingId)}
           onClick={() => loadPage(false)}
@@ -282,7 +287,10 @@ export default function AdminPaymentsPage() {
         <div className="error">
           <strong>Алдаа гарлаа</strong>
           <p>{error}</p>
-          <button onClick={() => loadPage(false)}>
+          <button
+            type="button"
+            onClick={() => loadPage(false)}
+          >
             Дахин оролдох
           </button>
         </div>
@@ -294,7 +302,10 @@ export default function AdminPaymentsPage() {
             {TABS.map(item => (
               <button
                 key={item.id}
-                className={`summary-card ${tab === item.id ? 'selected' : ''}`}
+                type="button"
+                className={`summary-card ${
+                  tab === item.id ? 'selected' : ''
+                }`}
                 onClick={() => setTab(item.id)}
               >
                 <span>{item.label}</span>
@@ -307,6 +318,7 @@ export default function AdminPaymentsPage() {
             {TABS.map(item => (
               <button
                 key={item.id}
+                type="button"
                 className={tab === item.id ? 'active' : ''}
                 onClick={() => setTab(item.id)}
               >
@@ -328,16 +340,23 @@ export default function AdminPaymentsPage() {
                 const isProcessing = processingId === request.id
 
                 return (
-                  <article className="request-card" key={request.id}>
+                  <article
+                    className="request-card"
+                    key={request.id}
+                  >
                     <div className="request-top">
                       <div>
                         <div className="eyebrow">
                           PAYMENT REQUEST
                         </div>
-                        <h2>{course?.title || 'Сургалт'}</h2>
+                        <h2>
+                          {course?.title || 'Сургалт'}
+                        </h2>
                       </div>
 
-                      <span className={`badge ${request.status}`}>
+                      <span
+                        className={`badge ${request.status}`}
+                      >
                         {request.status === 'pending'
                           ? 'Хүлээгдэж буй'
                           : request.status === 'approved'
@@ -358,27 +377,37 @@ export default function AdminPaymentsPage() {
 
                       <div>
                         <span>Имэйл</span>
-                        <strong>{student?.email || '—'}</strong>
+                        <strong>
+                          {student?.email || '—'}
+                        </strong>
                       </div>
 
                       <div>
                         <span>Шилжүүлсэн нэр</span>
-                        <strong>{request.sender_name || '—'}</strong>
+                        <strong>
+                          {request.sender_name || '—'}
+                        </strong>
                       </div>
 
                       <div>
                         <span>Утас</span>
-                        <strong>{request.sender_phone || '—'}</strong>
+                        <strong>
+                          {request.sender_phone || '—'}
+                        </strong>
                       </div>
 
                       <div>
                         <span>Дүн</span>
-                        <strong>{formatPrice(request.amount)}</strong>
+                        <strong>
+                          {formatPrice(request.amount)}
+                        </strong>
                       </div>
 
                       <div>
                         <span>Огноо</span>
-                        <strong>{formatDate(request.created_at)}</strong>
+                        <strong>
+                          {formatDate(request.created_at)}
+                        </strong>
                       </div>
                     </div>
 
@@ -391,8 +420,11 @@ export default function AdminPaymentsPage() {
 
                     {request.proof_path && (
                       <button
+                        type="button"
                         className="proof-button"
-                        onClick={() => openProof(request.proof_path)}
+                        onClick={() =>
+                          openProof(request.proof_path)
+                        }
                       >
                         Баримт харах ↗
                       </button>
@@ -401,9 +433,12 @@ export default function AdminPaymentsPage() {
                     {request.status === 'pending' && (
                       <div className="actions">
                         <button
+                          type="button"
                           className="approve-button"
                           disabled={Boolean(processingId)}
-                          onClick={() => processRequest(request, 'approve')}
+                          onClick={() =>
+                            processRequest(request, 'approve')
+                          }
                         >
                           {isProcessing
                             ? 'Боловсруулж байна...'
@@ -411,9 +446,12 @@ export default function AdminPaymentsPage() {
                         </button>
 
                         <button
+                          type="button"
                           className="reject-button"
                           disabled={Boolean(processingId)}
-                          onClick={() => processRequest(request, 'reject')}
+                          onClick={() =>
+                            processRequest(request, 'reject')
+                          }
                         >
                           {isProcessing
                             ? 'Боловсруулж байна...'
@@ -446,20 +484,20 @@ export default function AdminPaymentsPage() {
         }
 
         .eyebrow {
-          color: #0879D1;
+          color: #0879d1;
           font-size: 10px;
           font-weight: 900;
-          letter-spacing: .13em;
+          letter-spacing: 0.13em;
         }
 
         h1 {
           margin: 10px 0;
           font-size: 32px;
-          letter-spacing: -.04em;
+          letter-spacing: -0.04em;
         }
 
         .page-header p {
-          color: #928b9f;
+          color: #778397;
           font-size: 14px;
         }
 
@@ -469,9 +507,9 @@ export default function AdminPaymentsPage() {
         }
 
         .refresh {
-          border: 1px solid #ded9ed;
+          border: 1px solid #d9e5f1;
           background: white;
-          color: #0879D1;
+          color: #0879d1;
           border-radius: 11px;
           padding: 12px 18px;
           font-size: 12px;
@@ -479,7 +517,7 @@ export default function AdminPaymentsPage() {
         }
 
         button:disabled {
-          opacity: .5;
+          opacity: 0.5;
           cursor: not-allowed;
         }
 
@@ -491,7 +529,7 @@ export default function AdminPaymentsPage() {
         }
 
         .summary-card {
-          border: 1px solid #e7e2f2;
+          border: 1px solid #e0e9f3;
           border-radius: 18px;
           background: white;
           padding: 23px;
@@ -502,12 +540,12 @@ export default function AdminPaymentsPage() {
         }
 
         .summary-card.selected {
-          border-color: #0879D1;
-          background: #f8f6ff;
+          border-color: #0879d1;
+          background: #edf7ff;
         }
 
         .summary-card span {
-          color: #938ba2;
+          color: #778397;
           font-size: 13px;
           font-weight: 700;
         }
@@ -521,7 +559,7 @@ export default function AdminPaymentsPage() {
           display: flex;
           flex-wrap: wrap;
           gap: 8px;
-          border-bottom: 1px solid #e9e5f2;
+          border-bottom: 1px solid #e0e9f3;
           margin-bottom: 24px;
         }
 
@@ -533,18 +571,18 @@ export default function AdminPaymentsPage() {
           border-bottom: 3px solid transparent;
           background: transparent;
           padding: 14px 17px;
-          color: #918a9e;
+          color: #778397;
           font-size: 13px;
           font-weight: 800;
         }
 
         .tabs button.active {
-          border-bottom-color: #0879D1;
-          color: #0879D1;
+          border-bottom-color: #0879d1;
+          color: #0879d1;
         }
 
         .tabs span {
-          background: #f0edff;
+          background: #e7f2ff;
           border-radius: 20px;
           padding: 3px 8px;
           font-size: 11px;
@@ -556,7 +594,7 @@ export default function AdminPaymentsPage() {
         }
 
         .request-card {
-          border: 1px solid #e8e3f2;
+          border: 1px solid #e0e9f3;
           border-radius: 20px;
           background: white;
           padding: 27px;
@@ -600,21 +638,24 @@ export default function AdminPaymentsPage() {
 
         .details {
           display: grid;
-          grid-template-columns: repeat(3, minmax(0, 1fr));
+          grid-template-columns: repeat(
+            3,
+            minmax(0, 1fr)
+          );
           gap: 12px;
         }
 
         .details > div {
           min-width: 0;
           padding: 16px;
-          background: #faf9fd;
+          background: #f4f8fc;
           border-radius: 12px;
         }
 
         .details span {
           display: block;
           margin-bottom: 9px;
-          color: #9c96a6;
+          color: #778397;
           font-size: 11px;
         }
 
@@ -624,7 +665,7 @@ export default function AdminPaymentsPage() {
         }
 
         .note {
-          background: #f8f6ff;
+          background: #edf7ff;
           border-radius: 12px;
           padding: 16px;
           margin-top: 16px;
@@ -636,16 +677,16 @@ export default function AdminPaymentsPage() {
 
         .note p {
           margin-bottom: 0;
-          color: #817991;
+          color: #596b7d;
           font-size: 13px;
           line-height: 1.6;
         }
 
         .proof-button {
           margin-top: 18px;
-          border: 1px solid #ded8f4;
+          border: 1px solid #c9e0f6;
           background: white;
-          color: #0879D1;
+          color: #0879d1;
           border-radius: 11px;
           padding: 12px 16px;
           font-size: 12px;
@@ -657,7 +698,7 @@ export default function AdminPaymentsPage() {
           gap: 12px;
           margin-top: 22px;
           padding-top: 20px;
-          border-top: 1px solid #eeeaf4;
+          border-top: 1px solid #e0e9f3;
         }
 
         .approve-button,
@@ -670,7 +711,7 @@ export default function AdminPaymentsPage() {
 
         .approve-button {
           border: none;
-          background: #0879D1;
+          background: #0879d1;
           color: white;
         }
 
@@ -683,10 +724,10 @@ export default function AdminPaymentsPage() {
         .empty {
           padding: 55px 20px;
           background: white;
-          border: 1px solid #e8e3f2;
+          border: 1px solid #e0e9f3;
           border-radius: 18px;
           text-align: center;
-          color: #928b9f;
+          color: #778397;
           font-size: 14px;
         }
 

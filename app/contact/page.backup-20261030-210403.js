@@ -1,0 +1,116 @@
+import Link from "next/link";
+
+export const metadata = {
+  title: "Холбоо барих | LearnMinea",
+};
+
+export default function ContactPage() {
+  return (
+    <main className="contactPage">
+      <header className="contactHeader">
+        <Link href="/" className="contactLogo">
+          learnminea<span>.</span>
+        </Link>
+        <Link href="/" className="backHome">← Нүүр хуудас</Link>
+      </header>
+
+      <section className="contactContent">
+        <h1>Холбоо барих</h1>
+
+        <div className="contactGrid">
+          <article className="contactCard">
+            <div className="contactIcon">☎</div>
+            <h2>Бидэн рүү залгах</h2>
+            <a href="tel:+976">(+976) +976</a>
+          </article>
+
+          <article className="contactCard">
+            <div className="contactIcon">✉</div>
+            <h2>Имэйл илгээх</h2>
+            <a href="mailto:learnwithminea@gmail.com">
+              learnwithminea@gmail.com
+            </a>
+          </article>
+        </div>
+      </section>
+
+      <style>{`
+        .contactPage {
+          min-height: 100vh;
+          background: #fff;
+          color: #191a1c;
+          font-family: Arial, sans-serif;
+        }
+        .contactHeader {
+          max-width: 1200px;
+          margin: auto;
+          padding: 28px 24px;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+        }
+        .contactLogo {
+          font-family: Georgia, serif;
+          font-size: 28px;
+          color: #191a1c;
+          text-decoration: none;
+        }
+        .contactLogo span { color: #009afa; }
+        .backHome {
+          color: #333;
+          text-decoration: none;
+          font-size: 14px;
+        }
+        .contactContent {
+          max-width: 1200px;
+          margin: auto;
+          padding: 95px 24px 150px;
+        }
+        .contactContent h1 {
+          text-align: center;
+          font-size: clamp(34px, 4vw, 52px);
+          margin: 0 0 100px;
+        }
+        .contactGrid {
+          display: grid;
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+          gap: 28px;
+        }
+        .contactCard {
+          border: 1px solid #e0e2e8;
+          border-radius: 14px;
+          padding: 40px;
+          min-height: 260px;
+        }
+        .contactIcon {
+          width: 64px;
+          height: 64px;
+          background: #f5f5f7;
+          border-radius: 14px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 30px;
+          margin-bottom: 35px;
+        }
+        .contactCard h2 {
+          font-size: 23px;
+          margin-bottom: 32px;
+        }
+        .contactCard a {
+          color: #191a1c;
+          font-size: 21px;
+          text-underline-offset: 5px;
+          overflow-wrap: anywhere;
+        }
+        @media(max-width: 700px) {
+          .contactContent { padding-top: 70px; }
+          .contactContent h1 { margin-bottom: 55px; }
+          .contactGrid { grid-template-columns: 1fr; }
+          .contactCard { padding: 28px; min-height: 230px; }
+          .contactCard a { font-size: 17px; }
+        }
+      `}</style>
+    </main>
+  );
+}

@@ -1,0 +1,115 @@
+
+/* LEARNMINEA STEEP MOTION V2
+   Motion only. Existing colors, fonts and layout preserved.
+*/
+
+@media (prefers-reduced-motion: no-preference) {
+
+  /* Section entrance */
+  .site.steepMotionEnabled > section > .wrap,
+  .site.steepMotionEnabled > section > .heroInner {
+    opacity: 1;
+    transition:
+      opacity 850ms cubic-bezier(.16,1,.3,1);
+  }
+
+  /* Heading reveal */
+  .site.steepMotionEnabled > section h2 {
+    transition:
+      translate 900ms cubic-bezier(.16,1,.3,1),
+      opacity 900ms cubic-bezier(.16,1,.3,1);
+  }
+
+  /* Scroll parallax on existing hero artwork */
+  .site.steepMotionEnabled > .hero .floating {
+    translate:
+      0 calc(var(--steep-offset, 0) * -35px);
+    will-change: translate;
+  }
+
+  /* Floating cards: preserve existing transforms */
+  .site.steepMotionEnabled #books .booksGrid > *,
+  .site.steepMotionEnabled .testimonials .wrap > *,
+  .site.steepMotionEnabled .reason {
+    transition:
+      translate 650ms cubic-bezier(.16,1,.3,1),
+      box-shadow 650ms cubic-bezier(.16,1,.3,1);
+  }
+
+  /* Each card moves with a slightly different scroll depth */
+  .site.steepMotionEnabled #books .booksGrid > :nth-child(3n+1) {
+    translate: 0 calc(var(--steep-offset, 0) * -12px);
+  }
+
+  .site.steepMotionEnabled #books .booksGrid > :nth-child(3n+2) {
+    translate: 0 calc(var(--steep-offset, 0) * 10px);
+  }
+
+  .site.steepMotionEnabled #books .booksGrid > :nth-child(3n) {
+    translate: 0 calc(var(--steep-offset, 0) * -18px);
+  }
+
+  /* Steep-inspired elevated artifact hover */
+  .site #books .booksGrid > *:hover,
+  .site .reason:hover {
+    translate: 0 -7px;
+    box-shadow:
+      0 0 0 1px rgba(4,23,43,.04),
+      0 20px 25px -5px rgba(0,0,0,.08),
+      0 8px 10px -6px rgba(0,0,0,.06);
+  }
+
+  /* Interactive elements */
+  .site .blueBtn,
+  .site .search button,
+  .site .header a,
+  .site .header button {
+    transition:
+      translate 300ms cubic-bezier(.16,1,.3,1),
+      filter 300ms ease,
+      box-shadow 300ms ease;
+  }
+
+  .site .blueBtn:hover,
+  .site .search button:hover {
+    translate: 0 -3px;
+    filter: brightness(1.04);
+  }
+
+  /* Registration floating decoration */
+  .site #registration .mineacourseDecor {
+    translate:
+      0 calc(var(--steep-offset, 0) * -30px);
+  }
+}
+
+/* Keyboard accessibility */
+.site a:focus-visible,
+.site button:focus-visible,
+.site input:focus-visible {
+  outline: 3px solid currentColor;
+  outline-offset: 4px;
+}
+
+/* Small screens */
+@media (max-width: 767px) {
+  .site.steepMotionEnabled > .hero .floating,
+  .site.steepMotionEnabled #registration .mineacourseDecor {
+    translate: none;
+  }
+
+  .site.steepMotionEnabled #books .booksGrid > * {
+    translate: none;
+  }
+}
+
+/* Accessibility */
+@media (prefers-reduced-motion: reduce) {
+  .site .blueBtn,
+  .site .search button,
+  .site #books .booksGrid > *,
+  .site .reason {
+    animation: none !important;
+    transition: none !important;
+  }
+}

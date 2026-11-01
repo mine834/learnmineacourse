@@ -1,0 +1,14 @@
+import Link from 'next/link'
+import PublicHeader, { PageIntro } from '../components/PublicHeader'
+import styles from '../components/PublicPages.module.css'
+export default function Topik() {
+  return <main className={styles.page}>
+    <PublicHeader active="/topik" />
+    <PageIntro eyebrow="TOPIK" title="TOPIK">Түвшин, үгийн сан, асуултын төрөл, хугацааны стратегиа нэг төлөвлөгөөнд оруул.</PageIntro>
+    <section className={`${styles.container} ${styles.content}`}>
+      <Link className={styles.rowLink} href="/books"><span className={styles.number}>01</span><span className={styles.rowTitle}>Үгийн сангийн төлөвлөгөө</span><span className={styles.arrow}>→</span></Link>
+      <details className={styles.details}><summary className={styles.rowLink}><span className={styles.number}>02</span><span className={styles.rowTitle}>TOPIK гэж юу вэ?</span><span className={styles.arrow}>⌄</span></summary><div className={styles.detailsBody}>TOPIK нь солонгос хэлний мэдлэгийг үнэлэх шалгалт юм. Зорилтот түвшин, одоогийн чадвараа харгалзан үгийн сан, унших, сонсох, бичих дадлагаа төлөвлөөрэй.</div></details>
+      <div className={styles.registration}><div><p className={styles.eyebrow}>TOPIK</p><h2>TOPIK шалгалтын бүртгэл</h2><p>Албан ёсны хуудаснаас шалгалт, бүртгэлийн мэдээллээ шалгаарай.</p></div><a className={styles.whiteButton} href="https://www.topik.go.kr/" target="_blank" rel="noopener noreferrer">TOPIK мэдээлэл ↗</a></div>
+    </section>
+  </main>
+}

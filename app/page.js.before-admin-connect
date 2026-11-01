@@ -1,0 +1,16 @@
+import OriginalHome from './OriginalHome'
+import { getPublishedCatalog } from './lib/catalog.mjs'
+import { createPublicCatalogClient } from './lib/publicCatalog'
+
+export const dynamic = 'force-dynamic'
+
+export default async function HomePage() {
+  const client = createPublicCatalogClient()
+  const { books, errors } = await getPublishedCatalog(client)
+
+  if (errors.length) {
+    console.error('Catalog query failed:', errors)
+  }
+
+  return <OriginalHome books={books || []} />
+}

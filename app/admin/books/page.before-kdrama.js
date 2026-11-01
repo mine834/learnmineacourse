@@ -1,0 +1,579 @@
+ 'use client'
+
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { useRouter } from 'next/navigation'
+import { supabase } from '../../lib/supabase'
+import { PREVIEW_BUCKET, validatePreview, uploadProductPreview } from '../../lib/productPreview.mjs'
+
+const initialForm = { title:'', slug:'', description:'', short_description:'', price:'', old_price:'', order_url:'', image_url:'', preview_path:null, published:false, category:'', level:'' }
+const categoryNames = { vocabulary:'Үг', conversation:'Харилцан яриа', grammar:'Дүрэм', topik:'TOPIK' }
+const levelNames = { beginner:'Анхан', intermediate:'Дунд', advanced:'Ахисан' }
+
+const ALLOWED_TAGS = new Set([
+  'P', 'DIV', 'BR', 'STRONG', 'B', 'EM', 'I',
+  'U', 'S', 'H1', 'H2', 'H3', 'UL', 'OL',
+  'LI', 'BLOCKQUOTE', 'A', 'SPAN',
+])
+
+function cleanHTML(html) {
+  if (typeof window === 'undefined') return ''
+
+  const parser = new DOMParser()
+  const doc = parser.parseFromString(html || '', 'text/html')
+
+  function cleanNode(node) {
+    if (node.nodeType === 3) {
+      return document.createTextNode(node.textContent || '')
+    }
+
+    if (node.nodeType !== 1) {
+      return document.createDocumentFragment()
+    }
+
+    const tag = node.tagName
+
+    if (
+      ['SCRIPT', 'STYLE', 'IFRAME', 'SVG', 'MATH',
+        'OBJECT', 'FORM', 'TEMPLATE'].includes(tag)
+    ) {
+      return document.createDocumentFragment()
+    }
+
+    const element = ALLOWED_TAGS.has(tag)
+      ? document.createElement(tag.toLowerCase())
+      : document.createDocumentFragment()
+
+    if (tag === 'A' && element.nodeType === 1) {
+      const href = node.getAttribute('href') || ''
+
+      if (/^(https?:\/\/|mailto:)/i.test(href)) {
+        element.setAttribute('href', href)
+        element.setAttribute('target', '_blank')
+        element.setAttribute('rel', 'noopener noreferrer')
+      }
+    }
+
+    if (tag === 'SPAN' && element.nodeType === 1) {
+      const color = node.style.color
+      const background = node.style.backgroundColor
+      const validColor =
+        /^(#[0-9a-f]{3,8}|rgba?\([\d\s,.%]+\)|[a-z]+)$/i
+
+      if (validColor.test(color)) {
+        element.style.color = color
+      }
+
+      if (validColor.test(background)) {
+        element.style.backgroundColor = background
+      }
+    }
+
+    Array.from(node.childNodes).forEach(child => {
+      element.appendChild(cleanNode(child))
+    })
+
+    return element
+  }
+
+  const result = document.createElement('div')
+
+  Array.from(doc.body.childNodes).forEach(node => {
+    result.appendChild(cleanNode(node))
+  })
+
+  return result.innerHTML
+}
+
+function ProductDescription({ html }) {
+  const [safeHtml, setSafeHtml] = useState('')
+
+  useEffect(() => {
+    setSafeHtml(cleanHTML(html))
+  }, [html])
+
+  return (
+    <div
+      className="minea-description"
+      dangerouslySetInnerHTML={{ __html: safeHtml }}
+    />
+  )
+}
+
+function RichEditor({ value, onChange, editorRef }) {
+  const [color, setColor] = useState('#15263f')
+
+  useEffect(() => {
+    if (editorRef.current) {
+      editorRef.current.innerHTML = cleanHTML(value)
+    }
+  }, [editorRef])
+
+  function sync() {
+    if (!editorRef.current) return
+    onChange(cleanHTML(editorRef.current.innerHTML))
+  }
+
+  function format(command, argument) {
+    editorRef.current?.focus()
+    document.execCommand(command, false, argument)
+    sync()
+  }
+
+  function insertLink() {
+    const url = window.prompt(
+      'Линк оруулна уу (https://...)'
+    )
+
+    if (!url) return
+
+    if (!/^https?:\/\//i.test(url)) {
+      alert('Линк https:// эсвэл http:// гэж эхлэх ёстой.')
+      return
+    }
+
+    format('createLink', url)
+  }
+
+  function handlePaste(event) {
+    event.preventDefault()
+    const text = event.clipboardData.getData('text/plain')
+    document.execCommand('insertText', false, text)
+    sync()
+  }
+
+  function tool(label, title, command, argument) {
+    return (
+      <button
+        type="button"
+        title={title}
+        className="minea-tool"
+        onMouseDown={event => event.preventDefault()}
+        onClick={() => format(command, argument)}
+      >
+        {label}
+      </button>
+    )
+  }
+
+  return (
+    <div className="minea-rich-editor">
+      <div className="minea-toolbar">
+        <select
+          aria-label="Текстийн төрөл"
+          defaultValue="p"
+          onChange={event =>
+            format('formatBlock', event.target.value)
+          }
+        >
+          <option value="p">Энгийн текст</option>
+          <option value="h1">Гарчиг 1</option>
+          <option value="h2">Гарчиг 2</option>
+          <option value="h3">Гарчиг 3</option>
+          <option value="blockquote">Ишлэл</option>
+        </select>
+
+        {tool(<b>B</b>, 'Тод', 'bold')}
+        {tool(<i>I</i>, 'Налуу', 'italic')}
+        {tool(<u>U</u>, 'Доогуур зураас', 'underline')}
+        {tool(<s>S</s>, 'Дундуур зураас', 'strikeThrough')}
+
+        {tool('• Жагсаалт', 'Цэгтэй жагсаалт', 'insertUnorderedList')}
+        {tool('1. Жагсаалт', 'Дугаартай жагсаалт', 'insertOrderedList')}
+
+        {tool('≡', 'Зүүн талд', 'justifyLeft')}
+        {tool('☰', 'Голлуулах', 'justifyCenter')}
+        {tool('≡', 'Баруун талд', 'justifyRight')}
+
+        <button
+          type="button"
+          className="minea-tool"
+          onMouseDown={event => event.preventDefault()}
+          onClick={insertLink}
+          title="Линк нэмэх"
+        >
+          🔗 Линк
+        </button>
+
+        <label className="minea-color-tool">
+          Өнгө
+          <input
+            type="color"
+            value={color}
+            onChange={event => {
+              setColor(event.target.value)
+              format('foreColor', event.target.value)
+            }}
+          />
+        </label>
+
+        {tool('✕ Формат', 'Формат арилгах', 'removeFormat')}
+      </div>
+
+      <div className="minea-emoji-bar">
+        <span>Эможи:</span>
+        {['📚', '✨', '✅', '📌', '🎯', '💙', '🇰🇷', '➡️'].map(emoji => (
+          <button
+            key={emoji}
+            type="button"
+            onMouseDown={event => event.preventDefault()}
+            onClick={() => format('insertText', emoji)}
+          >
+            {emoji}
+          </button>
+        ))}
+      </div>
+
+      <div
+        ref={editorRef}
+        className="minea-editor-area"
+        contentEditable
+        suppressContentEditableWarning
+        data-placeholder="Номын тайлбараа энд бичнэ үү..."
+        onInput={sync}
+        onBlur={sync}
+        onPaste={handlePaste}
+        role="textbox"
+        aria-label="Бүтээгдэхүүний тайлбар"
+        aria-multiline="true"
+      />
+    </div>
+  )
+}
+
+
+export default function AdminBooksPage() {
+  const router = useRouter()
+  const editorRef = useRef(null)
+  const coverInputRef = useRef(null)
+  const previewInputRef = useRef(null)
+  const [books,setBooks] = useState([])
+  const [form,setForm] = useState({...initialForm})
+  const [cover,setCover] = useState(null)
+  const [preview,setPreview] = useState(null)
+  const [editingId,setEditingId] = useState(null)
+  const [loading,setLoading] = useState(true)
+  const [saving,setSaving] = useState(false)
+  const [message,setMessage] = useState('')
+  const [error,setError] = useState('')
+
+  const loadBooks = useCallback(async () => {
+    const {data,error} = await supabase.from('products').select('*').order('created_at',{ascending:false})
+    if(error) throw error
+    setBooks((data||[]).filter(item=>item.product_type === 'book' || !item.product_type))
+  },[])
+  useEffect(()=>{
+    let active=true
+    async function init(){
+      try {
+        const {data:{user}} = await supabase.auth.getUser()
+        if(!user){router.replace('/login');return}
+        const {data:admin,error:roleError}=await supabase.rpc('is_admin')
+        if(roleError) throw roleError
+        if(admin!==true){router.replace('/');return}
+        if(active) await loadBooks()
+      } catch(err){if(active)setError(err.message)}
+      finally {if(active)setLoading(false)}
+    }
+    init();return ()=>{active=false}
+  },[router,loadBooks])
+
+  function resetForm(){
+    setForm({...initialForm});setEditingId(null);setCover(null);setPreview(null)
+    if(coverInputRef.current)coverInputRef.current.value=''
+    if(previewInputRef.current)previewInputRef.current.value=''
+    if(editorRef.current)editorRef.current.innerHTML=''
+  }
+  function editBook(book){
+    const next={title:book.title||'',slug:book.slug||'',description:book.description||'',short_description:book.short_description||'',price:book.price??'',old_price:book.old_price??'',order_url:book.order_url||'',image_url:book.image_url||'',preview_path:book.preview_path||null,published:book.published??false,category:book.category||'',level:book.level||''}
+    setEditingId(book.id);setForm(next);setCover(null);setPreview(null);setError('');setMessage('')
+    if(coverInputRef.current)coverInputRef.current.value=''
+    if(previewInputRef.current)previewInputRef.current.value=''
+    if(editorRef.current)editorRef.current.innerHTML=cleanHTML(next.description)
+    window.scrollTo({top:0,behavior:'smooth'})
+  }
+  async function handleSave(event){
+    event.preventDefault();if(saving)return
+    setSaving(true);setError('');setMessage('')
+    const uploaded=[];let committed=false
+    try {
+      if(!form.title.trim())throw new Error('Номын нэр оруулна уу.')
+      await validatePreview(preview)
+      let imageUrl=form.image_url||null
+      if(cover){
+        if(!['image/jpeg','image/png','image/webp'].includes(cover.type))throw new Error('Зөвхөн JPG, PNG, WEBP зураг оруулна уу.')
+        if(cover.size>10*1024*1024)throw new Error('Зураг 10 MB-аас бага байх ёстой.')
+        const ext=cover.name.split('.').pop().toLowerCase()
+        const path=`${Date.now()}-${crypto.randomUUID()}.${ext}`
+        const {error:uploadError}=await supabase.storage.from('product-images').upload(path,cover,{contentType:cover.type,upsert:false})
+        if(uploadError)throw new Error(`Зураг upload: ${uploadError.message}`)
+        uploaded.push({bucket:'product-images',path})
+        imageUrl=supabase.storage.from('product-images').getPublicUrl(path).data.publicUrl
+      }
+      let previewPath=form.preview_path
+      if(preview){
+        try {previewPath=await uploadProductPreview(supabase,preview)}
+        catch(err){throw new Error(`PDF upload: ${err.message}`)}
+        uploaded.push({bucket:PREVIEW_BUCKET,path:previewPath})
+      }
+      const payload={
+        title:form.title.trim(),
+        short_description:form.short_description.trim() || null,
+        slug:form.slug?.trim()||`book-${crypto.randomUUID()}`,
+        description:editorRef.current?cleanHTML(editorRef.current.innerHTML):cleanHTML(form.description),
+        price:form.price===''?0:Number(form.price),
+        old_price:form.old_price===''?null:Number(form.old_price),
+        order_url:form.order_url.trim()||null,
+        image_url:imageUrl,preview_path:previewPath,
+        published:form.published,product_type:'book',category:form.category||null,level:form.level||null,
+      }
+      const result=editingId
+        ? await supabase.from('products').update(payload).eq('id',editingId)
+        : await supabase.from('products').insert(payload)
+      if(result.error)throw new Error(`Ном хадгалах: ${result.error.message}`)
+      committed=true;resetForm();await loadBooks();setMessage('Ном амжилттай хадгалагдлаа.')
+    }catch(err){
+      setError(err.message||'Алдаа гарлаа.')
+      if(!committed)for(const item of uploaded){
+        const {error:cleanupError}=await supabase.storage.from(item.bucket).remove([item.path])
+        if(cleanupError)console.error('Upload cleanup:',cleanupError.message)
+      }
+    }finally{setSaving(false)}
+  }
+  async function togglePublish(book){
+    const {error}=await supabase.from('products').update({published:!book.published,product_type:'book'}).eq('id',book.id)
+    if(error){setError(error.message);return}
+    try{await loadBooks()}catch(err){setError(err.message)}
+  }
+  async function deleteBook(book){
+    if(!window.confirm(`“${book.title}” номыг бүрмөсөн устгах уу?`))return
+    const {error}=await supabase.from('products').delete().eq('id',book.id)
+    if(error){setError(error.message);return}
+    if(editingId===book.id)resetForm()
+    try{await loadBooks()}catch(err){setError(err.message)}
+  }
+  if(loading)return <main className="wrap">Ачаалж байна...</main>
+  return <main className="wrap">
+    <div className="eyebrow">LEARN·MINEA / ADMIN</div>
+    <h1>Номын удирдлага</h1>
+    <p className="subtitle">Номын мэдээлэл, хавтас, үнэ, форматтай тайлбар болон PDF Preview-г нэг дор удирдана.</p>
+    <div className="layout">
+      <form className="panel" onSubmit={handleSave}>
+        <h2>{editingId?'Ном засах':'Шинэ ном нэмэх'}</h2>
+        <label>Номын нэр</label>
+        <input required value={form.title} onChange={e=>setForm({...form,title:e.target.value})} placeholder="Жишээ: TOPIK Vocabulary" />
+        <div className="two-cols">
+          <div><label>Үнэ (₮)</label><input type="number" min="0" value={form.price} onChange={e=>setForm({...form,price:e.target.value})} placeholder="14900" /></div>
+          <div><label>Хуучин үнэ (₮)</label><input type="number" min="0" value={form.old_price} onChange={e=>setForm({...form,old_price:e.target.value})} placeholder="34900" /></div>
+        </div>
+        <label htmlFor="book-short-description">Богино тайлбар (нүүр хуудасны карт дээр харагдана)</label>
+        <textarea id="book-short-description" rows={3} maxLength={280}
+          value={form.short_description}
+          onChange={e=>setForm({...form,short_description:e.target.value})}
+          placeholder="Номын тухай 1–2 өгүүлбэрээр бичээрэй." />
+        <p className="hint">{form.short_description.length}/280 тэмдэгт · Дэлгэрэнгүй тайлбараас тусдаа хадгалагдана.</p>
+        <label>Дэлгэрэнгүй тайлбар</label>
+        <RichEditor editorRef={editorRef} value={form.description} onChange={description=>setForm(previous=>({...previous,description}))}/>
+        <div className="two-cols">
+          <div><label>Үндсэн ангилал</label><select value={form.category} onChange={e=>setForm({...form,category:e.target.value})}><option value="">Ангилал сонгох</option>{Object.entries(categoryNames).map(([value,label])=><option key={value} value={value}>{label}</option>)}</select></div>
+          <div><label>Түвшин</label><select value={form.level} onChange={e=>setForm({...form,level:e.target.value})}><option value="">Түвшин сонгох</option>{Object.entries(levelNames).map(([value,label])=><option key={value} value={value}>{label}</option>)}</select></div>
+        </div>
+        <label>Номын хавтас (JPG, PNG, WEBP)</label>
+        {form.image_url&&!cover&&<img src={form.image_url} alt="Одоогийн хавтас" className="current-cover"/>}
+        <input ref={coverInputRef} type="file" accept="image/jpeg,image/png,image/webp" onChange={e=>setCover(e.target.files?.[0]||null)}/>
+        {cover&&<p className="hint">Сонгосон: {cover.name}</p>}
+        <label>PDF Preview (заавал биш, 20 MB хүртэл)</label>
+        {form.preview_path&&<div className="preview-actions"><a href={supabase.storage.from(PREVIEW_BUCKET).getPublicUrl(form.preview_path).data.publicUrl} target="_blank" rel="noopener noreferrer">Одоогийн PDF үзэх ↗</a><button type="button" onClick={()=>{setForm({...form,preview_path:null});setPreview(null);if(previewInputRef.current)previewInputRef.current.value=''}}>Preview-г салгах</button></div>}
+        <input ref={previewInputRef} type="file" accept="application/pdf,.pdf" onChange={async e=>{const file=e.target.files?.[0]||null;try{await validatePreview(file);setPreview(file);setError('')}catch(err){setError(err.message);setPreview(null);e.target.value=''}}}/>
+        {preview&&<p className="hint">Сонгосон: {preview.name}</p>}
+        <label>Захиалгын линк</label>
+        <input type="url" value={form.order_url} onChange={e=>setForm({...form,order_url:e.target.value})} placeholder="Google Form эсвэл захиалгын URL"/>
+        <label className="check"><input type="checkbox" checked={form.published} onChange={e=>setForm({...form,published:e.target.checked})}/>Сайт дээр нийтлэх</label>
+        {error&&<div className="error">{error}</div>}
+        {message&&<div className="success">{message}</div>}
+        <button className="primary" disabled={saving} type="submit">{saving?'Хадгалж байна...':editingId?'Өөрчлөлт хадгалах':'Ном нэмэх →'}</button>
+        {editingId&&<button className="cancel" type="button" onClick={resetForm}>Болих</button>}
+      </form>
+      <section className="panel">
+        <h2>Номын жагсаалт ({books.length})</h2>
+        {books.length===0&&<p>Одоогоор ном байхгүй.</p>}
+        {books.map(book=><div className="book-row" key={book.id}>
+          {book.image_url?<img src={book.image_url} alt={book.title}/>:<div className="no-cover">📖</div>}
+          <div className="book-info"><strong>{book.title}</strong><span>{book.published?'● Нийтлэгдсэн':'○ Ноорог'}</span>
+            <small>{categoryNames[book.category]||'Ангилалгүй'} · {levelNames[book.level]||'Түвшингүй'}</small>
+            <small>₮{Number(book.price||0).toLocaleString()}{book.old_price!=null?` · Хуучин ₮${Number(book.old_price).toLocaleString()}`:''}</small>
+            <div className="row-actions"><button type="button" onClick={()=>editBook(book)}>Засах</button><button type="button" onClick={()=>togglePublish(book)}>{book.published?'Нуух':'Нийтлэх'}</button><button type="button" onClick={()=>deleteBook(book)}>Устгах</button></div>
+          </div>
+        </div>)}
+      </section>
+    </div>
+      <style jsx global>{`
+        .minea-rich-editor {border:1px solid #dce3ed;border-radius:12px;overflow:hidden;background:#fff;min-width:0;}
+        .minea-rich-editor .minea-toolbar,.minea-rich-editor .minea-emoji-bar {display:flex;gap:6px;align-items:center;flex-wrap:wrap;padding:10px;border-bottom:1px solid #e3e9f1;}
+        .minea-rich-editor .minea-toolbar select {width:auto!important;min-width:130px;max-width:100%;padding:8px!important;margin:0!important;background:#f7f9fc;border:1px solid #dce3ed;border-radius:7px;font-size:13px;}
+        .minea-rich-editor .minea-tool,.minea-rich-editor .minea-emoji-bar button {display:inline-flex;align-items:center;justify-content:center;min-height:32px;border:1px solid transparent;background:#f4f7fb;border-radius:7px;padding:6px 9px;cursor:pointer;color:#15263f;font-size:13px;white-space:nowrap;line-height:1.3;}
+        .minea-rich-editor .minea-tool:hover,.minea-rich-editor .minea-emoji-bar button:hover {background:#e6eef9;border-color:#cbdcf2;}
+        .minea-rich-editor .minea-color-tool {display:inline-flex;align-items:center;gap:6px;margin:0;font-size:13px;}
+        .minea-rich-editor .minea-color-tool input {width:32px!important;height:30px!important;padding:0!important;margin:0!important;border:0;cursor:pointer;}
+        .minea-rich-editor .minea-editor-area {min-height:190px;padding:14px;outline:none;overflow-wrap:anywhere;line-height:1.6;font-size:14px;}
+        .minea-rich-editor .minea-editor-area:empty:before {content:attr(data-placeholder);color:#9ca3af;}
+        .minea-rich-editor .minea-emoji-bar span {font-size:12px;color:#64748b;}
+        .minea-rich-editor .minea-editor-area h1 {font-size:1.8em;margin:.5em 0;}
+        .minea-rich-editor .minea-editor-area h2 {font-size:1.45em;margin:.5em 0;}
+        .minea-rich-editor .minea-editor-area h3 {font-size:1.2em;margin:.5em 0;}
+        .minea-rich-editor .minea-editor-area ul {list-style:disc;padding-left:24px;}
+        .minea-rich-editor .minea-editor-area ol {list-style:decimal;padding-left:24px;}
+      `}</style>
+      <style jsx>{`
+        .two-cols { display:grid;grid-template-columns:1fr 1fr;gap:12px; }
+        .current-cover {display:block;width:100px;height:130px;object-fit:cover;margin:8px 0;border-radius:8px;}
+        .preview-actions {display:flex;gap:14px;align-items:center;flex-wrap:wrap;font-size:12px;margin:8px 0;}
+        .preview-actions button {border:0;background:none;color:#0879d1;cursor:pointer;}
+
+
+
+
+
+
+
+
+
+        .wrap {
+          max-width: 1180px;
+          padding: 36px 28px 80px;
+          color: #292535;
+        }
+        .eyebrow {
+          color: #0879D1;
+          font-size: 11px;
+          font-weight: 900;
+          letter-spacing: 2px;
+        }
+        h1 { font-size: 34px; margin: 12px 0; }
+        h2 { font-size: 20px; margin: 0 0 24px; }
+        .subtitle { color: #888391; margin-bottom: 30px; }
+        .layout {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 22px;
+        }
+        .panel {
+          background: white;
+          border: 1px solid #e9e5f2;
+          border-radius: 22px;
+          padding: 26px;
+        }
+        label {
+          display: block;
+          font-size: 12px;
+          font-weight: 800;
+          margin: 18px 0 8px;
+        }
+        input:not([type="checkbox"]), textarea, select {
+          width: 100%;
+          box-sizing: border-box;
+          border: 1px solid #e4dff0;
+          border-radius: 11px;
+          padding: 13px;
+          background: #fcfbff;
+          font: inherit;
+        }
+        .hint {
+          font-size: 12px;
+          color: #928b9f;
+          line-height: 1.6;
+        }
+        .check {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+        }
+        .check input { width: 17px; height: 17px; }
+        .primary {
+          width: 100%;
+          padding: 15px;
+          border: 0;
+          border-radius: 12px;
+          background: #0879D1;
+          color: white;
+          font-weight: 800;
+          cursor: pointer;
+        }
+        .cancel {
+          margin-top: 10px;
+          width: 100%;
+          border: 0;
+          background: transparent;
+          padding: 12px;
+          cursor: pointer;
+        }
+        .error, .success {
+          padding: 13px;
+          border-radius: 10px;
+          margin: 15px 0;
+          font-size: 13px;
+        }
+        .error { background: #fff0f1; color: #b54751; }
+        .success { background: #e9f8ee; color: #277a49; }
+        .book-row {
+          display: flex;
+          gap: 16px;
+          padding: 16px 0;
+          border-bottom: 1px solid #eeeaf5;
+        }
+        .book-row img, .no-cover {
+          width: 72px;
+          height: 96px;
+          object-fit: cover;
+          border-radius: 8px;
+          background: #f1edff;
+        }
+        .no-cover {
+          display: grid;
+          place-items: center;
+          font-size: 25px;
+        }
+        .book-info {
+          display: flex;
+          flex-direction: column;
+          gap: 10px;
+          min-width: 0;
+        }
+        .book-info strong { overflow-wrap: anywhere; }
+        .book-info span {
+          font-size: 12px;
+          color: #8a8298;
+        }
+        .row-actions {
+          display: flex;
+          gap: 12px;
+        }
+        .row-actions button {
+          border: 0;
+          background: transparent;
+          color: #0879D1;
+          font-size: 12px;
+          font-weight: 800;
+          cursor: pointer;
+          padding: 0;
+        }
+        @media (max-width: 850px) {
+          .layout { grid-template-columns: 1fr; }
+          .two-cols {grid-template-columns:1fr;}
+          .two-cols { display:grid;grid-template-columns:1fr 1fr;gap:12px; }
+        .current-cover {display:block;width:100px;height:130px;object-fit:cover;margin:8px 0;border-radius:8px;}
+        .preview-actions {display:flex;gap:14px;align-items:center;flex-wrap:wrap;font-size:12px;margin:8px 0;}
+        .preview-actions button {border:0;background:none;color:#0879d1;cursor:pointer;}
+
+
+
+
+
+
+
+
+
+        .wrap { padding: 24px 16px 60px; }
+        }
+      `}</style>
+  </main>
+}

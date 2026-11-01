@@ -132,3 +132,880 @@
     margin-top: 22px;
   }
 }
+
+
+/* Ticket layout fix */
+.site .ticket {
+  width: 300px;
+  padding: 19px 18px;
+  border-radius: 9px;
+  overflow: hidden;
+}
+
+.site .ticketRows {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr);
+  gap: 10px;
+  padding: 12px 0;
+}
+
+.site .ticketLabels,
+.site .ticketValues {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 0;
+}
+
+.site .ticketLabels span,
+.site .ticketValues strong {
+  display: block;
+  font-size: 11px;
+  line-height: 1.5;
+  white-space: nowrap;
+}
+
+.site .ticketLabels span {
+  color: #85818b;
+}
+
+.site .ticketValues strong {
+  text-align: right;
+  color: #252235;
+}
+
+@media (max-width: 700px) {
+  .site .ticket {
+    width: 240px;
+  }
+
+  .site .ticketLabels span,
+  .site .ticketValues strong {
+    font-size: 9px;
+  }
+}
+
+
+/* LEARNMINEA MOTION ONLY — NOTION INSPIRED */
+/* Зөвхөн хөдөлгөөн. Өнгө, хэмжээ, layout өөрчлөхгүй. */
+
+/* 1. Товч болон холбоосын зөөлөн hover */
+.site .blueBtn,
+.site .whiteBtn,
+.site .textLink,
+.site .nav a,
+.site .footer a,
+.site .search button {
+  transition:
+    opacity 200ms ease,
+    filter 200ms ease;
+}
+
+.site .blueBtn:hover,
+.site .whiteBtn:hover,
+.site .search button:hover {
+  filter: brightness(1.06);
+}
+
+.site .nav a:hover,
+.site .footer a:hover,
+.site .textLink:hover {
+  opacity: 0.78;
+}
+
+/* 2. Картуудын зөөлөн хөдөлгөөн */
+.site .studyCard,
+.site .bookItem,
+.site .testimonial,
+.site .reason {
+  transition:
+    transform 200ms ease,
+    box-shadow 200ms ease;
+}
+
+.site .studyCard:hover,
+.site .bookItem:hover,
+.site .testimonial:hover {
+  transform: translateY(-4px);
+}
+
+/* 3. Hero дээрх солонгос үгтэй картууд */
+.site .floatCard {
+  animation: mineaGentleFloat 5s ease-in-out infinite;
+}
+
+.site .cardTwo {
+  animation-delay: -1.2s;
+}
+
+.site .cardThree {
+  animation-delay: -2.4s;
+}
+
+.site .cardFour {
+  animation-delay: -3.6s;
+}
+
+@keyframes mineaGentleFloat {
+  0%, 100% {
+    translate: 0 0;
+  }
+  50% {
+    translate: 0 -9px;
+  }
+}
+
+/* 4. Hero-ийн Student Pass */
+.site .ticket {
+  animation: mineaTicketFloat 6s ease-in-out infinite;
+}
+
+@keyframes mineaTicketFloat {
+  0%, 100% {
+    translate: 0 0;
+  }
+  50% {
+    translate: 0 -7px;
+  }
+}
+
+/* 5. Accessibility: хөдөлгөөн багасгах тохиргоо */
+@media (prefers-reduced-motion: reduce) {
+  .site .floatCard,
+  .site .ticket {
+    animation: none !important;
+  }
+
+  .site .studyCard,
+  .site .bookItem,
+  .site .testimonial,
+  .site .reason,
+  .site .blueBtn,
+  .site .whiteBtn,
+  .site .textLink,
+  .site .nav a,
+  .site .footer a,
+  .site .search button {
+    transition: none !important;
+  }
+}
+
+
+/* LEARNMINEA TWO FONT SYSTEM */
+/* Font family only — хэмжээ, өнгө, layout өөрчлөхгүй */
+
+/* 1. Бүх үндсэн текст */
+.site {
+  font-family: Arial, sans-serif;
+}
+
+/* 2. Бүх гарчиг */
+.site h1,
+.site h2,
+.site h3,
+.site h4,
+.site h5,
+.site h6,
+.site .ticketName,
+.site .logo {
+  font-family: Georgia, serif !important;
+}
+
+/* 3. Тайлбар, меню, товч, картын жижиг текст */
+.site p,
+.site span,
+.site small,
+.site label,
+.site input,
+.site button,
+.site a,
+.site li,
+.site .eyebrow,
+.site .bookMeta,
+.site .ticketSub,
+.site .ticketRows,
+.site .ticketBottom {
+  font-family: Arial, sans-serif;
+}
+
+/* 4. Гарчигтай холбоосуудыг Georgia хэвээр хадгалах */
+.site a.logo,
+.site .studyCard h3,
+.site .bookItem h3,
+.site .reason h3,
+.site .testimonial h3,
+.site .faq h2,
+.site .cta h2 {
+  font-family: Georgia, serif !important;
+}
+
+
+/* LEARNMINEA REGISTRATION V2 */
+/* Зөвхөн онлайн сургалтын хэсэг */
+
+.site .registration {
+  position: relative;
+  padding-top: 64px;
+  padding-bottom: 64px;
+}
+
+.site .mineaRegistrationLayout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 220px;
+  gap: 36px;
+  align-items: start;
+}
+
+.site .mineaRegistrationContent {
+  min-width: 0;
+  max-width: 760px;
+}
+
+.site .mineaRegistrationContent h2 {
+  max-width: 700px;
+}
+
+.site .mineaRegistrationContent .sub {
+  margin-top: 18px;
+  max-width: 700px;
+}
+
+.site .mineaRegistrationAction {
+  position: sticky;
+  top: 110px;
+  align-self: start;
+  padding-top: 38px;
+}
+
+.site .mineaRegistrationAction .blueBtn {
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+@media (max-width: 800px) {
+  .site .mineaRegistrationLayout {
+    grid-template-columns: 1fr;
+    gap: 22px;
+  }
+
+  .site .mineaRegistrationAction {
+    position: static;
+    padding-top: 0;
+    max-width: 240px;
+  }
+}
+
+
+/* LEARNMINEA WHY SCROLL REVEAL */
+
+@media (prefers-reduced-motion: no-preference) {
+  .site .mineaWhyReveal > div:first-child,
+  .site .mineaWhyReveal .reason {
+    animation: mineaWhyEnter 650ms ease both;
+    animation-timeline: view();
+    animation-range: entry 0% entry 75%;
+  }
+
+  @keyframes mineaWhyEnter {
+    from {
+      opacity: 0;
+      translate: 0 28px;
+    }
+    to {
+      opacity: 1;
+      translate: 0 0;
+    }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .site .mineaWhyReveal > div:first-child,
+  .site .mineaWhyReveal .reason {
+    animation: none !important;
+    opacity: 1 !important;
+    translate: none !important;
+  }
+}
+
+
+/* LEARNMINEA WHY STICKY HEADING */
+/* Зөвхөн Яагаад LearnMinea вэ? хэсэг */
+
+/* Өмнөх scroll reveal хөдөлгөөнийг энэ хэсэгт унтраах */
+.site .why.mineaWhyReveal > div:first-child,
+.site .why.mineaWhyReveal .reason {
+  animation: none !important;
+  opacity: 1 !important;
+  translate: none !important;
+}
+
+/* Зүүн талын гарчгийг гүйлгэхэд дагуулах */
+@media (min-width: 801px) {
+  .site .why {
+    align-items: start;
+  }
+
+  .site .why > div:first-child {
+    position: sticky;
+    top: 110px;
+    align-self: start;
+  }
+}
+
+/* Утас дээр ердийн байрлалтай */
+@media (max-width: 800px) {
+  .site .why > div:first-child {
+    position: static;
+  }
+}
+
+
+/* LEARNMINEA REGISTRATION COMPACT V3 */
+/* Зөвхөн онлайн сургалтын бүртгэлийн хэсэг */
+
+.site section.registration {
+  min-height: 0 !important;
+  height: auto !important;
+  padding-top: 76px !important;
+  padding-bottom: 76px !important;
+}
+
+.site .registration .mineaRegistrationLayout,
+.site .registration .wrap.split {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: flex-start !important;
+  justify-content: flex-start !important;
+  gap: 22px !important;
+}
+
+.site .registration .mineaRegistrationContent,
+.site .registration .wrap.split > div:first-child {
+  width: 100%;
+  max-width: 860px;
+}
+
+.site .registration h2 {
+  max-width: 860px;
+  margin-bottom: 0;
+}
+
+.site .registration p.sub {
+  max-width: 700px;
+  margin-top: 16px;
+}
+
+.site .registration .mineaRegistrationAction,
+.site .registration .wrap.split > div:last-child {
+  position: static !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  width: auto !important;
+  max-width: none !important;
+}
+
+.site .registration .blueBtn {
+  width: auto !important;
+  min-width: 180px;
+  box-sizing: border-box;
+}
+
+@media (max-width: 800px) {
+  .site section.registration {
+    padding-top: 52px !important;
+    padding-bottom: 52px !important;
+  }
+}
+
+
+/* LEARNMINEA REGISTRATION REVEAL V1 */
+/* Зөвхөн сургалтын бүртгэлийн хэсгийн хөдөлгөөн */
+
+@media (prefers-reduced-motion: no-preference) {
+  .site .mineaRegistrationReveal .eyebrow,
+  .site .mineaRegistrationReveal h2,
+  .site .mineaRegistrationReveal p.sub,
+  .site .mineaRegistrationReveal .blueBtn {
+    opacity: 0;
+    transition:
+      opacity 650ms cubic-bezier(0.16, 1, 0.3, 1),
+      translate 650ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .site .mineaRegistrationReveal .eyebrow {
+    translate: 0 18px;
+    transition-delay: 0ms;
+  }
+
+  .site .mineaRegistrationReveal h2 {
+    translate: 0 42px;
+    transition-delay: 90ms;
+  }
+
+  .site .mineaRegistrationReveal p.sub {
+    translate: 0 30px;
+    transition-delay: 170ms;
+  }
+
+  .site .mineaRegistrationReveal .blueBtn {
+    translate: 55px 0;
+    transition-delay: 230ms;
+  }
+
+  .site .mineaRegistrationReveal.mineaRegistrationVisible .eyebrow,
+  .site .mineaRegistrationReveal.mineaRegistrationVisible h2,
+  .site .mineaRegistrationReveal.mineaRegistrationVisible p.sub,
+  .site .mineaRegistrationReveal.mineaRegistrationVisible .blueBtn {
+    opacity: 1;
+    translate: 0 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .site .mineaRegistrationReveal .eyebrow,
+  .site .mineaRegistrationReveal h2,
+  .site .mineaRegistrationReveal p.sub,
+  .site .mineaRegistrationReveal .blueBtn {
+    opacity: 1 !important;
+    translate: none !important;
+    transition: none !important;
+  }
+}
+
+
+
+/* LEARNMINEA COURSE GENIESTUDIO V1 */
+/* Зөвхөн сургалтын бүртгэлийн хэсэг */
+
+section.registration.mineaRegistrationReveal {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  background: #ebf5ff;
+  min-height: 520px;
+  display: flex;
+  align-items: center;
+}
+
+section.registration .mineaRegistrationLayout {
+  position: relative;
+  z-index: 2;
+}
+
+section.registration .mineacourseDecor {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+}
+
+section.registration .mineacourseEmoji {
+  position: absolute;
+  display: block;
+  font-size: clamp(38px, 5vw, 78px);
+  line-height: 1;
+  filter: drop-shadow(0 12px 12px rgba(34, 93, 145, .12));
+  animation: mineacourseFloat 5s ease-in-out infinite;
+}
+
+section.registration .courseCloud {
+  top: 10%;
+  right: 14%;
+  animation-delay: -.8s;
+}
+
+section.registration .coursePencil {
+  bottom: 13%;
+  right: 30%;
+  transform: rotate(-22deg);
+  animation-delay: -2s;
+}
+
+section.registration .courseLetter {
+  top: 23%;
+  right: 5%;
+  animation-delay: -3s;
+}
+
+section.registration .courseStar {
+  bottom: 18%;
+  left: 5%;
+  font-size: 45px;
+  animation-delay: -1.5s;
+}
+
+section.registration .courseSmile {
+  bottom: 8%;
+  right: 7%;
+  animation-delay: -2.7s;
+}
+
+@keyframes mineacourseFloat {
+  0%, 100% { translate: 0 0; }
+  50% { translate: 0 -16px; }
+}
+
+/* Scroll reveal — чимэглэлүүд ч бас дарааллаар гарч ирнэ */
+@media (prefers-reduced-motion: no-preference) {
+  section.registration.mineaRegistrationReveal .mineacourseEmoji {
+    opacity: 0;
+    scale: .6;
+    transition:
+      opacity 800ms cubic-bezier(.16, 1, .3, 1),
+      scale 800ms cubic-bezier(.16, 1, .3, 1);
+  }
+
+  section.registration.mineaRegistrationVisible .mineacourseEmoji {
+    opacity: 1;
+    scale: 1;
+  }
+
+  section.registration .courseCloud { transition-delay: 120ms; }
+  section.registration .coursePencil { transition-delay: 240ms; }
+  section.registration .courseLetter { transition-delay: 360ms; }
+  section.registration .courseStar { transition-delay: 480ms; }
+  section.registration .courseSmile { transition-delay: 600ms; }
+}
+
+@media (max-width: 800px) {
+  section.registration.mineaRegistrationReveal {
+    min-height: 480px;
+  }
+
+  section.registration .mineacourseEmoji {
+    font-size: 38px;
+  }
+
+  section.registration .courseCloud { top: 7%; right: 8%; }
+  section.registration .coursePencil { bottom: 8%; right: 17%; }
+  section.registration .courseLetter { top: 12%; right: 4%; }
+  section.registration .courseStar { left: 5%; bottom: 7%; }
+  section.registration .courseSmile { right: 5%; bottom: 22%; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  section.registration .mineacourseEmoji {
+    animation: none !important;
+    opacity: 1 !important;
+    scale: 1 !important;
+  }
+}
+
+/* LEARNMINEA DARK FOOTER */
+.site footer,
+.site .footer {
+  background: #191a1d !important;
+  color: #ffffff !important;
+}
+
+.site footer .logo,
+.site .footer .logo {
+  color: #ffffff !important;
+}
+
+.site footer p,
+.site footer a:not(.logo),
+.site footer small,
+.site footer .footerBottom,
+.site .footer p,
+.site .footer a:not(.logo),
+.site .footer small,
+.site .footer .footerBottom {
+  color: #b7bcc6 !important;
+}
+
+.site footer a:hover,
+.site .footer a:hover {
+  color: #ffffff !important;
+}
+
+.site footer .footerBottom,
+.site .footer .footerBottom {
+  border-top-color: #454750 !important;
+}
+
+/* END LEARNMINEA DARK FOOTER */
+
+/* LEARNMINEA REGISTRATION LAYOUT V1 */
+
+.site section.registration .mineaRegistrationLayout {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) auto !important;
+  align-items: start !important;
+  column-gap: 40px !important;
+  row-gap: 28px !important;
+}
+
+.site section.registration .mineaRegistrationContent {
+  grid-column: 1 !important;
+  min-width: 0;
+}
+
+.site section.registration .mineaRegistrationLayout .mineaRegistrationContent h2 {
+  max-width: 100%;
+}
+
+.site section.registration .mineaRegistrationLayout .mineaRegistrationContent .sub {
+  max-width: 760px;
+}
+
+.site section.registration .mineaRegistrationLayout > :not(.mineaRegistrationContent) {
+  grid-column: 2 !important;
+  grid-row: 1 !important;
+  align-self: start !important;
+  justify-self: end !important;
+  position: relative;
+  z-index: 3;
+}
+
+@media (max-width: 767px) {
+  .site section.registration .mineaRegistrationLayout {
+    grid-template-columns: 1fr !important;
+    gap: 24px !important;
+  }
+
+  .site section.registration .mineaRegistrationLayout > :not(.mineaRegistrationContent) {
+    grid-column: 1 !important;
+    grid-row: auto !important;
+    justify-self: start !important;
+  }
+}
+
+/* END LEARNMINEA REGISTRATION LAYOUT V1 */
+
+/* LEARNMINEA TOPIK GKS V2 */
+#topik-info, #gks-info {background:#fff}
+#topik-info h2, #gks-info h2 {font-size:clamp(32px,4vw,52px)}
+.lmInfoTag {display:inline-block;padding:10px 16px;background:#eeeaff;color:#715df0;border-radius:30px;font-size:13px;font-weight:700;margin-bottom:20px}
+.lmInfoGrid,.lmGksGrid {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:24px;margin-top:32px}
+.lmInfoBox,.lmGksGrid article {background:#faf9ff;border:1px solid #e3ddfa;border-radius:24px;padding:30px}
+.lmInfoBox h3,.lmGksBody h3 {font-size:23px;margin:18px 0}
+.lmInfoBox p,.lmGksBox p {color:#77758b;line-height:1.7}
+.lmInfoIcon {display:grid;place-items:center;width:60px;height:60px;background:#eeeaff;color:#715df0;border-radius:18px;font-size:26px;font-weight:700}
+.lmInfoBox a,.lmGksBody>a {color:#715df0;font-weight:700}
+.lmInfoLinks {display:grid;gap:14px;margin-top:25px}
+.lmInfoLinks a {padding:12px 0;border-bottom:1px solid #e3ddfa}
+.lmGksBox {background:#f8f6ff;border:1px solid #e3ddfa;border-radius:28px;overflow:hidden}
+.lmGksBox summary {display:flex;align-items:center;justify-content:space-between;gap:25px;padding:35px;cursor:pointer;list-style:none}
+.lmGksBox summary::-webkit-details-marker {display:none}
+.lmGksButton {white-space:nowrap;padding:14px 20px;background:white;border:1px solid #dcd3ff;border-radius:14px;color:#715df0;font-weight:700}
+.lmGksBody {border-top:1px solid #e3ddfa;padding:35px}
+.lmGksBody ul {line-height:2}
+.lmGksList {columns:2}
+@media(max-width:700px){
+.lmInfoGrid,.lmGksGrid {grid-template-columns:1fr}
+.lmGksList {columns:1}
+.lmGksBox summary {display:block;padding:24px}
+.lmGksButton {display:inline-block;margin-top:20px}
+.lmGksBody {padding:24px}
+}
+/* END LEARNMINEA TOPIK GKS V2 */
+
+/* LEARNMINEA TOPIK + GKS HOME V1 */
+.site .lmTopikHome,
+.site .lmGksHome {
+  background: #ffffff;
+}
+.site .lmInfoGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 24px;
+  margin-top: 36px;
+}
+.site .lmInfoCard {
+  background: #f8f7ff;
+  border: 1px solid #e5dffa;
+  border-radius: 26px;
+  padding: 35px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.site .lmInfoCard h3 {
+  font-size: 28px;
+  margin: 0;
+}
+.site .lmInfoCard p {
+  margin: 0;
+}
+.site .lmInfoCard a,
+.site .lmGksBody a {
+  color: #6d5be8;
+  font-weight: 700;
+}
+.site .lmInfoSymbol {
+  width: 58px;
+  height: 58px;
+  display: grid;
+  place-items: center;
+  background: #e9e3ff;
+  border-radius: 18px;
+  color: #6d5be8;
+  font-size: 28px;
+}
+.site .lmGksDetails {
+  border: 1px solid #e5dffa;
+  background: #f8f7ff;
+  border-radius: 26px;
+  overflow: hidden;
+}
+.site .lmGksDetails summary {
+  padding: 30px;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  font-size: 22px;
+  font-weight: 700;
+}
+.site .lmGksBody {
+  padding: 0 30px 30px;
+  line-height: 1.8;
+}
+@media (max-width: 700px) {
+  .site .lmInfoGrid {
+    grid-template-columns: 1fr;
+  }
+}
+/* END LEARNMINEA TOPIK + GKS HOME V1 */
+
+/* LM TOPIK ACCORDION V1 */
+.site .lmTopikAccordionSection {
+  background: #fff;
+  padding-top: 30px;
+  padding-bottom: 90px;
+}
+.site .lmTopikAccordionWrap {
+  max-width: 1300px;
+}
+.site .lmTopikAccordion {
+  border-bottom: 1px solid #dce3ec;
+}
+.site .lmTopikAccordion:first-child {
+  border-top: 1px solid #dce3ec;
+}
+.site .lmTopikAccordion > summary {
+  display: grid;
+  grid-template-columns: 100px 1fr 45px;
+  align-items: center;
+  gap: 25px;
+  padding: 45px 0;
+  cursor: pointer;
+  list-style: none;
+}
+.site .lmTopikAccordion > summary::-webkit-details-marker {
+  display: none;
+}
+.site .lmTopikNumber {
+  font-size: 15px;
+  color: #007fe5;
+  font-family: Arial, sans-serif;
+}
+.site .lmTopikHeading {
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(30px, 4vw, 58px);
+  line-height: 1.2;
+  color: #191a1d;
+}
+.site .lmTopikChevron {
+  font-size: 34px;
+  text-align: right;
+  transition: transform .2s;
+}
+.site .lmTopikAccordion[open] .lmTopikChevron {
+  transform: rotate(180deg);
+}
+.site .lmTopikPanel {
+  padding: 0 0 45px 125px;
+  max-width: 1050px;
+}
+.site .lmTopikPanel p,
+.site .lmTopikPanel li {
+  font-size: 17px;
+  line-height: 1.8;
+}
+.site .lmTopikPanel a {
+  display: inline-block;
+  margin: 12px 22px 12px 0;
+  color: #007fe5;
+  font-weight: 700;
+}
+.site .lmTopikMiniGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+  margin: 25px 0;
+}
+.site .lmTopikMiniGrid article {
+  padding: 25px;
+  background: #f7f9fd;
+  border: 1px solid #e1e7f0;
+  border-radius: 18px;
+}
+.site .lmTopikMiniGrid h3 {
+  font-size: 25px;
+  margin: 0 0 12px;
+}
+.site .lmTopikNested {
+  margin-top: 28px;
+}
+.site .lmTopikNested details {
+  border: 1px solid #e1e7f0;
+  border-radius: 16px;
+  margin-bottom: 12px;
+  overflow: hidden;
+}
+.site .lmTopikNested summary {
+  padding: 22px;
+  display: flex;
+  justify-content: space-between;
+  gap: 15px;
+  cursor: pointer;
+  list-style: none;
+  font-weight: 700;
+  font-size: 19px;
+}
+.site .lmTopikNested summary::-webkit-details-marker {
+  display: none;
+}
+.site .lmTopikNested details > div {
+  padding: 0 22px 22px;
+}
+.site .lmTopikNested details[open] {
+  background: #f7f9fd;
+}
+.site .lmTopikAccordion {
+  scroll-margin-top: 100px;
+}
+@media (max-width: 700px) {
+  .site .lmTopikAccordion > summary {
+    grid-template-columns: 30px 1fr 25px;
+    gap: 12px;
+    padding: 28px 0;
+  }
+  .site .lmTopikHeading {
+    font-size: 29px;
+  }
+  .site .lmTopikPanel {
+    padding: 0 0 30px;
+  }
+  .site .lmTopikMiniGrid {
+    grid-template-columns: 1fr;
+  }
+}
+/* END LM TOPIK ACCORDION V1 */
+
+/* LearnMinea TOPIK homepage blue */
+.site .lmTopikHome .lmInfoCard {
+  background:#f0f7ff!important;
+  border-color:#cfe6ff!important;
+}
+.site .lmTopikHome .lmInfoSymbol {
+  background:#dceeff!important;
+  color:#007fe5!important;
+}
+.site .lmTopikHome .lmInfoCard a {
+  color:#007fe5!important;
+}

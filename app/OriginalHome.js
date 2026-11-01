@@ -1,8 +1,14 @@
 'use client'
+
+import './learnminea-illustrations.css'
+import './steep-cinematic.css'
 import './site-compact.css'
+import './steep-motion.css'
 import './method-compact.css'
 import Link from 'next/link'
-import { useState } from 'react'
+import { TopikInfoSection, GksInfoSection } from './components/InfoSections'
+import { useState, useEffect } from 'react'
+import { localizeHomeContent, safeHomeLink } from './lib/homeContent.mjs'
 
 const study = [
   {sy:'가',title:'Үгийн сан',desc:'Өдөр тутамд хамгийн түрүүнд хэрэглэх үгс',href:'/books'},
@@ -22,7 +28,388 @@ const faqs = [
   ['Хичээлүүд үнэгүй юу?','Сайтын нээлттэй танилцуулга, жишээ хэллэгүүдийг үнэгүй үзнэ. Номын сангийн материалуудын үнэ тус бүрдээ харагдана.'],
   ['TOPIK-д зориулсан материал бий юу?','TOPIK-ийн стратеги, үгийн сан, бэлтгэлийн материалын танилцуулгыг TOPIK болон номын сангийн хэсгээс үзээрэй.']
 ]
+
+/* LEARNMINEA FULL-PAGE SCROLL REVEAL */
+function FullPageScrollReveal() {
+  useEffect(() => {
+    const site = document.querySelector('.site')
+    if (!site) return
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    if (reduced || !('IntersectionObserver' in window)) return
+
+    // Do not animate the hero: its GSAP timeline is managed separately.
+    // Keep interactive content visible until the observer has been attached.
+    const selectors = [
+      ':scope > section:not(.hero) .studyCard',
+      ':scope > section:not(.hero) .bookItem',
+      ':scope > section:not(.hero) .reason',
+      ':scope > section:not(.hero) .testimonial',
+      ':scope > section:not(.hero) .faqItem',
+      ':scope > section:not(.hero) .methodCard',
+      ':scope > section:not(.hero) .talkCard',
+      ':scope > section:not(.hero) .scene',
+      ':scope > section:not(.hero) .cta',
+      ':scope > section:not(.hero) .splitCopy',
+      ':scope > section:not(.hero) .booksHead',
+      ':scope > section:not(.hero) .section > .wrap > h2',
+      ':scope > .wrap .lmGksPanel',
+      ':scope > .wrap .lmTopikInfo',
+      ':scope > footer .footerGrid > div',
+      ':scope > footer .footerBottom'
+    ]
+    const items = Array.from(new Set(selectors.flatMap(selector =>
+      Array.from(site.querySelectorAll(selector))
+    )))
+    // Avoid overriding pre-existing dedicated reveals and animation containers.
+    const eligible = items.filter(el =>
+      !el.closest('.mineaWhyReveal, .mineaRegistrationReveal')
+    )
+    const observer = new IntersectionObserver(entries => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('lmScrollVisible')
+          observer.unobserve(entry.target)
+        }
+      })
+    }, { threshold: 0.08, rootMargin: '0px 0px -30px 0px' })
+    eligible.forEach((el, i) => {
+      el.classList.add('lmScrollItem')
+      el.style.setProperty('--lm-scroll-delay', `${(i % 4) * 75}ms`)
+      // Anything already on screen should not disappear after hydration.
+      if (el.getBoundingClientRect().top < window.innerHeight * 0.9) {
+        el.classList.add('lmScrollVisible')
+      } else {
+        observer.observe(el)
+      }
+    })
+    site.classList.add('lmScrollReady')
+    return () => {
+      observer.disconnect()
+      site.classList.remove('lmScrollReady')
+      eligible.forEach(el => {
+        el.classList.remove('lmScrollItem', 'lmScrollVisible')
+        el.style.removeProperty('--lm-scroll-delay')
+      })
+    }
+  }, [])
+  return null
+}
+
+/* LEARNMINEA WHY SCROLL REVEAL */
+function WhyScrollReveal() {
+  useEffect(() => {
+    const root = document.querySelector('.mineaWhyReveal')
+    if (!root) return
+
+    const items = [
+      root.querySelector(':scope > div:first-child'),
+      ...root.querySelectorAll('.reason')
+    ].filter(Boolean)
+
+    if (!('IntersectionObserver' in window)) return
+
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('mineaIsVisible')
+          observer.unobserve(entry.target)
+        }
+      })
+    }, {
+      threshold: 0.12,
+      rootMargin: '0px 0px -35px 0px'
+    })
+
+    items.forEach((item) => observer.observe(item))
+    return () => observer.disconnect()
+  }, [])
+
+  return null
+}
+
+
+/* LEARNMINEA REGISTRATION REVEAL V1 */
+function RegistrationScrollReveal() {
+  useEffect(() => {
+    const section = document.querySelector(
+      '#registration.mineaRegistrationReveal'
+    )
+    if (!section) return
+
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches ||
+        !('IntersectionObserver' in window)) {
+      section.classList.add('mineaRegistrationVisible')
+      return
+    }
+
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('mineaRegistrationVisible')
+          observer.unobserve(entry.target)
+        }
+      })
+    }, {
+      threshold: 0.15,
+      rootMargin: '0px 0px -30px 0px'
+    })
+
+    observer.observe(section)
+
+    return () => observer.disconnect()
+  }, [])
+
+  return null
+}
+
+
+
+
+/* LEARNMINEA STEEP CINEMATIC V1 */
+function SteepCinematicScroll() {
+  useEffect(() => {
+    let context = null
+    let cancelled = false
+
+    async function setup() {
+      const [{ gsap }, { ScrollTrigger }] = await Promise.all([
+        import('gsap'),
+        import('gsap/ScrollTrigger')
+      ])
+
+      if (cancelled) return
+
+      gsap.registerPlugin(ScrollTrigger)
+
+      const site = document.querySelector('.site')
+      const hero = site?.querySelector(':scope > section.hero')
+
+      if (!site || !hero) return
+
+      const mm = gsap.matchMedia()
+      context = mm
+
+      mm.add(
+        '(min-width: 768px) and (prefers-reduced-motion: no-preference)',
+        () => {
+          const heroInner = hero.querySelector('.heroInner')
+          const heading = hero.querySelector('h1')
+          const floating = hero.querySelector('.floating')
+          const paragraphs = hero.querySelectorAll('p')
+          const buttons = hero.querySelectorAll('a, button')
+
+          const timeline = gsap.timeline({
+            defaults: { ease: 'none' },
+            scrollTrigger: {
+              trigger: hero,
+              start: 'top top',
+              end: '+=100%',
+              pin: true,
+              pinSpacing: true,
+              scrub: 0.8,
+              anticipatePin: 1,
+              invalidateOnRefresh: true
+            }
+          })
+
+          // Hero доторх агуулга эхлээд гүн рүү шилжинэ.
+          if (heading) {
+            timeline.to(heading, {
+              y: -110,
+              scale: 0.86,
+              opacity: 0,
+              duration: 0.7
+            }, 0.35)
+          }
+
+          if (paragraphs.length) {
+            timeline.to(paragraphs, {
+              y: -60,
+              opacity: 0,
+              stagger: 0.06,
+              duration: 0.45
+            }, 0.45)
+          }
+
+          if (buttons.length) {
+            timeline.to(buttons, {
+              y: -35,
+              opacity: 0,
+              stagger: 0.025,
+              duration: 0.35
+            }, 0.6)
+          }
+
+          // Бодит Hero дүрслэл томорч, байрлалаа солино.
+          if (floating) {
+            timeline.fromTo(floating,
+              {
+                xPercent: 0,
+                yPercent: 0,
+                scale: 1,
+                rotation: 0
+              },
+              {
+                xPercent: -18,
+                yPercent: -12,
+                scale: 1.4,
+                rotation: -5,
+                duration: 1.1
+              },
+              0
+            )
+
+            timeline.to(floating, {
+              scale: 1.85,
+              opacity: 0,
+              duration: 0.45
+            }, 0.95)
+          }
+
+          // Hero-ийн бусад визуал элементүүд
+          // өөр хурдтай хөдөлнө.
+          const visualCards = hero.querySelectorAll(
+            '.heroVisual > *, .heroArt > *, .heroCards > *'
+          )
+
+          if (visualCards.length) {
+            timeline.fromTo(visualCards,
+              {
+                y: 0,
+                rotation: 0
+              },
+              {
+                y: (index) => index % 2 === 0 ? -95 : 80,
+                rotation: (index) => index % 2 === 0 ? -7 : 6,
+                stagger: 0.06,
+                duration: 1
+              },
+              0
+            )
+          }
+
+          if (heroInner) {
+            timeline.to(heroInner, {
+              opacity: 0,
+              duration: 0.35
+            }, 1.05)
+          }
+
+          // Дараагийн section-уудыг мөн scroll-той
+          // уялдуулж, тус бүрийн картыг хөдөлгөнө.
+          const sections = gsap.utils.toArray(
+            site.querySelectorAll(':scope > section')
+          ).filter(section => section !== hero)
+
+          sections.forEach(section => {
+            const cards = Array.from(
+              section.querySelectorAll(
+                '.booksGrid > *, .reason, .testimonialCard'
+              )
+            )
+
+            if (cards.length) {
+              gsap.fromTo(cards,
+                {
+                  y: (index) => 55 + (index % 3) * 20,
+                  opacity: 0.55
+                },
+                {
+                  y: 0,
+                  opacity: 1,
+                  stagger: 0.08,
+                  ease: 'none',
+                  scrollTrigger: {
+                    trigger: section,
+                    start: 'top 85%',
+                    end: 'top 25%',
+                    scrub: true
+                  }
+                }
+              )
+            }
+          })
+        }
+      )
+
+      ScrollTrigger.refresh()
+    }
+
+    setup().catch(error => {
+      console.error('LearnMinea cinematic motion:', error)
+    })
+
+    return () => {
+      cancelled = true
+      if (context) context.revert()
+    }
+  }, [])
+
+  return null
+}
+
+
+/* LEARNMINEA CUSTOM ILLUSTRATIONS V1 */
+function LearnMineaIllustrations() {
+  useEffect(() => {
+    const root = document.querySelector('.site')
+    if (!root) return
+    const map = [
+      [/☁|🌥|🌤|⛅|🌦/u, 'cloud'],
+      [/✉|📩|💌|📨|📧/u, 'envelope'],
+      [/✏|✎|🖉|📝|✍/u, 'pencil'],
+      [/😊|🙂|😄|😀|🥰|😍/u, 'smile'],
+      [/⭐|🌟|✨|✦|✧/u, 'star'],
+      [/🎨|🖌/u, 'palette'],
+      [/❤️|💗|💕|💖|♥/u, 'heart'],
+      [/📚|📖|📘|📕|📙/u, 'book'],
+      [/🪁/u, 'kite']
+    ]
+    const decorate = () => {
+      const containers = root.querySelectorAll('.floating, .mineacourseDecor')
+      containers.forEach(container => {
+        container.querySelectorAll('span, i, b, div').forEach(el => {
+          if (el.dataset.lmIllustration || el.children.length) return
+          const label = (el.textContent || '').trim()
+          if (!label || label.length > 8) return
+          const found = map.find(([pattern]) => pattern.test(label))
+          if (!found) return
+          const [, name] = found
+          const img = document.createElement('img')
+          img.src = '/learnminea-illustrations/' + name + '.svg'
+          img.alt = ''
+          img.className = 'lmIllustrationImage'
+          img.setAttribute('aria-hidden', 'true')
+          el.textContent = ''
+          el.appendChild(img)
+          el.dataset.lmIllustration = name
+          el.classList.add('lmIllustrationHolder')
+        })
+      })
+    }
+    decorate()
+    // MutationObserver handles decorations mounted after language/content changes.
+    let busy = false
+    const observer = new MutationObserver(() => {
+      if (busy) return
+      busy = true
+      requestAnimationFrame(() => { decorate(); busy = false })
+    })
+    observer.observe(root, {childList:true, subtree:true})
+    return () => observer.disconnect()
+  }, [])
+  return null
+}
+
 export default function Home({ books = [], homeContent = null, editorSettings = {} }) {
+  const [lang, setLang] = useState('MN')
+  const home = localizeHomeContent(
+    homeContent,
+    lang === '한국' ? 'KR' : lang
+  )
+  const url = (value, fallback = '/') =>
+    safeHomeLink(value) || fallback
+
   const realBookImages = books.slice(0, 4).map(book =>
     book.cover_url || book.image_url || book.cover_image_url || ''
   )
@@ -30,60 +417,163 @@ export default function Home({ books = [], homeContent = null, editorSettings = 
  const [search,setSearch]=useState('')
  const [faq,setFaq]=useState(2)
  const [menu,setMenu]=useState(false)
- const [lang,setLang]=useState('MN')
  const [playing,setPlaying]=useState(false)
  const speak=(value)=>{if(typeof window==='undefined'||!window.speechSynthesis)return;window.speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(value);u.lang='ko-KR';u.rate=.85;setPlaying(true);u.onend=()=>setPlaying(false);window.speechSynthesis.speak(u)}
  const searchNow=(e)=>{e.preventDefault();window.location.href='/books?search='+encodeURIComponent(search)}
  return <div className="site">
-  <header className="header"><Link className="logo" href="/">learnminea<span>.</span></Link><nav className={menu?'nav show':'nav'}><Link href="/">Нүүр</Link><Link href="/topik">TOPIK</Link><Link href="/k-drama">K-Drama</Link><Link href="/books">Цахим ном</Link><a href="#method">Сурах</a></nav><div className="headright"><div className="languages">{['MN','EN','한국'].map(x=><button key={x} onClick={()=>setLang(x)} className={lang===x?'selected':''}>{x}</button>)}</div><Link href="/survey" className="round" aria-label="Судалгаа">♙</Link><Link href="/books" className="round" aria-label="Номын сан">▣</Link><button className="round hamburger" onClick={()=>setMenu(!menu)} aria-label="Цэс">☰</button></div></header>
+    <LearnMineaIllustrations />
+    {/* Hero zoom/pin disabled; full-page scroll reveals remain enabled. */}
+    <FullPageScrollReveal />
+    
+    
+    
+  <header className="header"><Link className="logo" href="/">learnminea<span>.</span></Link><nav className={menu?'nav show':'nav'}><Link href="/">Нүүр</Link><Link href="/topik">TOPIK</Link><Link href="/k-drama">K-Drama</Link><Link href="/books">Цахим ном</Link><Link href="/survey">Сурах</Link></nav><div className="headright"><div className="languages">{['MN','EN','한국'].map(x=><button key={x} onClick={()=>setLang(x)} className={lang===x?'selected':''}>{x}</button>)}</div><Link href="/survey" className="round" aria-label="Судалгаа">♙</Link><Link href="/books" className="round" aria-label="Номын сан"><svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 7v14"/><path d="M3 18V5a2 2 0 0 1 2-2h3a4 4 0 0 1 4 4 4 4 0 0 1 4-4h3a2 2 0 0 1 2 2v13a2 2 0 0 0-2-2h-3a4 4 0 0 0-4 4 4 4 0 0 0-4-4H5a2 2 0 0 0-2 2Z"/></svg></Link><button className="round hamburger" onClick={()=>setMenu(!menu)} aria-label="Цэс">☰</button></div></header>
   <section
     className="hero"
     style={{
+      background: editorSettings.heroColor || '#79B6FA',
       '--admin-hero-title-size': `${Number(editorSettings.heroFontSize) || 72}px`,
       '--admin-hero-text-size': `${Number(editorSettings.heroTextSize) || 18}px`,
       '--admin-heading-size': `${Number(editorSettings.headingFontSize) || 48}px`,
     }}
-  ><div className="heroInner"><div className="heroText"><div className="eyebrow white">ӨӨРИЙН ХЭМНЭЛЭЭР, БОДИТ ХЭРЭГЛЭЭНЭЭС</div><h1>
-      {editorSettings.heroTitle || 'Хэл сурахад ихийг биш, зөвийг сур.'}
-    </h1><p>Хэл сурахад ихийг биш, зөвийг сур. Өөрийн түвшин, зорилго, сурах арга барилдаа тохирсон хичээл, цахим ном, бодит хэрэглээний материалаа нэг дороос олоорой.</p><form className="search" onSubmit={searchNow}><span>⌕</span><input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Жишээ нь: кафед хэрхэн захиалах вэ?"/><button>Хайх&nbsp; →</button></form></div><div className="floating" aria-hidden="true"><div className="floatCard cardOne">오늘 뭐 해요?</div><div className="floatCard cardTwo">-고 싶어요</div><div className="floatCard cardThree"><small>♬</small>TOPIK II</div><div className="floatCard cardFour">진짜?</div><div
+  ><div className="heroInner"><div className="heroText"><div
+      className="eyebrow white"
+      style={{
+        fontSize: `${editorSettings.heroEyebrowFontSize ?? 14}px`,
+        lineHeight: editorSettings.heroEyebrowLineHeight ?? 1.3,
+        letterSpacing: `${editorSettings.heroEyebrowLetterSpacing ?? 3}px`,
+      }}
+    >
+      {(lang !== 'MN' ? home.hero.eyebrow : (editorSettings.heroEyebrow ?? home.hero.eyebrow))}
+    </div><h1 style={{
+      lineHeight: editorSettings.heroTitleLineHeight ?? 1.05,
+      letterSpacing: `${editorSettings.heroTitleLetterSpacing ?? -3}px`,
+    }}>
+      {(lang !== 'MN' ? home.hero.title : (editorSettings.heroTitle || home.hero.title))}
+    </h1><p style={{
+      lineHeight: editorSettings.heroSubtitleLineHeight ?? 1.55,
+      letterSpacing: `${editorSettings.heroSubtitleLetterSpacing ?? 0}px`,
+    }}>
+      {(lang !== 'MN' ? home.hero.body : (editorSettings.heroSubtitle ?? home.hero.body))}
+    </p><form className="search" onSubmit={searchNow}><span>⌕</span><input value={search} onChange={e=>setSearch(e.target.value)} placeholder={home.hero.search_placeholder}/><button>{home.hero.search_button}</button></form></div><div className="floating" aria-hidden="true">
+      {editorSettings.heroImage &&
+        /^https?:\/\//i.test(editorSettings.heroImage) && (
+          <img
+            src={editorSettings.heroImage}
+            alt=""
+            style={{
+              position: 'absolute',
+              inset: 0,
+              width: '100%',
+              height: '100%',
+              objectFit: 'contain',
+              opacity: 0.35,
+              pointerEvents: 'none',
+            }}
+          />
+        )}<div className="floatCard cardOne">오늘 뭐 해요?</div><div className="floatCard cardTwo">-고 싶어요</div><div className="floatCard cardThree"><small>♬</small>TOPIK II</div><div className="floatCard cardFour">진짜?</div><div
   className="ticket"
   style={{
     top: `${Number(editorSettings.ticketTop ?? 44)}%`,
     left: `${Number(editorSettings.ticketLeft ?? 58)}%`,
-    transform: `rotate(${Number(editorSettings.ticketRotate ?? 5)}deg) scale(${Number(editorSettings.ticketScale ?? 0.68)})`,
+    transform: `translate(-50%, -50%) rotate(${Number(editorSettings.ticketRotate ?? 5)}deg) scale(${Number(editorSettings.ticketScale ?? 0.68)})`,
     transformOrigin: 'center center',
+    background: editorSettings.ticketBackground || '#fffdfb',
+    color: editorSettings.ticketTextColor || '#222032',
+    '--ticket-accent': editorSettings.ticketAccentColor || '#ff747b',
   }}
-><div className="ticketName">LEARN <b>✦</b> MINEA</div><div className="ticketSub">KOREAN LEARNING · STUDENT PASS</div><div className="ticketLine"/><div className="ticketRows"><span>Суралцагч<br/>Сургалт<br/>Систем<br/>Ахиц</span><strong>Таны нэр<br/>Таны сонголт<br/>Видео + Quiz<br/>Progress tracking</strong></div><div className="ticketLine"/><div className="ticketBottom">START LEARNING →</div></div></div></div></section>
-  <section className="section"><div className="wrap"><div className="eyebrow">ЭХЛЭХ ХЭСЭГ</div><h2>Өнөөдөр юу сурах вэ?</h2><p className="sub">Өнөөдөр танд хэрэгтэй нэг жижиг сэдвээс эхлээд тогтвортой урагшлаарай.</p><div className="studyGrid">{study.map(x=><Link href={x.href} className="studyCard" key={x.title}><span className="sy">{x.sy}</span><div><h3>{x.title}</h3><p>{x.desc}</p></div><span className="arrow">→</span></Link>)}</div></div></section>
+>
+
+<div className="ticketName">
+  {editorSettings.ticketTitle ?? 'LEARN ✦ MINEA'}
+</div>
+<div className="ticketSub">
+  {editorSettings.ticketSubtitle ?? 'KOREAN LEARNING · STUDENT PASS'}
+</div>
+<div className="ticketLine" />
+<div className="ticketRows">
+  <div className="ticketLabels">
+    {String(editorSettings.ticketLabels ?? 'Суралцагч\nСургалт\nСистем\nАхиц')
+      .replace(/\\n/g, '\n')
+      .split('\n')
+      .map((line, i) => <span key={i}>{line}</span>)}
+  </div>
+  <div className="ticketValues">
+    {String(editorSettings.ticketValues ?? 'Таны нэр\nТаны сонголт\nВидео + Quiz\nProgress tracking')
+      .replace(/\\n/g, '\n')
+      .split('\n')
+      .map((line, i) => <strong key={i}>{line}</strong>)}
+  </div>
+</div>
+<div className="ticketLine" />
+<div className="ticketBottom">
+  {editorSettings.ticketBottom ?? 'START LEARNING →'}
+</div>
+</div></div></div></section>
+  
+  <section className="section">
+    <div className="wrap">
+      <div className="eyebrow">{home.study.eyebrow}</div>
+      <h2>{home.study.title}</h2>
+      <p className="sub">{home.study.body}</p>
+
+      <div className="studyGrid">
+        {home.study.cards.map((item, index) => (
+          <Link
+            href={index === 0 ? '/books?category=vocabulary#book-catalog' : index === 1 ? '/books?category=grammar#book-catalog' : index === 2 ? '/books?category=conversation#book-catalog' : url(item.url, study[index]?.href || '/books')}
+            className="studyCard"
+            key={index}
+          >
+            <span className="sy">{item.symbol}</span>
+            <div>
+              <h3>{item.title}</h3>
+              <p>{item.body}</p>
+            </div>
+            <span className="arrow">→</span>
+          </Link>
+        ))}
+      </div>
+    </div>
+  </section>
+  
+  {/* Shared public/admin components: identical markup and styles */}
+  <div className="wrap"><TopikInfoSection value={home.topikInfo} /></div>
+  <div className="wrap" style={{paddingBottom:70}}><GksInfoSection value={home.gksInfo} /></div>
+
   <section className="section conversation" id="conversation">
     <div className="wrap split">
       <div className="talkCard">
         <div className="talkTop">
-          <span>{homeContent?.conversation?.eyebrow ?? 'ӨНӨӨДРИЙН ЯРИА'}</span>
+          <span>{home.conversation.eyebrow}</span>
           <button
-            onClick={() => speak(homeContent?.conversation?.korean ?? '아이스 아메리카노 한 잔 주세요.')}
+            onClick={() => speak(home.conversation.korean)}
             aria-label="Солонгос дуудлага сонсох"
           >
             {playing ? 'Ⅱ' : '▶'}
           </button>
         </div>
-        <h2 lang="ko">{homeContent?.conversation?.korean ?? '아이스 아메리카노 한 잔 주세요.'}</h2>
-        <p>{homeContent?.conversation?.translation ?? 'Нэг мөстэй американо өгнө үү.'}</p>
-        <div className="tip">
-          {homeContent?.conversation?.tip ?? '📌 한 잔 нь аяга уух зүйл тоолох хэллэг. 주세요-г хүсэлтээ эелдгээр хэлэхдээ ашиглана.'}
-        </div>
+
+        <h2 lang="ko">{home.conversation.korean}</h2>
+        <p>{home.conversation.translation}</p>
+        <div className="tip">{home.conversation.tip}</div>
       </div>
+
       <div className="splitCopy">
-        <div className="eyebrow">{homeContent?.conversation?.side_eyebrow ?? 'АМЬД ХЭРЭГЛЭЭНИЙ СОЛОНГОС ХЭЛ'}</div>
-        <h2>{homeContent?.conversation?.side_title ?? 'Солонгос хэлийг амьд хэрэглээнээс сур'}</h2>
-        <p>{homeContent?.conversation?.side_body ?? 'Дүрмийг дангаар нь бус, яг хэрэглэх нөхцөл, өнгө аяс, богино жишээтэй нь ойлгоно.'}</p>
-        <Link className="textLink" href={homeContent?.conversation?.button_url || '/k-drama'}>
-          {homeContent?.conversation?.button_text ?? 'Дэлгэрэнгүй үзэх →'}
+        <div className="eyebrow">
+          {home.conversation.side_eyebrow}
+        </div>
+        <h2>{home.conversation.side_title}</h2>
+        <p>{home.conversation.side_body}</p>
+        <Link
+          className="textLink"
+          href={url(home.conversation.button_url, '/k-drama')}
+        >
+          {home.conversation.button_text}
         </Link>
       </div>
     </div>
   </section>
-  <section className="section" id="books"><div className="wrap"><div className="booksHead"><div><div className="eyebrow">ЦАХИМ НОМЫН САН</div><h2>Хаана ч авч явах сурах<br/>материал</h2></div><p>Татаж аваад өөрийн хурдаар ажиллах, тодорхой зорилготой таван цуглуулга.</p></div><div className="booksGrid">
+  <section className="section" id="books"><div className="wrap"><div className="booksHead"><div><div className="eyebrow">{home.books.eyebrow}</div><h2>{home.books.title}</h2></div><p>{home.books.body}</p></div><div className="booksGrid">
   {books.slice(0, 4).map((book, i) => {
     const image = book.cover_url || book.image_url || book.cover_image_url || ''
 
@@ -113,27 +603,130 @@ export default function Home({ books = [], homeContent = null, editorSettings = 
 
         <div className="bookMeta">ДИЖИТАЛ МАТЕРИАЛ · PDF</div>
         <h3>{book.title}</h3>
-        
-
-        {book.price != null && (
-          <strong className="price">
-            {Number(book.price).toLocaleString('en-US')}₮
-          </strong>
-        )}
+        <p className="mineaBookShort">{book.short_description || book.shortDescription || ''}</p>
+        <div className="mineaBookFooter">
+          {book.price != null && (
+            <strong className="price">{Number(book.price).toLocaleString('en-US')}₮</strong>
+          )}
+          <span className="mineaBookOrder">Захиалах</span>
+        </div>
       </Link>
     )
   })}
 </div>
 {books.length === 0 && (
-  <p>Одоогоор нийтлэгдсэн цахим ном байхгүй байна.</p>
+  <p>{home.books.empty_text}</p>
 )}
-<div className="center"><Link className="blueBtn" href="/books">Бүх номыг үзэх →</Link></div></div></section>
-  <section className="section method" id="method"><div className="wrap split"><div><div className="eyebrow warm">СУРАХ АРГА БАРИЛ</div><h2>Танд тохирох сурах аргаа олъё</h2><p>15–20 минутын асуулгаар таны зорилго, одоогийн арга, боломжит цагийг тодруулж, бодит төлөвлөгөө санал болгоно.</p><Link className="whiteBtn" href="/survey">Үнэлгээг эхлүүлэх &nbsp; →</Link></div><div className="methodCard"><div><strong>15–20</strong><span> минут</span></div><hr/><p>✓ &nbsp; Сурах арга барил</p><p>✓ &nbsp; Хувийн хөтөлбөр</p><p>✓ &nbsp; Дөрвөн чадварын тэнцвэр</p></div></div></section>
-  <section className="section"><div className="wrap split why"><div><div className="eyebrow">ЯАГААД LEARNMINEA ВЭ</div><h2>Илүү их контент биш. Илүү зөв чиглэл.</h2></div><div className="reasons">{[['Бүгдийг биш, хэрэгтэйг','Таны зорилгод хүргэх үг, дүрэм, нөхцөлд төвлөрнө.'],['Цээжлэхээс илүү ойлгох','Яагаад ингэж хэлдгийг утга, холбоо, жишээгээр тайлбарлана.'],['Цагаа үр дүнтэй ашиглах','Богино хичээл бүр тодорхой нэг үр дүнтэй.'],['Материал дээр нэмэх нь чиглүүлэг','Дижитал материалаа хэрхэн ашиглах алхмыг хамт өгнө.']].map((x,i)=><div className="reason" key={i}><span>0{i+1}</span><div><h3>{x[0]}</h3><p>{x[1]}</p></div></div>)}</div></div></section>
-  <section className="section lifestyle"><div className="wrap split"><div className="scene">
-  {homeContent?.lifestyle?.image_url ? (
+<div className="center"><Link className="blueBtn" href={url(home.books.button_url, "/books")}>{home.books.button_text}</Link></div></div></section>
+  <section
+    className="section method"
+    id="method"
+    style={{
+      background: home.assessment.style.background,
+      paddingTop: home.assessment.style.section_padding,
+      paddingBottom: home.assessment.style.section_padding
+    }}
+  >
+    <div className="wrap split">
+      <div>
+        <div
+          className="eyebrow warm"
+          style={{
+            color: home.assessment.style.eyebrow_color,
+            fontSize: home.assessment.style.eyebrow_size
+          }}
+        >
+          {home.assessment.eyebrow}
+        </div>
+
+        <h2
+          style={{
+            color: home.assessment.style.heading_color,
+            fontSize: home.assessment.style.heading_size
+          }}
+        >
+          {home.assessment.title}
+        </h2>
+
+        <p
+          style={{
+            color: home.assessment.style.body_color,
+            fontSize: home.assessment.style.body_size
+          }}
+        >
+          {home.assessment.body}
+        </p>
+
+        <Link
+          className="whiteBtn"
+          href={url(home.assessment.button_url, '/survey')}
+          style={{
+            background: home.assessment.style.button_background,
+            color: home.assessment.style.button_text_color,
+            fontSize: home.assessment.style.button_size
+          }}
+        >
+          {home.assessment.button_text}
+        </Link>
+      </div>
+
+      <div
+        className="methodCard"
+        style={{
+          background: home.assessment.style.card_background,
+          borderColor: home.assessment.style.card_border,
+          borderRadius: home.assessment.style.card_radius
+        }}
+      >
+        <div>
+          <strong
+            style={{
+              fontSize: home.assessment.style.duration_size,
+              color: home.assessment.style.card_text_color
+            }}
+          >
+            {home.assessment.duration}
+          </strong>
+          <span>
+            {' '}{home.assessment.duration_unit}
+          </span>
+        </div>
+        <hr/>
+
+        {home.assessment.benefits.map((benefit, i) => (
+          <p key={i}>
+            ✓ &nbsp; {benefit}
+          </p>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <section className="section">
+    <WhyScrollReveal />
+    <div className="wrap split why mineaWhyReveal">
+      <div>
+        <div className="eyebrow">{home.why.eyebrow}</div>
+        <h2>{home.why.title}</h2>
+      </div>
+
+      <div className="reasons">
+        {home.why.reasons.map((reason, i) => (
+          <div className="reason" key={i}>
+            <span>{String(i + 1).padStart(2, '0')}</span>
+            <div>
+              <h3>{reason.title}</h3>
+              <p>{reason.body}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  </section>
+  {home.lifestyle.enabled && (<section className="section lifestyle"><div className="wrap split"><div className="scene">
+  {home.lifestyle.image_url ? (
     <img
-      src={homeContent.lifestyle.image_url}
+      src={home.lifestyle.image_url}
       alt="Бодит хэрэглээний солонгос хэл"
       style={{
         display: 'block',
@@ -149,21 +742,21 @@ export default function Home({ books = [], homeContent = null, editorSettings = 
       <div className="ground"><span>안녕하세요</span></div>
     </>
   )}
-</div><div className="splitCopy"><div className="eyebrow">БОДИТ АМЬДРАЛ, БОДИТ ХЭЛ</div><h2>Хичээлээс гараад шууд хэрэглэгддэг хэл</h2><p>Кафе, сургууль, ажил, нийтийн тээвэр, өдөр тутмын уулзалт. Амьдрал дээр танд хэрэг болох мөчөөс хичээл эхэлнэ.</p><div className="pills">{['Кафе','Сургууль','Ажил','Тээвэр','Өдөр тутам'].map(x=><span key={x}>{x}</span>)}</div></div></div></section>
-  {homeContent?.testimonials?.enabled !== false && (
+</div><div className="splitCopy"><div className="eyebrow">{home.lifestyle.eyebrow}</div><h2>{home.lifestyle.title}</h2><p>{home.lifestyle.body}</p><div className="pills">{home.lifestyle.tags.map((x,i)=><span key={i}>{x}</span>)}</div></div></div></section>)}
+  {home.testimonials.enabled !== false && (
     <section className="section testimonials">
       <div className="wrap">
         <div className="eyebrow">
-          {homeContent?.testimonials?.eyebrow || 'СУРАЛЦАГЧДЫН СЭТГЭГДЭЛ'}
+          {home.testimonials.eyebrow || 'СУРАЛЦАГЧДЫН СЭТГЭГДЭЛ'}
         </div>
 
         <h2>
-          {homeContent?.testimonials?.title ||
+          {home.testimonials.title ||
             'Суралцагчид LearnMinea-г хэрхэн ашиглаж байна'}
         </h2>
 
         <div className="testimonialGrid">
-          {(homeContent?.testimonials?.reviews || [])
+          {(home.testimonials.reviews || [])
             .filter(review => review.published && review.text)
             .map((review, index) => (
               <div className="testimonial" key={review.id || index}>
@@ -177,42 +770,206 @@ export default function Home({ books = [], homeContent = null, editorSettings = 
       </div>
     </section>
   )}
-  <section className="section"><div className="wrap split faq"><h2>Түгээмэл асуулт</h2><div className="faqList">{faqs.map((x,i)=><div className="faqItem" key={i}><button onClick={()=>setFaq(faq===i?-1:i)}><span>{x[0]}</span><span>{faq===i?'×':'+'}</span></button>{faq===i&&<p>{x[1]}</p>}</div>)}</div></div></section>
-  <section className="section finalCta"><div className="wrap"><div className="cta"><div><div className="eyebrow warm">LEARNMINEA</div><h2>Хэл сурах нэг л зөв арга гэж<br/>байхгүй.</h2><p>Танд тохирох арга, ойлгомжтой тайлбар, тогтвортой жижиг алхам байхад хангалттай.</p></div><Link className="whiteBtn" href="/survey">Өөрийн аргаа олох →</Link></div></div></section>
-  <footer className="footer"><div className="wrap"><div className="footerGrid"><div><Link className="logo" href="/">learnminea<span>.</span></Link><p>Хэл сурахыг өөртөө ойр, амьдралд хэрэгтэй болгоно.</p><div className="social footerSocials">
-  {homeContent?.footer?.instagram && (
-    <a href={homeContent.footer.instagram}
-       target="_blank" rel="noopener noreferrer"
-       aria-label="Instagram" title="Instagram">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
-           strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-        <rect x="2" y="2" width="20" height="20" rx="5"/>
-        <circle cx="12" cy="12" r="4"/>
-        <circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/>
-      </svg>
-    </a>
+    {home.registration.enabled && (
+    <section className="section registration mineaRegistrationCompact" id="registration">
+      {/* LEARNMINEA COURSE GENIESTUDIO V1 */}
+<div className="wrap mineaRegistrationLayout">
+        <div className="mineaRegistrationContent">
+          <div className="eyebrow">
+            {home.registration.eyebrow}
+          </div>
+
+          <h2>{home.registration.title}</h2>
+          <p className="sub">{home.registration.body}</p>
+        </div>
+
+        {home.registration.button_url && (
+          <div className="mineaRegistrationAction">
+            <a
+              className="blueBtn"
+              href={url(home.registration.button_url, '#registration')}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              {home.registration.button_text}
+            </a>
+          </div>
+        )}
+      </div>
+    </section>
   )}
-  {homeContent?.footer?.facebook && (
-    <a href={homeContent.footer.facebook}
-       target="_blank" rel="noopener noreferrer"
-       aria-label="Facebook" title="Facebook">
-      <svg viewBox="0 0 24 24" fill="currentColor">
-        <path d="M22 12a10 10 0 1 0-11.56 9.88v-6.99H7.9V12h2.54V9.8c0-2.5 1.49-3.89 3.77-3.89 1.09 0 2.23.19 2.23.19v2.46h-1.26c-1.24 0-1.63.77-1.63 1.56V12h2.78l-.44 2.89h-2.34v6.99A10 10 0 0 0 22 12Z"/>
-      </svg>
-    </a>
-  )}
-  {homeContent?.footer?.email && (
-    <a href={'mailto:' + homeContent.footer.email}
-       aria-label="Gmail" title="И-мэйл">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
-           strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-        <rect x="2" y="5" width="20" height="14" rx="2"/>
-        <path d="m3 7 9 7 9-7"/>
-      </svg>
-    </a>
-  )}
-</div></div><div><strong>СУРАХ</strong><Link href="/topik">TOPIK</Link><Link href="/k-drama">K-Drama</Link><Link href="/books">Цахим ном</Link></div><div><strong>LEARNMINEA</strong><Link href="/">Нүүр</Link><Link href="/survey">Сурах арга барил</Link><a href="#faq">Түгээмэл асуулт</a><a href="mailto:hello@learnminea.com">Холбоо</a></div></div><div className="footerBottom"><span>© 2026 LearnMinea. Бүх эрх хуулиар хамгаалагдсан.</span><span>Дижитал материалын эрх, таталтыг серверээр баталгаажуулна.</span></div></div></footer>
+
+
+<style jsx global>{`
+/* LearnMinea registration + FAQ compact layout */
+.site #faq .faqItem button { font-size: clamp(17px, 1.45vw, 23px) !important; line-height: 1.35; padding: 20px 0 !important; font-family: Arial, 'Noto Sans', sans-serif !important; }
+.site #faq .faqItem button span:last-child { font-size: 26px !important; flex: 0 0 auto; }
+.site #faq .faqItem p { font-size: 16px !important; line-height: 1.7; margin: 0 0 22px; }
+.site #registration.mineaRegistrationCompact { position: relative !important; overflow: hidden; padding: 70px 0 !important; background: #eaf4ff; }
+.site #registration .mineaRegistrationLayout { position: relative !important; display: grid !important; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: center !important; gap: 40px; min-height: 0 !important; transform: none !important; opacity: 1 !important; }
+.site #registration .mineaRegistrationContent { position: static !important; transform: none !important; opacity: 1 !important; min-width: 0; }
+.site #registration .mineaRegistrationContent h2 { font-size: clamp(32px, 3.4vw, 52px) !important; line-height: 1.12; }
+.site #registration .mineaRegistrationContent .sub { font-size: clamp(15px, 1.15vw, 18px) !important; }
+.site #registration .mineaRegistrationAction { position: static !important; inset: auto !important; transform: none !important; opacity: 1 !important; display: flex !important; align-items: center; justify-content: center; margin: 0 !important; width: auto !important; height: auto !important; }
+.site #registration .mineaRegistrationAction .blueBtn { display: inline-flex; justify-content: center; align-items: center; width: auto !important; min-width: 160px; max-width: 100%; padding: 14px 28px !important; font-size: 17px !important; border-radius: 999px; }
+@media (max-width: 760px) {
+ .site #registration.mineaRegistrationCompact { padding: 52px 0 !important; }
+ .site #registration .mineaRegistrationLayout { grid-template-columns: 1fr; gap: 22px; }
+ .site #registration .mineaRegistrationAction { justify-content: flex-start; }
+ .site #faq .faqItem button { font-size: 17px !important; }
+}
+`}</style>
+
+  <section className="section" id="faq">
+    <div className="wrap split faq">
+      <div>
+        <div className="eyebrow">{home.faq.eyebrow}</div>
+        <h2>{home.faq.title}</h2>
+      </div>
+
+      <div className="faqList">
+        {home.faq.items.map((item, i) => (
+          <div className="faqItem" key={i}>
+            <button
+              onClick={() => setFaq(faq === i ? -1 : i)}
+            >
+              <span>{item.question}</span>
+              <span>{faq === i ? '×' : '+'}</span>
+            </button>
+            {faq === i && <p>{item.answer}</p>}
+          </div>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <section className="section finalCta">
+    <div className="wrap">
+      <div className="cta">
+        <div>
+          <div className="eyebrow warm">
+            {home.finalCta.eyebrow}
+          </div>
+          <h2>{home.finalCta.title}</h2>
+          <p>{home.finalCta.body}</p>
+        </div>
+
+        <Link
+          className="whiteBtn"
+          href={url(home.finalCta.button_url, '/survey')}
+        >
+          {home.finalCta.button_text}
+        </Link>
+      </div>
+    </div>
+  </section>
+  
+<style jsx global>{`
+  footer.mineaDarkFooter {
+    background: #191a1c !important;
+    background-color: #191a1c !important;
+    color: #ffffff !important;
+  }
+  footer.mineaDarkFooter .logo,
+  footer.mineaDarkFooter strong {
+    color: #ffffff !important;
+  }
+  footer.mineaDarkFooter p,
+  footer.mineaDarkFooter a:not(.logo),
+  footer.mineaDarkFooter .footerBottom {
+    color: #b9bbc5 !important;
+  }
+  footer.mineaDarkFooter .footerBottom {
+    border-top-color: #44464b !important;
+  }
+`}</style>
+
+<footer className="footer mineaDarkFooter" style={{backgroundColor:"#191a1c",color:"#ffffff"}}><div className="wrap"><div className="footerGrid"><div><Link className="logo" href="/">{home.footer.logo}<span>.</span></Link><p>{home.footer[lang === "한국" ? "KR" : lang]?.description}</p><div className="social footerSocials">
+  <a
+    href={home.footer?.instagram || 'https://www.instagram.com/'}
+    target="_blank"
+    rel="noopener noreferrer"
+    aria-label="Instagram"
+    title="Instagram"
+  >
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="2" y="2" width="20" height="20" rx="5"/>
+      <circle cx="12" cy="12" r="4"/>
+      <circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/>
+    </svg>
+  </a>
+
+  <a
+    href={home.footer?.facebook || 'https://www.facebook.com/'}
+    target="_blank"
+    rel="noopener noreferrer"
+    aria-label="Facebook"
+    title="Facebook"
+  >
+    <svg viewBox="0 0 24 24" fill="currentColor">
+      <path d="M22 12a10 10 0 1 0-11.56 9.88v-6.99H7.9V12h2.54V9.8c0-2.5 1.49-3.89 3.77-3.89 1.09 0 2.23.19 2.23.19v2.46h-1.26c-1.24 0-1.63.77-1.63 1.56V12h2.78l-.44 2.89h-2.34v6.99A10 10 0 0 0 22 12Z"/>
+    </svg>
+  </a>
+
+  <a
+    href={home.footer?.email
+      ? `mailto:${home.footer.email}`
+      : 'mailto:hello@learnminea.com'}
+    aria-label="Gmail"
+    title="И-мэйл"
+  >
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="2" y="5" width="20" height="14" rx="2"/>
+      <path d="m3 7 9 7 9-7"/>
+    </svg>
+  </a>
+</div></div><div><strong>{home.footer[lang === "한국" ? "KR" : lang]?.learn_heading}</strong><Link href="/topik">TOPIK</Link><Link href="/k-drama">K-Drama</Link><Link href="/books">{home.footer[lang === "한국" ? "KR" : lang]?.books}</Link></div><div><strong>{home.footer[lang === "한국" ? "KR" : lang]?.site_heading}</strong><Link href="/">{home.footer[lang === "한국" ? "KR" : lang]?.home}</Link><Link href="/survey">{home.footer[lang === "한국" ? "KR" : lang]?.assessment}</Link><a href="#faq">{home.footer[lang === "한국" ? "KR" : lang]?.faq}</a><Link href="/contact">{home.footer[lang === "한국" ? "KR" : lang]?.contact}</Link></div></div><div className="footerBottom"><span>{home.footer[lang === "한국" ? "KR" : lang]?.copyright}</span><span>{home.footer[lang === "한국" ? "KR" : lang]?.rights}</span></div></div></footer>
   <style jsx global>{`
+
+
+  /* GKS: compact LearnMinea blue and white layout */
+  .site .lmGksHome{padding-top:55px;padding-bottom:100px}
+  .site .lmGksPanel{border:1px solid #cfe3ff;border-radius:26px;background:#f4f9ff;overflow:hidden;box-shadow:0 12px 36px #2275b00a}
+  .site .lmGksHeader{padding:32px 36px;display:flex;justify-content:space-between;align-items:center;gap:22px}
+  .site .lmGksEyebrow{display:inline-block;border-radius:100px;padding:8px 12px;background:#e0efff;color:#0874d1;font-size:11px;font-weight:800;letter-spacing:1.1px;margin-bottom:14px}
+  .site .lmGksHeader h2{font-family:Arial,'Noto Sans',sans-serif;font-size:clamp(26px,3vw,40px);font-weight:800;letter-spacing:-1.2px}
+  .site .lmGksHeader p{font-size:15px;margin:12px 0 0;max-width:760px;color:#66788f}
+  .site .lmGksMore{border:1px solid #a9d2ff;border-radius:12px;background:white;color:#0877d6!important;font-size:14px;font-weight:700;padding:12px 17px;white-space:nowrap}
+  .site .lmGksDetails{border-top:1px solid #dbe9f9}
+  .site .lmGksDetails summary{list-style:none;display:flex;align-items:center;justify-content:space-between;cursor:pointer;padding:18px 36px;font-size:15px;font-weight:700;color:#22364f}
+  .site .lmGksDetails summary::-webkit-details-marker{display:none}
+  .site .lmGksDetails[open] summary span{transform:rotate(45deg)}
+  .site .lmGksDetails summary span{font-size:22px;transition:transform .2s}
+/* Compact GKS: one box, no second accordion bar */
+.site .lmGksHome{padding-top:34px;padding-bottom:70px}
+.site .lmGksHome .lmGksPanel{max-width:1120px;margin:0 auto;background:#f5f8ff;border:1px solid #d7e5ff;border-radius:22px;box-shadow:0 10px 30px #234e9210;overflow:hidden}
+.site .lmGksHome .lmGksHeader{display:flex;flex-direction:row;align-items:center;justify-content:space-between;gap:24px;padding:28px 32px}
+.site .lmGksHome .lmGksEyebrow{font-size:10px;padding:7px 11px;margin-bottom:12px;letter-spacing:.5px}
+.site .lmGksHome .lmGksHeader h2{font-family:Arial,'Noto Sans',sans-serif;font-size:clamp(21px,2.1vw,27px)!important;line-height:1.25;font-weight:800;letter-spacing:-.6px;margin:0}
+.site .lmGksHome .lmGksHeader p{font-size:13px;line-height:1.5;margin:9px 0 0;color:#68778b;max-width:760px}
+.site .lmGksHome .lmGksMore{flex-shrink:0;font-family:inherit;border:1px solid #c7d9ff;border-radius:11px;background:#fff;color:#1976d2!important;font-size:13px;font-weight:700;padding:11px 15px;cursor:pointer}
+.site .lmGksHome .lmGksDetails{border-top:0}
+.site .lmGksHome .lmGksDetails>summary{display:none}
+.site .lmGksHome .lmGksDetails[open] .lmGksBody{border-top:1px solid #dce8fc}
+@media(max-width:700px){.site .lmGksHome .lmGksHeader{padding:22px;align-items:flex-start;flex-direction:column}.site .lmGksHome .lmGksMore{align-self:flex-end}}
+
+  .site .lmGksBody{padding:4px 36px 32px}
+  .site .lmGksSection{margin:22px 0 26px}
+  .site .lmGksBody h3{font-family:Arial,'Noto Sans',sans-serif;font-size:17px;font-weight:800;margin:0 0 13px;letter-spacing:-.2px}
+  .site .lmGksBody p,.site .lmGksBody li{font-size:14px;line-height:1.85;color:#596b81}
+  .site .lmGksBody ul{margin:8px 0 0;padding-left:20px}
+  .site .lmGksBody li{padding-left:3px;margin-bottom:6px;break-inside:avoid}
+  .site .lmGksTwoCols{columns:2;column-gap:42px}
+  .site .lmGksNote{background:#fff;border:1px solid #d8e7f8;padding:14px 16px;border-radius:12px}
+  .site .lmGksCards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin-top:26px}
+  .site .lmGksCards article{background:#fff;border:1px solid #dbe7f7;border-radius:15px;padding:22px;min-height:150px}
+  .site .lmGksCards p{white-space:pre-line;margin:0}
+  .site .lmGksActions{display:flex;justify-content:space-between;align-items:center;gap:16px;background:#fff;border:1px solid #d8e7fa;border-radius:14px;margin-top:22px;padding:14px 17px}
+  .site .lmGksActions>a:first-child{color:#0877d6!important;font-size:13px;font-weight:600}
+  .site .lmGksConsult{display:inline-block;background:#087cdb;color:#fff!important;border-radius:10px;padding:12px 20px;font-size:14px;font-weight:700}
+  @media(max-width:700px){.site .lmGksHeader{padding:23px;align-items:flex-start;flex-direction:column}.site .lmGksDetails summary{padding:17px 23px}.site .lmGksBody{padding:0 23px 25px}.site .lmGksTwoCols{columns:1}.site .lmGksCards{grid-template-columns:1fr}.site .lmGksActions{align-items:stretch;flex-direction:column}.site .lmGksConsult{text-align:center}}
 
   .footerSocials {
     display: flex;
@@ -249,7 +1006,41 @@ export default function Home({ books = [], homeContent = null, editorSettings = 
   .site .heroText > p {
     font-size: var(--admin-hero-text-size) !important;
   }
-  `}
+  
+/* MINEA_BOOK_CARD_FINAL_V1 */
+.site #books .booksGrid { display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:22px;align-items:stretch; }
+.site #books .bookItem {display:flex;flex-direction:column;min-width:0;height:100%;padding:18px;background:#fff;border:1px solid #e6e8f1;border-radius:22px;box-shadow:0 5px 20px rgba(22,35,70,.035);overflow:hidden;text-decoration:none;}
+.site #books .bookCover {width:100%;aspect-ratio:4/5;flex-shrink:0;overflow:hidden;border-radius:14px;padding:0;box-shadow:none;margin:0 0 14px;}
+.site #books .bookCover img {width:100%;height:100%;object-fit:contain;display:block;}
+.site #books .bookMeta {margin-top:5px;}
+.site #books .bookItem h3 {font-size:21px;line-height:1.35;margin:12px 0 12px;min-height:2.7em;}
+.site #books .mineaBookShort {font:15px/1.6 Arial,'Noto Sans',sans-serif;color:#858a97;flex:1;margin:0 0 18px;min-height:4.8em;overflow-wrap:anywhere;}
+.site #books .mineaBookFooter {display:flex;align-items:center;justify-content:space-between;gap:8px;border-top:1px solid #e7e9f0;padding-top:15px;margin-top:auto;min-height:55px;}
+.site #books .mineaBookFooter .price {font:700 18px/1.3 Arial,'Noto Sans',sans-serif;color:#6960e9;margin:0;padding:0;white-space:nowrap;}
+.site #books .mineaBookOrder {font:700 14px/1.2 Arial,'Noto Sans',sans-serif;color:#292535;border:1px solid #e4e7f0;border-radius:12px;padding:12px 14px;background:#fff;white-space:nowrap;}
+.site #books .bookItem:hover .mineaBookOrder {border-color:#91c4f4;background:#f6fbff;}
+@media(max-width:1050px){.site #books .booksGrid{grid-template-columns:repeat(2,minmax(0,1fr));}}
+@media(max-width:600px){.site #books .booksGrid{gap:12px}.site #books .bookItem{padding:10px;border-radius:14px}.site #books .bookItem h3{font-size:15px;min-height:2.7em}.site #books .mineaBookShort{font-size:12px;min-height:5em}.site #books .mineaBookOrder{font-size:11px;padding:9px 8px}.site #books .mineaBookFooter .price{font-size:13px}.site #books .bookCover{border-radius:9px}}
+
+
+/* LEARNMINEA FULL-PAGE REVEAL — excludes pinned hero */
+@media (prefers-reduced-motion: no-preference) {
+  .site.lmScrollReady .lmScrollItem {
+    opacity: 0;
+    transform: translate3d(0, 38px, 0);
+    transition: opacity 850ms cubic-bezier(.2,.75,.2,1),
+                transform 850ms cubic-bezier(.2,.75,.2,1);
+    transition-delay: var(--lm-scroll-delay, 0ms);
+  }
+  .site.lmScrollReady .lmScrollItem.lmScrollVisible {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .site .lmScrollItem { opacity: 1 !important; transform: none !important; }
+}
+`}
 
 
 </style>

@@ -16,7 +16,6 @@ const menu = [
   {
     title: 'БУСАД УДИРДЛАГА',
     items: [
-      { name: 'Бүтээгдэхүүн', href: '/admin/products', icon: '⬡' },
       { name: 'Сургалт', href: '/admin/courses', icon: '▱' },
       { name: 'Сурагчид', href: '/admin/students', icon: '♙' },
       { name: 'Төлбөр', href: '/admin/payments', icon: '▣' },

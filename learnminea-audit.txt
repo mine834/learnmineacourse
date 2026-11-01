@@ -1,0 +1,4510 @@
+
+
+=================================================================
+FILE: app/OriginalHome.js
+=================================================================
+0001: 'use client'
+0002: import './site-compact.css'
+0003: import './method-compact.css'
+0004: import Link from 'next/link'
+0005: import { useState } from 'react'
+0006: 
+0007: const study = [
+0008:   {sy:'가',title:'Үгийн сан',desc:'Өдөр тутамд хамгийн түрүүнд хэрэглэх үгс',href:'/books'},
+0009:   {sy:'-요',title:'Дүрэм',desc:'Цээжлэх бус, утгаар нь ойлгох дүрэм',href:'/topik'},
+0010:   {sy:'말',title:'Бодит яриа',desc:'Нөхцөл бүрд шууд хэрэглэж болох харилцан яриа',href:'#conversation'},
+0011:   {sy:'컷',title:'K-Drama',desc:'Киноноос байнга сонсогддог амьд хэллэг',href:'/k-drama'}
+0012: ]
+0013: const samples = [
+0014:   {label:'ҮГИЙН САН',title:'Анхан шатны 1000 үг',desc:'Суурь үг, бодит жишээ өгүүлбэр, давтлагын дасгалтай PDF.',price:'29,900₮',tone:'peach'},
+0015:   {label:'ШАЛГАЛТ',title:'TOPIK тактик',desc:'Асуултын төрөл, хугацаа хуваарилалт, оноо нэмэх стратеги.',price:'34,900₮',tone:'blue'},
+0016:   {label:'ҮГИЙН БҮТЭЦ',title:'Ханзны мастер',desc:'Хамгийн түгээмэл ханзаар солонгос үгийн утга, холбоог ойлго.',price:'32,900₮',tone:'dark'},
+0017:   {label:'ЯРИА',title:'Солонгос дахь амьд харилцан яриа',desc:'Кафе, сургууль, ажил, тээвэрт хэрэглэх Real Conversation in Korea.',price:'39,900₮',tone:'peach'}
+0018: ]
+0019: const faqs = [
+0020:   ['Анхан шатнаас эхэлж болох уу?','Тийм. Үгийн сан, дүрэм, өдөр тутмын ярианаас өөрийн түвшинд тохирсон материалаа сонгон эхэлж болно.'],
+0021:   ['Дижитал номоо хэрхэн үзэх вэ?','Номын сангаас номоо сонгоод “PDF Preview” хэсгээр эхний 5–10 хуудсыг бүртгэлгүй үзэж болно.'],
+0022:   ['Хичээлүүд үнэгүй юу?','Сайтын нээлттэй танилцуулга, жишээ хэллэгүүдийг үнэгүй үзнэ. Номын сангийн материалуудын үнэ тус бүрдээ харагдана.'],
+0023:   ['TOPIK-д зориулсан материал бий юу?','TOPIK-ийн стратеги, үгийн сан, бэлтгэлийн материалын танилцуулгыг TOPIK болон номын сангийн хэсгээс үзээрэй.']
+0024: ]
+0025: export default function Home({ books = [], homeContent = null, editorSettings = {} }) {
+0026:   const realBookImages = books.slice(0, 4).map(book =>
+0027:     book.cover_url || book.image_url || book.cover_image_url || ''
+0028:   )
+0029: 
+0030:  const [search,setSearch]=useState('')
+0031:  const [faq,setFaq]=useState(2)
+0032:  const [menu,setMenu]=useState(false)
+0033:  const [lang,setLang]=useState('MN')
+0034:  const [playing,setPlaying]=useState(false)
+0035:  const speak=(value)=>{if(typeof window==='undefined'||!window.speechSynthesis)return;window.speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(value);u.lang='ko-KR';u.rate=.85;setPlaying(true);u.onend=()=>setPlaying(false);window.speechSynthesis.speak(u)}
+0036:  const searchNow=(e)=>{e.preventDefault();window.location.href='/books?search='+encodeURIComponent(search)}
+0037:  return <div className="site">
+0038:   <header className="header"><Link className="logo" href="/">learnminea<span>.</span></Link><nav className={menu?'nav show':'nav'}><Link href="/">Нүүр</Link><Link href="/topik">TOPIK</Link><Link href="/k-drama">K-Drama</Link><Link href="/books">Цахим ном</Link><a href="#method">Сурах</a></nav><div className="headright"><div className="languages">{['MN','EN','한국'].map(x=><button key={x} onClick={()=>setLang(x)} className={lang===x?'selected':''}>{x}</button>)}</div><Link href="/survey" className="round" aria-label="Судалгаа">♙</Link><Link href="/books" className="round" aria-label="Номын сан">▣</Link><button className="round hamburger" onClick={()=>setMenu(!menu)} aria-label="Цэс">☰</button></div></header>
+0039:   <section
+0040:     className="hero"
+0041:     style={{
+0042:       background: editorSettings.heroColor || '#79B6FA',
+0043:       '--admin-hero-title-size': `${Number(editorSettings.heroFontSize) || 72}px`,
+0044:       '--admin-hero-text-size': `${Number(editorSettings.heroTextSize) || 18}px`,
+0045:       '--admin-heading-size': `${Number(editorSettings.headingFontSize) || 48}px`,
+0046:     }}
+0047:   ><div className="heroInner"><div className="heroText"><div
+0048:       className="eyebrow white"
+0049:       style={{
+0050:         fontSize: `${editorSettings.heroEyebrowFontSize ?? 14}px`,
+0051:         lineHeight: editorSettings.heroEyebrowLineHeight ?? 1.3,
+0052:         letterSpacing: `${editorSettings.heroEyebrowLetterSpacing ?? 3}px`,
+0053:       }}
+0054:     >
+0055:       {editorSettings.heroEyebrow ?? 'ӨӨРИЙН ХЭМНЭЛЭЭР, БОДИТ ХЭРЭГЛЭЭНЭЭС'}
+0056:     </div><h1 style={{
+0057:       lineHeight: editorSettings.heroTitleLineHeight ?? 1.05,
+0058:       letterSpacing: `${editorSettings.heroTitleLetterSpacing ?? -3}px`,
+0059:     }}>
+0060:       {editorSettings.heroTitle || 'Хэл сурахад ихийг биш, зөвийг сур.'}
+0061:     </h1><p style={{
+0062:       lineHeight: editorSettings.heroSubtitleLineHeight ?? 1.55,
+0063:       letterSpacing: `${editorSettings.heroSubtitleLetterSpacing ?? 0}px`,
+0064:     }}>
+0065:       {editorSettings.heroSubtitle ?? 'Хэл сурахад ихийг биш, зөвийг сур. Өөрийн түвшин, зорилго, сурах арга барилдаа тохирсон хичээл, цахим ном, бодит хэрэглээний материалаа нэг дороос олоорой.'}
+0066:     </p><form className="search" onSubmit={searchNow}><span>⌕</span><input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Жишээ нь: кафед хэрхэн захиалах вэ?"/><button>Хайх&nbsp; →</button></form></div><div className="floating" aria-hidden="true">
+0067:       {editorSettings.heroImage &&
+0068:         /^https?:\/\//i.test(editorSettings.heroImage) && (
+0069:           <img
+0070:             src={editorSettings.heroImage}
+0071:             alt=""
+0072:             style={{
+0073:               position: 'absolute',
+0074:               inset: 0,
+0075:               width: '100%',
+0076:               height: '100%',
+0077:               objectFit: 'contain',
+0078:               opacity: 0.35,
+0079:               pointerEvents: 'none',
+0080:             }}
+0081:           />
+0082:         )}<div className="floatCard cardOne">오늘 뭐 해요?</div><div className="floatCard cardTwo">-고 싶어요</div><div className="floatCard cardThree"><small>♬</small>TOPIK II</div><div className="floatCard cardFour">진짜?</div><div
+0083:   className="ticket"
+0084:   style={{
+0085:     top: `${Number(editorSettings.ticketTop ?? 44)}%`,
+0086:     left: `${Number(editorSettings.ticketLeft ?? 58)}%`,
+0087:     transform: `translate(-50%, -50%) rotate(${Number(editorSettings.ticketRotate ?? 5)}deg) scale(${Number(editorSettings.ticketScale ?? 0.68)})`,
+0088:     transformOrigin: 'center center',
+0089:     background: editorSettings.ticketBackground || '#fffdfb',
+0090:     color: editorSettings.ticketTextColor || '#222032',
+0091:     '--ticket-accent': editorSettings.ticketAccentColor || '#ff747b',
+0092:   }}
+0093: >
+0094: 
+0095: <div className="ticketName">
+0096:   {editorSettings.ticketTitle ?? 'LEARN ✦ MINEA'}
+0097: </div>
+0098: <div className="ticketSub">
+0099:   {editorSettings.ticketSubtitle ?? 'KOREAN LEARNING · STUDENT PASS'}
+0100: </div>
+0101: <div className="ticketLine" />
+0102: <div className="ticketRows">
+0103:   <div className="ticketLabels">
+0104:     {String(editorSettings.ticketLabels ?? 'Суралцагч\nСургалт\nСистем\nАхиц')
+0105:       .replace(/\\n/g, '\n')
+0106:       .split('\n')
+0107:       .map((line, i) => <span key={i}>{line}</span>)}
+0108:   </div>
+0109:   <div className="ticketValues">
+0110:     {String(editorSettings.ticketValues ?? 'Таны нэр\nТаны сонголт\nВидео + Quiz\nProgress tracking')
+0111:       .replace(/\\n/g, '\n')
+0112:       .split('\n')
+0113:       .map((line, i) => <strong key={i}>{line}</strong>)}
+0114:   </div>
+0115: </div>
+0116: <div className="ticketLine" />
+0117: <div className="ticketBottom">
+0118:   {editorSettings.ticketBottom ?? 'START LEARNING →'}
+0119: </div>
+0120: </div></div></div></section>
+0121:   
+0122:   <section className="section">
+0123:     <div className="wrap">
+0124:       <div className="eyebrow">
+0125:         {homeContent?.study?.eyebrow ?? 'ЭХЛЭХ ХЭСЭГ'}
+0126:       </div>
+0127: 
+0128:       <h2>
+0129:         {homeContent?.study?.title ?? 'Өнөөдөр юу сурах вэ?'}
+0130:       </h2>
+0131: 
+0132:       <p className="sub">
+0133:         {homeContent?.study?.body ??
+0134:           'Өнөөдөр танд хэрэгтэй нэг жижиг сэдвээс эхлээд тогтвортой урагшлаарай.'}
+0135:       </p>
+0136: 
+0137:       <div className="studyGrid">
+0138:         {(homeContent?.study?.cards ?? study).map((item, index) => (
+0139:           <Link
+0140:             href={item.url || item.href || study[index]?.href || '/books'}
+0141:             className="studyCard"
+0142:             key={index}
+0143:           >
+0144:             <span className="sy">
+0145:               {item.symbol ?? item.sy ?? study[index]?.sy ?? ''}
+0146:             </span>
+0147: 
+0148:             <div>
+0149:               <h3>{item.title ?? study[index]?.title ?? ''}</h3>
+0150:               <p>{item.body ?? item.desc ?? study[index]?.desc ?? ''}</p>
+0151:             </div>
+0152: 
+0153:             <span className="arrow">→</span>
+0154:           </Link>
+0155:         ))}
+0156:       </div>
+0157:     </div>
+0158:   </section>
+0159: 
+0160:   <section className="section conversation" id="conversation">
+0161:     <div className="wrap split">
+0162:       <div className="talkCard">
+0163:         <div className="talkTop">
+0164:           <span>{homeContent?.conversation?.eyebrow ?? 'ӨНӨӨДРИЙН ЯРИА'}</span>
+0165:           <button
+0166:             onClick={() => speak(homeContent?.conversation?.korean ?? '아이스 아메리카노 한 잔 주세요.')}
+0167:             aria-label="Солонгос дуудлага сонсох"
+0168:           >
+0169:             {playing ? 'Ⅱ' : '▶'}
+0170:           </button>
+0171:         </div>
+0172:         <h2 lang="ko">{homeContent?.conversation?.korean ?? '아이스 아메리카노 한 잔 주세요.'}</h2>
+0173:         <p>{homeContent?.conversation?.translation ?? 'Нэг мөстэй американо өгнө үү.'}</p>
+0174:         <div className="tip">
+0175:           {homeContent?.conversation?.tip ?? '📌 한 잔 нь аяга уух зүйл тоолох хэллэг. 주세요-г хүсэлтээ эелдгээр хэлэхдээ ашиглана.'}
+0176:         </div>
+0177:       </div>
+0178:       <div className="splitCopy">
+0179:         <div className="eyebrow">{homeContent?.conversation?.side_eyebrow ?? 'АМЬД ХЭРЭГЛЭЭНИЙ СОЛОНГОС ХЭЛ'}</div>
+0180:         <h2>{homeContent?.conversation?.side_title ?? 'Солонгос хэлийг амьд хэрэглээнээс сур'}</h2>
+0181:         <p>{homeContent?.conversation?.side_body ?? 'Дүрмийг дангаар нь бус, яг хэрэглэх нөхцөл, өнгө аяс, богино жишээтэй нь ойлгоно.'}</p>
+0182:         <Link className="textLink" href={homeContent?.conversation?.button_url || '/k-drama'}>
+0183:           {homeContent?.conversation?.button_text ?? 'Дэлгэрэнгүй үзэх →'}
+0184:         </Link>
+0185:       </div>
+0186:     </div>
+0187:   </section>
+0188:   <section className="section" id="books"><div className="wrap"><div className="booksHead"><div><div className="eyebrow">ЦАХИМ НОМЫН САН</div><h2>Хаана ч авч явах сурах<br/>материал</h2></div><p>Татаж аваад өөрийн хурдаар ажиллах, тодорхой зорилготой таван цуглуулга.</p></div><div className="booksGrid">
+0189:   {books.slice(0, 4).map((book, i) => {
+0190:     const image = book.cover_url || book.image_url || book.cover_image_url || ''
+0191: 
+0192:     return (
+0193:       <Link
+0194:         href={`/books/${book.id}`}
+0195:         prefetch={false}
+0196:         className="bookItem"
+0197:         key={`${book.source || 'book'}-${book.id}`}
+0198:       >
+0199:         <div className="bookCover">
+0200:           {image ? (
+0201:             <img
+0202:               src={image}
+0203:               alt={book.title || 'Цахим ном'}
+0204:               style={{
+0205:                 display: 'block',
+0206:                 width: '100%',
+0207:                 height: '100%',
+0208:                 objectFit: 'contain',
+0209:               }}
+0210:             />
+0211:           ) : (
+0212:             <span>ЦАХИМ НОМ</span>
+0213:           )}
+0214:         </div>
+0215: 
+0216:         <div className="bookMeta">ДИЖИТАЛ МАТЕРИАЛ · PDF</div>
+0217:         <h3>{book.title}</h3>
+0218:         
+0219: 
+0220:         {book.price != null && (
+0221:           <strong className="price">
+0222:             {Number(book.price).toLocaleString('en-US')}₮
+0223:           </strong>
+0224:         )}
+0225:       </Link>
+0226:     )
+0227:   })}
+0228: </div>
+0229: {books.length === 0 && (
+0230:   <p>Одоогоор нийтлэгдсэн цахим ном байхгүй байна.</p>
+0231: )}
+0232: <div className="center"><Link className="blueBtn" href="/books">Бүх номыг үзэх →</Link></div></div></section>
+0233:   <section className="section method" id="method"><div className="wrap split"><div><div className="eyebrow warm">СУРАХ АРГА БАРИЛ</div><h2>Танд тохирох сурах аргаа олъё</h2><p>15–20 минутын асуулгаар таны зорилго, одоогийн арга, боломжит цагийг тодруулж, бодит төлөвлөгөө санал болгоно.</p><Link className="whiteBtn" href="/survey">Үнэлгээг эхлүүлэх &nbsp; →</Link></div><div className="methodCard"><div><strong>15–20</strong><span> минут</span></div><hr/><p>✓ &nbsp; Сурах арга барил</p><p>✓ &nbsp; Хувийн хөтөлбөр</p><p>✓ &nbsp; Дөрвөн чадварын тэнцвэр</p></div></div></section>
+0234:   <section className="section"><div className="wrap split why"><div><div className="eyebrow">ЯАГААД LEARNMINEA ВЭ</div><h2>Илүү их контент биш. Илүү зөв чиглэл.</h2></div><div className="reasons">{[['Бүгдийг биш, хэрэгтэйг','Таны зорилгод хүргэх үг, дүрэм, нөхцөлд төвлөрнө.'],['Цээжлэхээс илүү ойлгох','Яагаад ингэж хэлдгийг утга, холбоо, жишээгээр тайлбарлана.'],['Цагаа үр дүнтэй ашиглах','Богино хичээл бүр тодорхой нэг үр дүнтэй.'],['Материал дээр нэмэх нь чиглүүлэг','Дижитал материалаа хэрхэн ашиглах алхмыг хамт өгнө.']].map((x,i)=><div className="reason" key={i}><span>0{i+1}</span><div><h3>{x[0]}</h3><p>{x[1]}</p></div></div>)}</div></div></section>
+0235:   <section className="section lifestyle"><div className="wrap split"><div className="scene">
+0236:   {homeContent?.lifestyle?.image_url ? (
+0237:     <img
+0238:       src={homeContent.lifestyle.image_url}
+0239:       alt="Бодит хэрэглээний солонгос хэл"
+0240:       style={{
+0241:         display: 'block',
+0242:         width: '100%',
+0243:         height: '100%',
+0244:         objectFit: 'cover',
+0245:         borderRadius: 'inherit',
+0246:       }}
+0247:     />
+0248:   ) : (
+0249:     <>
+0250:       <div className="sky"><i/><i/></div>
+0251:       <div className="ground"><span>안녕하세요</span></div>
+0252:     </>
+0253:   )}
+0254: </div><div className="splitCopy"><div className="eyebrow">БОДИТ АМЬДРАЛ, БОДИТ ХЭЛ</div><h2>Хичээлээс гараад шууд хэрэглэгддэг хэл</h2><p>Кафе, сургууль, ажил, нийтийн тээвэр, өдөр тутмын уулзалт. Амьдрал дээр танд хэрэг болох мөчөөс хичээл эхэлнэ.</p><div className="pills">{['Кафе','Сургууль','Ажил','Тээвэр','Өдөр тутам'].map(x=><span key={x}>{x}</span>)}</div></div></div></section>
+0255:   {homeContent?.testimonials?.enabled !== false && (
+0256:     <section className="section testimonials">
+0257:       <div className="wrap">
+0258:         <div className="eyebrow">
+0259:           {homeContent?.testimonials?.eyebrow || 'СУРАЛЦАГЧДЫН СЭТГЭГДЭЛ'}
+0260:         </div>
+0261: 
+0262:         <h2>
+0263:           {homeContent?.testimonials?.title ||
+0264:             'Суралцагчид LearnMinea-г хэрхэн ашиглаж байна'}
+0265:         </h2>
+0266: 
+0267:         <div className="testimonialGrid">
+0268:           {(homeContent?.testimonials?.reviews || [])
+0269:             .filter(review => review.published && review.text)
+0270:             .map((review, index) => (
+0271:               <div className="testimonial" key={review.id || index}>
+0272:                 <span>“</span>
+0273:                 <p>{review.text}</p>
+0274:                 <strong>{review.name}</strong>
+0275:                 <small>{review.caption}</small>
+0276:               </div>
+0277:             ))}
+0278:         </div>
+0279:       </div>
+0280:     </section>
+0281:   )}
+0282:   <section className="section"><div className="wrap split faq"><h2>Түгээмэл асуулт</h2><div className="faqList">{faqs.map((x,i)=><div className="faqItem" key={i}><button onClick={()=>setFaq(faq===i?-1:i)}><span>{x[0]}</span><span>{faq===i?'×':'+'}</span></button>{faq===i&&<p>{x[1]}</p>}</div>)}</div></div></section>
+0283:   <section className="section finalCta"><div className="wrap"><div className="cta"><div><div className="eyebrow warm">LEARNMINEA</div><h2>Хэл сурах нэг л зөв арга гэж<br/>байхгүй.</h2><p>Танд тохирох арга, ойлгомжтой тайлбар, тогтвортой жижиг алхам байхад хангалттай.</p></div><Link className="whiteBtn" href="/survey">Өөрийн аргаа олох →</Link></div></div></section>
+0284:   <footer className="footer"><div className="wrap"><div className="footerGrid"><div><Link className="logo" href="/">learnminea<span>.</span></Link><p>Хэл сурахыг өөртөө ойр, амьдралд хэрэгтэй болгоно.</p><div className="social footerSocials">
+0285:   {homeContent?.footer?.instagram && (
+0286:     <a href={homeContent.footer.instagram}
+0287:        target="_blank" rel="noopener noreferrer"
+0288:        aria-label="Instagram" title="Instagram">
+0289:       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+0290:            strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+0291:         <rect x="2" y="2" width="20" height="20" rx="5"/>
+0292:         <circle cx="12" cy="12" r="4"/>
+0293:         <circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/>
+0294:       </svg>
+0295:     </a>
+0296:   )}
+0297:   {homeContent?.footer?.facebook && (
+0298:     <a href={homeContent.footer.facebook}
+0299:        target="_blank" rel="noopener noreferrer"
+0300:        aria-label="Facebook" title="Facebook">
+0301:       <svg viewBox="0 0 24 24" fill="currentColor">
+0302:         <path d="M22 12a10 10 0 1 0-11.56 9.88v-6.99H7.9V12h2.54V9.8c0-2.5 1.49-3.89 3.77-3.89 1.09 0 2.23.19 2.23.19v2.46h-1.26c-1.24 0-1.63.77-1.63 1.56V12h2.78l-.44 2.89h-2.34v6.99A10 10 0 0 0 22 12Z"/>
+0303:       </svg>
+0304:     </a>
+0305:   )}
+0306:   {homeContent?.footer?.email && (
+0307:     <a href={'mailto:' + homeContent.footer.email}
+0308:        aria-label="Gmail" title="И-мэйл">
+0309:       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+0310:            strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+0311:         <rect x="2" y="5" width="20" height="14" rx="2"/>
+0312:         <path d="m3 7 9 7 9-7"/>
+0313:       </svg>
+0314:     </a>
+0315:   )}
+0316: </div></div><div><strong>СУРАХ</strong><Link href="/topik">TOPIK</Link><Link href="/k-drama">K-Drama</Link><Link href="/books">Цахим ном</Link></div><div><strong>LEARNMINEA</strong><Link href="/">Нүүр</Link><Link href="/survey">Сурах арга барил</Link><a href="#faq">Түгээмэл асуулт</a><a href="mailto:hello@learnminea.com">Холбоо</a></div></div><div className="footerBottom"><span>© 2026 LearnMinea. Бүх эрх хуулиар хамгаалагдсан.</span><span>Дижитал материалын эрх, таталтыг серверээр баталгаажуулна.</span></div></div></footer>
+0317:   <style jsx global>{`
+0318: 
+0319:   .footerSocials {
+0320:     display: flex;
+0321:     align-items: center;
+0322:     gap: 20px;
+0323:     margin-top: 20px;
+0324:   }
+0325:   .footerSocials a {
+0326:     width: 24px;
+0327:     height: 24px;
+0328:     display: inline-flex;
+0329:     align-items: center;
+0330:     justify-content: center;
+0331:     color: #fff !important;
+0332:     transition: opacity .2s, transform .2s;
+0333:   }
+0334:   .footerSocials a:hover {
+0335:     opacity: .7;
+0336:     transform: translateY(-2px);
+0337:   }
+0338:   .footerSocials svg {
+0339:     display: block;
+0340:     width: 22px;
+0341:     height: 22px;
+0342:   }
+0343: 
+0344:   *{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;color:#191a1d;background:white;font-family:Arial,'Noto Sans',sans-serif}.site a{text-decoration:none;color:inherit}.site button,.site input{font:inherit}.site button{cursor:pointer}.site h1,.site h2,.site h3,.site .logo,.site .bookCover strong,.site .floatCard,.site .ticketName{font-family:Georgia,'Times New Roman',serif;font-weight:400}.wrap{width:min(1440px,90%);margin:auto}.header{height:88px;padding:0 4.3%;display:flex;align-items:center;justify-content:space-between;background:#75b4fb;border-bottom:1px solid #ffffff55;gap:20px}.logo{font-size:32px;letter-spacing:-1.3px;white-space:nowrap}.logo span{color:#008fff}.nav{display:flex;gap:34px;align-items:center;font-size:16px}.nav a:hover{color:#fff}.headright{display:flex;align-items:center;gap:12px}.languages{display:flex;align-items:center;padding:4px;background:#ffffff80;border-radius:35px}.languages button{border:0;background:transparent;border-radius:30px;padding:10px;font-size:11px}.languages .selected{background:white}.round{width:49px;height:49px;border-radius:50%;background:#ffffffaa;border:0;display:grid;place-items:center;font-size:23px}.hamburger{display:none}.hero{background:linear-gradient(125deg,#67aaf9 0%,#81bafc 62%,#b3d8ff 100%);min-height:810px;overflow:hidden}.heroInner{width:min(1500px,92%);min-height:810px;margin:auto;display:grid;grid-template-columns:52% 48%;align-items:center}.heroText{padding:65px 0 105px}.eyebrow{font-size:14px;letter-spacing:3px;color:#0079dc;font-weight:600;margin-bottom:28px}.eyebrow.white{color:#fff}.eyebrow.warm{color:#f6d6c6}.hero h1{font-size:clamp(64px,6.5vw,116px);line-height:.94;letter-spacing:-3px;color:white;margin:0 0 36px}.heroText>p{font-size:20px;line-height:1.55;color:#465d70;max-width:690px;margin:0 0 38px}.search{display:flex;align-items:center;background:white;padding:8px 9px 8px 22px;border-radius:45px;max-width:710px;box-shadow:0 9px 18px #2a6ca03b;gap:15px}.search span{font-size:32px;color:#7b8390}.search input{flex:1;min-width:0;border:0;outline:0;font-size:17px}.search button,.blueBtn{border:0;background:#009afa;color:white!important;padding:18px 29px;border-radius:40px;box-shadow:0 5px 0 #0075c4;font-size:18px;white-space:nowrap}.floating{position:relative;height:680px}.floatCard{position:absolute;background:#eaf3ff;border-radius:20px;padding:26px 32px;font-size:30px;box-shadow:0 15px 30px #3074ad3b;white-space:nowrap}.cardOne{top:60px;left:8%;transform:rotate(-5deg)}.cardTwo{top:220px;right:-8%;transform:rotate(5deg)}.cardThree{bottom:140px;left:18%;transform:rotate(-3deg)}.cardThree small{display:block;color:#009afa;font:18px Arial}.cardFour{bottom:80px;right:3%;transform:rotate(6deg)}.ticket{position:absolute;top:265px;left:35%;width:300px;padding:19px 18px;background:#fffdfb;border-radius:9px;box-shadow:0 16px 45px #1b6ea04a;transform:rotate(-5deg);font-family:Arial,sans-serif}.ticketName{font-family:Arial!important;font-size:22px;font-weight:900!important;letter-spacing:-1px;color:#222032}.ticketName b{color:#ff747b}.ticketSub{font-size:8px;letter-spacing:2px;color:#84818e;margin:9px 0 16px}.ticketLine{border-top:2px dashed #d8d1e5}.ticketRows{display:flex;justify-content:space-between;gap:8px;font-size:11px;line-height:2.1;color:#85818b;padding:12px 0}.ticketRows strong{text-align:right;color:#252235}.ticketBottom{font-weight:800;color:#7561ef;font-size:12px;margin-top:10px}.section{padding:110px 0}.section h2{font-size:clamp(42px,4.1vw,72px);line-height:1.08;letter-spacing:-1.8px;margin:0}.section .sub,.section p{color:#818694;line-height:1.55}.sub{font-size:22px;margin:8px 0 55px}.studyGrid{display:grid;grid-template-columns:repeat(4,1fr);gap:22px;margin-top:60px}.studyCard{background:#f9f9fb;border:1px solid #e1e3e8;border-radius:26px;min-height:350px;padding:33px;display:flex;flex-direction:column;justify-content:space-between;transition:transform .2s,box-shadow .2s}.studyCard:hover{transform:translateY(-5px);box-shadow:0 15px 30px #00000010}.sy{background:white;border-radius:50%;width:75px;height:75px;display:grid;place-items:center;font:30px Georgia;color:#633623}.studyCard h3{font-size:37px;margin:0 0 16px}.studyCard p{font-size:18px;margin:0}.studyCard .arrow{text-align:right;font-size:30px}.conversation,.testimonials{background:#f9f9fb}.split{display:grid;grid-template-columns:1fr 1fr;gap:9%;align-items:center}.talkCard{background:white;border-radius:32px;padding:48px;box-shadow:0 20px 30px #00000012}.talkTop{display:flex;justify-content:space-between;align-items:center;color:#848694;letter-spacing:2px}.talkTop button{border:0;border-radius:50%;width:65px;height:65px;background:#009afa;color:white;font-size:26px}.talkCard h2{font-size:clamp(45px,4.2vw,70px);margin:65px 0 20px;line-height:1.18}.talkCard>p{font-size:24px}.tip{background:#ffe0ce;border-radius:20px;padding:24px;color:#623e30;line-height:1.6;font-size:17px;margin-top:35px}.splitCopy>p{font-size:22px;margin:35px 0 48px}.textLink{font-size:22px;color:#0075d9!important;font-weight:600}.booksHead{display:flex;align-items:end;justify-content:space-between;gap:50px;margin-bottom:55px}.booksHead>p{font-size:20px;max-width:430px}.booksGrid{display:grid;grid-template-columns:repeat(4,1fr);gap:24px}.bookCover{aspect-ratio:.78;border-radius:7px 20px 20px 7px;display:flex;flex-direction:column;justify-content:space-between;padding:0;box-shadow:none;transition:transform .2s}.bookItem:hover .bookCover{transform:translateY(-6px)}.bookCover.peach{background:transparent;color:inherit}.bookCover.blue{background:transparent;color:inherit}.bookCover.dark{background:transparent;color:inherit}.bookCover span,.bookCover small{font-size:11px;letter-spacing:1.5px;font-family:Arial;font-weight:700}.bookCover strong{font-size:clamp(27px,2.4vw,42px);line-height:1.12}.bookMeta{font-size:12px;letter-spacing:1px;color:#8b8e99;margin-top:30px}.bookItem h3{font-size:25px;margin:10px 0 5px}.bookItem p{font-size:16px;margin:0 0 14px}.price{font-size:18px}.center{text-align:center;margin-top:50px}.center .blueBtn{display:inline-block}.note{font-size:12px!important;color:#9a9ca5!important;margin-top:22px}.method{background:#191a1c;color:white}.method h2{max-width:780px}.method .split>div>p{font-size:22px;color:#9fa0a8;margin:40px 0}.whiteBtn{display:inline-block;border-radius:45px;background:white;color:#18191b!important;padding:21px 32px;font-weight:600;font-size:19px}.methodCard{background:#28292b;border:1px solid #4b4c4e;border-radius:32px;padding:55px}.methodCard strong{font:100px Georgia}.methodCard span{color:#a4a6ac}.methodCard hr{border:0;border-top:1px solid #555;margin:25px 0 35px}.methodCard p{color:white!important;font-size:22px;margin:15px 0}.why{align-items:start}.reasons{border-top:1px solid #e3e4e7}.reason{display:grid;grid-template-columns:90px 1fr;border-bottom:1px solid #e3e4e7;padding:35px 0}.reason>span{color:#007ee5}.reason h3{font-size:37px;margin:0 0 12px}.reason p{font-size:18px;margin:0}.lifestyle{background:#ffe1d0}.scene{border:0;outline:0;border-radius:34px;overflow:hidden;height:510px;padding:0;background:transparent;box-shadow:none}.scene>img{display:block;width:100%;height:100%;object-fit:cover;border-radius:34px}.sky{height:58%;background:#a7d3fb;display:flex;align-items:center;justify-content:space-around}.sky i{background:#e0f1ff;width:22%;height:60px;border-radius:50%}.ground{height:42%;background:#5c2c1c;display:grid;place-items:center}.ground span{background:white;border-radius:50px;padding:16px 35px;font:33px Georgia;transform:rotate(-5deg);color:#633521}.pills{display:flex;gap:12px;flex-wrap:wrap}.pills span{border:1px solid #d9b8a7;border-radius:30px;padding:11px 20px;color:#643b2e}.testimonials h2{margin-bottom:55px}.testimonialGrid{display:grid;grid-template-columns:repeat(3,1fr);gap:22px}.testimonial{background:white;border:1px solid #e2e4e9;border-radius:30px;padding:40px;min-height:350px;display:flex;flex-direction:column}.testimonial>span{font:75px Georgia;color:#009afa;line-height:.7}.testimonial p{font:26px/1.35 Georgia;color:#191a1c;flex:1}.testimonial strong{margin-top:25px}.testimonial small{color:#8c909c;margin-top:8px}.faq{align-items:start}.faqList{border-top:1px solid #ddd}.faqItem{border-bottom:1px solid #ddd}.faqItem button{display:flex;width:100%;align-items:center;justify-content:space-between;text-align:left;gap:20px;background:transparent;border:0;padding:32px 0;font:30px Georgia}.faqItem button span:last-child{font:34px Arial}.faqItem p{font-size:20px;margin:0 0 35px}.finalCta{padding-top:25px}.cta{background:#5a2d1d;color:white;border-radius:30px;padding:70px;display:flex;align-items:end;justify-content:space-between;gap:30px}.cta h2{font-size:clamp(42px,3.8vw,64px)}.cta p{color:#e9c9b8;font-size:18px;max-width:600px}.footer{background:#191a1c;color:white;padding:60px 0 22px}.footerGrid{display:grid;grid-template-columns:2fr 1fr 1fr;gap:40px}.footer .logo{font-size:30px}.footerGrid p{max-width:270px;color:#9b9da7;line-height:1.6}.footerGrid>div:not(:first-child){display:flex;flex-direction:column;gap:17px}.footerGrid strong{font-size:11px;letter-spacing:2px}.footerGrid a:not(.logo){color:#a4a6af}.footerBottom{border-top:1px solid #444;margin-top:55px;padding-top:20px;display:flex;justify-content:space-between;gap:20px;font-size:11px;color:#8c8e98}
+0345:   @media(max-width:1050px){.nav{gap:14px}.heroInner{grid-template-columns:1fr}.heroText{padding:90px 0 30px}.hero{min-height:unset}.floating{height:480px}.ticket{top:120px;left:38%}.cardOne{top:25px}.cardTwo{top:100px;right:2%}.cardThree{bottom:40px}.cardFour{bottom:35px}.studyGrid,.booksGrid{grid-template-columns:repeat(2,1fr)}.split{gap:5%}.section{padding:75px 0}}
+0346:   @media(max-width:700px){.header{height:75px;padding:0 5%}.logo{font-size:26px}.headright{gap:6px}.round{width:38px;height:38px;font-size:19px}.hamburger{display:grid}.nav{display:none;position:absolute;top:75px;left:0;right:0;background:#81bafc;z-index:10;flex-direction:column;padding:25px;align-items:start}.nav.show{display:flex}.languages button{padding:8px 6px}.heroInner{width:90%}.heroText{padding:80px 0 20px}.hero h1{font-size:clamp(55px,13vw,85px);letter-spacing:-2px}.heroText>p{font-size:16px}.eyebrow{font-size:11px;letter-spacing:2px}.search{padding:6px 6px 6px 15px}.search input{font-size:13px}.search button{padding:13px 18px;font-size:14px}.floating{height:400px}.floatCard{font-size:20px;padding:18px}.ticket{top:135px;left:22%;width:240px}.cardOne{left:0}.cardTwo{top:65px;right:-8%}.cardThree{bottom:22px;left:2%}.cardFour{bottom:0;right:-5%}.section{padding:70px 0}.section h2{font-size:clamp(38px,10vw,55px)}.sub{font-size:17px}.studyGrid,.booksGrid,.testimonialGrid{grid-template-columns:1fr}.studyCard{min-height:270px}.split{grid-template-columns:1fr;gap:50px}.talkCard{padding:27px}.talkCard h2{margin:40px 0 20px}.booksHead{display:block}.booksHead>p{font-size:17px}.booksGrid{grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.bookCover{padding:15px}.bookCover strong{font-size:24px}.bookItem h3{font-size:20px}.bookItem p{font-size:14px}.bookMeta{font-size:10px}.methodCard{padding:30px}.methodCard strong{font-size:75px}.scene{height:320px}.cta{padding:35px;display:block}.cta .whiteBtn{margin-top:20px}.footerGrid{grid-template-columns:1fr 1fr}.footerGrid>div:first-child{grid-column:1/-1}.footerBottom{display:block}.faqItem button{font-size:23px}}
+0347:   .site .hero h1 {
+0348:     font-size: clamp(32px, 6.5vw, var(--admin-hero-title-size)) !important;
+0349:     white-space: pre-line;
+0350:   }
+0351:   .site .heroText > p {
+0352:     font-size: var(--admin-hero-text-size) !important;
+0353:   }
+0354:   `}
+0355: 
+0356: 
+0357: </style>
+0358:  </div>
+0359: }
+
+
+=================================================================
+FILE: app/page.js
+=================================================================
+0001: import OriginalHome from './OriginalHome'
+0002: import { getPublishedCatalog } from './lib/catalog.mjs'
+0003: import { createPublicCatalogClient } from './lib/publicCatalog'
+0004: import { getHomeContent } from './lib/homeContent.mjs'
+0005: 
+0006: export const dynamic = 'force-dynamic'
+0007: 
+0008: export default async function HomePage() {
+0009:   const client = createPublicCatalogClient()
+0010:   const [{ books, errors }, { content: homeContent, error: homeError }] =
+0011:     await Promise.all([
+0012:       getPublishedCatalog(client),
+0013:       getHomeContent(client),
+0014:     ])
+0015: 
+0016:   if (homeError) {
+0017:     console.error('Homepage content query failed:', homeError.message)
+0018:   }
+0019: 
+0020:   if (errors.length) {
+0021:     console.error('Catalog query failed:', errors)
+0022:   }
+0023: 
+0024:   let editorSettings = {}
+0025: 
+0026:   const { data: editorData, error: editorError } = await client
+0027:     .from('site_editor_settings')
+0028:     .select('content')
+0029:     .eq('id', 'homepage')
+0030:     .maybeSingle()
+0031: 
+0032:   if (editorError) {
+0033:     console.error('Homepage editor settings:', editorError.message)
+0034:   } else {
+0035:     editorSettings = editorData?.content || {}
+0036:   }
+0037: 
+0038:   return (
+0039:     <OriginalHome
+0040:       books={books || []}
+0041:       homeContent={homeContent}
+0042:       editorSettings={editorSettings}
+0043:     />
+0044:   )
+0045: }
+
+
+=================================================================
+FILE: app/lib/homeContent.mjs
+=================================================================
+0001: 
+0002: import { googleFormUrl } from './googleForm.mjs'
+0003: 
+0004: export const HOME_CONTENT_KEY = 'homepage_sections'
+0005: 
+0006: const studyCards = [
+0007:   {
+0008:     symbol: '가',
+0009:     title: 'Үгийн сан',
+0010:     body: 'Өдөр тутамд хамгийн түрүүнд хэрэглэх үгс',
+0011:     url: '/books',
+0012:   },
+0013:   {
+0014:     symbol: '-요',
+0015:     title: 'Дүрэм',
+0016:     body: 'Цээжлэх бус, утгаар нь ойлгох дүрэм',
+0017:     url: '/topik',
+0018:   },
+0019:   {
+0020:     symbol: '말',
+0021:     title: 'Бодит яриа',
+0022:     body: 'Нөхцөл бүрд шууд хэрэглэж болох харилцан яриа',
+0023:     url: '#conversation',
+0024:   },
+0025:   {
+0026:     symbol: '컷',
+0027:     title: 'K-Drama',
+0028:     body: 'Киноноос байнга сонсогддог амьд хэллэг',
+0029:     url: '/kdrama',
+0030:   },
+0031: ]
+0032: 
+0033: const questions = [
+0034:   {
+0035:     question: 'Анхан шатнаас эхэлж болох уу?',
+0036:     answer: 'Тийм. Үгийн сан, дүрэм, өдөр тутмын ярианаас өөрийн түвшинд тохирсон материалаа сонгон эхэлж болно.',
+0037:   },
+0038:   {
+0039:     question: 'Дижитал номоо хэрхэн үзэх вэ?',
+0040:     answer: 'Номын сангаас номоо сонгоод PDF Preview хэсгээр эхний хуудсуудыг үзэж болно.',
+0041:   },
+0042:   {
+0043:     question: 'Хичээлүүд үнэгүй юу?',
+0044:     answer: 'Сайтын нээлттэй танилцуулга, жишээ хэллэгүүдийг үнэгүй үзнэ. Төлбөртэй материалын үнэ тусдаа харагдана.',
+0045:   },
+0046:   {
+0047:     question: 'TOPIK-д зориулсан материал бий юу?',
+0048:     answer: 'TOPIK-ийн стратеги, үгийн сан болон бэлтгэлийн материалуудыг TOPIK болон номын сангийн хэсгээс үзээрэй.',
+0049:   },
+0050: ]
+0051: 
+0052: const reasons = [
+0053:   {
+0054:     title: 'Бүгдийг биш, хэрэгтэйг',
+0055:     body: 'Таны зорилгод хүргэх үг, дүрэм, нөхцөлд төвлөрнө.',
+0056:   },
+0057:   {
+0058:     title: 'Цээжлэхээс илүү ойлгох',
+0059:     body: 'Яагаад ингэж хэлдгийг утга, жишээгээр тайлбарлана.',
+0060:   },
+0061:   {
+0062:     title: 'Цагаа үр дүнтэй ашиглах',
+0063:     body: 'Богино хичээл бүр тодорхой нэг үр дүнтэй.',
+0064:   },
+0065:   {
+0066:     title: 'Материал дээр нэмэх нь чиглүүлэг',
+0067:     body: 'Дижитал материалаа хэрхэн ашиглах алхмыг хамт өгнө.',
+0068:   },
+0069: ]
+0070: 
+0071: const footerText = {
+0072:   description: 'Хэл сурахыг өөртөө ойр, амьдралд хэрэгтэй болгоно.',
+0073:   learn_heading: 'СУРАХ',
+0074:   site_heading: 'LEARNMINEA',
+0075:   topik: 'TOPIK',
+0076:   kdrama: 'K-Drama',
+0077:   books: 'Цахим ном',
+0078:   home: 'Нүүр',
+0079:   assessment: 'Сурах арга барил',
+0080:   faq: 'Түгээмэл асуулт',
+0081:   contact: 'Холбоо барих',
+0082:   copyright: '© 2026 LearnMinea. Бүх эрх хуулиар хамгаалагдсан.',
+0083:   rights: 'Дижитал материалын эрх, таталтыг серверээр баталгаажуулна.',
+0084: }
+0085: 
+0086: export const homeContentDefaults = {
+0087:   hero: {
+0088:     eyebrow: 'ӨӨРИЙН ХЭМНЭЛЭЭР, БОДИТ ХЭРЭГЛЭЭНЭЭС',
+0089:     title: 'Хэл сурахад\nихийг биш,\nзөвийг сур.',
+0090:     body: 'Өөрийн түвшин, зорилго, сурах арга барилдаа тохирсон хичээл, цахим ном, бодит хэрэглээний материалаа нэг дороос олоорой.',
+0091:     search_placeholder: 'Жишээ нь: кафед хэрхэн захиалах вэ?',
+0092:     search_button: 'Хайх →',
+0093:   },
+0094: 
+0095:   study: {
+0096:     eyebrow: 'ЭХЛЭХ ХЭСЭГ',
+0097:     title: 'Өнөөдөр юу сурах вэ?',
+0098:     body: 'Өнөөдөр танд хэрэгтэй нэг жижиг сэдвээс эхлээд тогтвортой урагшлаарай.',
+0099:     cards: studyCards,
+0100:   },
+0101: 
+0102:   conversation: {
+0103:     eyebrow: 'ӨНӨӨДРИЙН ЯРИА',
+0104:     korean: '아이스 아메리카노 한 잔 주세요.',
+0105:     translation: 'Нэг мөстэй американо өгнө үү.',
+0106:     tip: '♧ 한 잔 нь аяга уух зүйл тоолох хэллэг. 주세요-г хүсэлтээ эелдгээр хэлэхдээ ашиглана.',
+0107:     side_eyebrow: 'АМЬД ХЭРЭГЛЭЭНИЙ СОЛОНГОС ХЭЛ',
+0108:     side_title: 'Солонгос хэлийг амьд хэрэглээнээс сур',
+0109:     side_body: 'Дүрмийг дангаар нь бус, яг хэрэглэх нөхцөл, өнгө аяс, богино жишээтэй нь ойлгоно.',
+0110:     button_text: 'Дэлгэрэнгүй үзэх →',
+0111:     button_url: '/kdrama',
+0112:   },
+0113: 
+0114:   books: {
+0115:     eyebrow: 'ЦАХИМ НОМЫН САН',
+0116:     title: 'Сурах материалаа сонго',
+0117:     body: 'Түвшин, зорилгодоо тохирсон цахим ном, материалуудаа үзээрэй.',
+0118:     button_text: 'Бүх номыг үзэх →',
+0119:     button_url: '/books',
+0120:     empty_text: 'Одоогоор нийтлэгдсэн ном алга байна.',
+0121:   },
+0122: 
+0123:   assessment: {
+0124:     eyebrow: 'СУРАХ АРГА БАРИЛ',
+0125:     title: 'Танд тохирох сурах аргаа олъё',
+0126:     body: '5–7 минутын асуулгаар таны зорилго, одоогийн арга, боломжит цагийг тодруулж, бодит төлөвлөгөө санал болгоно.',
+0127:     button_text: 'Үнэлгээг эхлүүлэх →',
+0128:     button_url: '/assessment/questions',
+0129:     duration: '5–7',
+0130:     duration_unit: 'минут',
+0131:     benefits: [
+0132:       'Сурах арга барил',
+0133:       'Хувийн хөтөлбөр',
+0134:       'Дөрвөн чадварын тэнцвэр',
+0135:     ],
+0136:     style: {
+0137:       background: '#191919',
+0138:       card_background: '#292929',
+0139:       card_border: '#494949',
+0140:       eyebrow_color: '#e6c9bd',
+0141:       heading_color: '#ffffff',
+0142:       body_color: '#9b9ba3',
+0143:       card_text_color: '#ffffff',
+0144:       muted_text_color: '#a3a3aa',
+0145:       button_background: '#ffffff',
+0146:       button_text_color: '#191919',
+0147:       heading_size: 58,
+0148:       body_size: 24,
+0149:       eyebrow_size: 14,
+0150:       duration_size: 112,
+0151:       benefit_size: 24,
+0152:       button_size: 18,
+0153:       section_padding: 90,
+0154:       card_radius: 36,
+0155:     },
+0156:   },
+0157: 
+0158:   why: {
+0159:     eyebrow: 'ЯАГААД LEARNMINEA ВЭ',
+0160:     title: 'Илүү их контент биш. Илүү зөв чиглэл.',
+0161:     reasons,
+0162:   },
+0163: 
+0164:   lifestyle: {
+0165:     enabled: true,
+0166:     eyebrow: 'БОДИТ АМЬДРАЛ, БОДИТ ХЭЛ',
+0167:     title: 'Хичээлээс гараад шууд хэрэглэгддэг хэл',
+0168:     body: 'Кафе, сургууль, ажил, нийтийн тээвэр, өдөр тутмын уулзалт. Амьдрал дээр танд хэрэг болох мөчөөс хичээл эхэлнэ.',
+0169:     image_url: '',
+0170:     tags: ['Кафе', 'Сургууль', 'Ажил', 'Тээвэр', 'Өдөр тутам'],
+0171:   },
+0172: 
+0173:   testimonials: {
+0174:     enabled: true,
+0175:     eyebrow: 'СУРАЛЦАГЧДЫН СЭТГЭГДЭЛ',
+0176:     title: 'Суралцагчид LearnMinea-г хэрхэн ашиглаж байна',
+0177:     reviews: [],
+0178:   },
+0179: 
+0180:   registration: {
+0181:     enabled: true,
+0182:     eyebrow: 'ONLINE COURSE',
+0183:     title: 'Онлайн сургалтад бүртгүүлэх',
+0184:     body: 'Багшийн чиглүүлэгтэй, түвшинд тохирсон онлайн сургалтын бүртгэл.',
+0185:     button_text: 'Бүртгүүлэх',
+0186:     button_url: '',
+0187:   },
+0188: 
+0189:   faq: {
+0190:     eyebrow: 'ТУСЛАМЖ',
+0191:     title: 'Түгээмэл асуулт',
+0192:     items: questions,
+0193:   },
+0194: 
+0195:   finalCta: {
+0196:     eyebrow: 'ЭХЛЭХЭД БЭЛЭН ҮҮ?',
+0197:     title: 'Өөрт тохирох аргаар өнөөдөр эхэл.',
+0198:     body: 'Таны сурах зорилго, түвшин, боломжит цагт тохирсон эхний алхмаа олоорой.',
+0199:     button_text: 'Сурах аргаа тодорхойлох →',
+0200:     button_url: '/assessment/questions',
+0201:   },
+0202: 
+0203:   footer: {
+0204:     logo: 'learnminea',
+0205:     instagram: 'https://www.instagram.com/',
+0206:     facebook: 'https://www.facebook.com/',
+0207:     email: '',
+0208:     MN: footerText,
+0209:     EN: {
+0210:       description: 'Making language learning practical and personal.',
+0211:       learn_heading: 'LEARN',
+0212:       site_heading: 'LEARNMINEA',
+0213:       topik: 'TOPIK',
+0214:       kdrama: 'K-Drama',
+0215:       books: 'E-books',
+0216:       home: 'Home',
+0217:       assessment: 'Learning style',
+0218:       faq: 'FAQ',
+0219:       contact: 'Contact',
+0220:       copyright: '© 2026 LearnMinea. All rights reserved.',
+0221:       rights: 'Digital purchases and downloads are verified securely.',
+0222:     },
+0223:     KR: {
+0224:       description: '언어 학습을 더 가깝고 실용적으로 만듭니다.',
+0225:       learn_heading: '학습',
+0226:       site_heading: 'LEARNMINEA',
+0227:       topik: 'TOPIK',
+0228:       kdrama: 'K-Drama',
+0229:       books: '전자책',
+0230:       home: '홈',
+0231:       assessment: '학습 유형',
+0232:       faq: '자주 묻는 질문',
+0233:       contact: '문의하기',
+0234:       copyright: '© 2026 LearnMinea. 모든 권리 보유.',
+0235:       rights: '디지털 자료의 구매 및 다운로드는 서버에서 확인됩니다.',
+0236:     },
+0237:   },
+0238: 
+0239:   translations: {
+0240:     EN: {
+0241:       hero: {
+0242:         eyebrow: 'LEARN AT YOUR OWN PACE',
+0243:         title: 'Learn smarter,\nnot harder.',
+0244:         body: 'Discover Korean lessons, e-books and practical learning resources matched to your goals.',
+0245:         search_placeholder: 'Try: ordering at a café',
+0246:         search_button: 'Search →',
+0247:       },
+0248:       study: {
+0249:         eyebrow: 'GET STARTED',
+0250:         title: 'What will you learn today?',
+0251:         body: 'Start with one useful topic and build your progress.',
+0252:         cards: [
+0253:           { title: 'Vocabulary', body: 'Useful everyday words' },
+0254:           { title: 'Grammar', body: 'Understand how Korean works' },
+0255:           { title: 'Conversation', body: 'Speak in real situations' },
+0256:           { title: 'K-Drama', body: 'Natural phrases from dramas' },
+0257:         ],
+0258:       },
+0259:       conversation: {
+0260:         eyebrow: 'TODAY’S CONVERSATION',
+0261:         translation: 'One iced Americano, please.',
+0262:         tip: '한 잔 counts cups of drinks; 주세요 makes a polite request.',
+0263:         side_eyebrow: 'REAL-LIFE KOREAN',
+0264:         side_title: 'Learn Korean through everyday life',
+0265:         side_body: 'Learn expressions in context, with natural examples.',
+0266:         button_text: 'Explore more →',
+0267:       },
+0268:       books: {
+0269:         eyebrow: 'DIGITAL LIBRARY',
+0270:         title: 'Find your learning resources',
+0271:         body: 'Explore e-books for your level and goals.',
+0272:         button_text: 'Browse all books →',
+0273:         empty_text: 'No books are published yet.',
+0274:       },
+0275:       assessment: {
+0276:         eyebrow: 'LEARNING STYLE',
+0277:         title: 'Find your best way to learn',
+0278:         body: 'A 5–7 minute assessment helps you clarify your goals and create a practical study plan.',
+0279:         button_text: 'Start assessment →',
+0280:         duration_unit: 'minutes',
+0281:         benefits: ['Learning style', 'Personal study plan', 'Balanced language skills'],
+0282:       },
+0283:       why: {
+0284:         eyebrow: 'WHY LEARNMINEA?',
+0285:         title: 'Less noise. Better direction.',
+0286:         reasons: [
+0287:           { title: 'Focus on what matters', body: 'Study what supports your goals.' },
+0288:           { title: 'Understand, don’t just memorize', body: 'Learn the meaning behind expressions.' },
+0289:           { title: 'Make your time count', body: 'Every short lesson has a clear purpose.' },
+0290:           { title: 'Materials with guidance', body: 'Know how to use every resource.' },
+0291:         ],
+0292:       },
+0293:       lifestyle: {
+0294:         eyebrow: 'REAL LIFE, REAL LANGUAGE',
+0295:         title: 'Korean you can use right away',
+0296:         body: 'From cafés to work and school, learn expressions you really need.',
+0297:         tags: ['Café', 'School', 'Work', 'Transport', 'Everyday life'],
+0298:       },
+0299:       testimonials: {
+0300:         eyebrow: 'STUDENT REVIEWS',
+0301:         title: 'How students use LearnMinea',
+0302:       },
+0303:       registration: {
+0304:         eyebrow: 'ONLINE COURSE',
+0305:         title: 'Join an online course',
+0306:         body: 'Guided learning designed for your level.',
+0307:         button_text: 'Register',
+0308:       },
+0309:       faq: {
+0310:         eyebrow: 'HELP',
+0311:         title: 'Frequently asked questions',
+0312:         items: [
+0313:           { question: 'Can beginners start here?', answer: 'Yes. Choose materials that match your current level.' },
+0314:           { question: 'How can I preview an e-book?', answer: 'Open the library and check the available PDF preview.' },
+0315:           { question: 'Are lessons free?', answer: 'Open resources are free; paid materials show their prices.' },
+0316:           { question: 'Do you have TOPIK resources?', answer: 'Yes. Explore the TOPIK and digital library sections.' },
+0317:         ],
+0318:       },
+0319:       finalCta: {
+0320:         eyebrow: 'READY TO BEGIN?',
+0321:         title: 'Start with the right approach.',
+0322:         body: 'Find your next step based on your goals and schedule.',
+0323:         button_text: 'Find my learning style →',
+0324:       },
+0325:     },
+0326: 
+0327:     KR: {
+0328:       hero: {
+0329:         eyebrow: '나만의 속도로 배우는 한국어',
+0330:         title: '많이보다\n제대로 배우세요.',
+0331:         body: '목표와 수준에 맞는 한국어 수업, 전자책, 실생활 학습 자료를 만나 보세요.',
+0332:         search_placeholder: '예: 카페에서 주문하기',
+0333:         search_button: '검색 →',
+0334:       },
+0335:       study: {
+0336:         eyebrow: '학습 시작',
+0337:         title: '오늘은 무엇을 배울까요?',
+0338:         body: '오늘 필요한 작은 주제부터 꾸준히 시작해 보세요.',
+0339:         cards: [
+0340:           { title: '어휘', body: '일상에서 자주 쓰는 단어' },
+0341:           { title: '문법', body: '의미로 이해하는 문법' },
+0342:           { title: '실전 회화', body: '바로 사용할 수 있는 표현' },
+0343:           { title: 'K-Drama', body: '드라마 속 자연스러운 표현' },
+0344:         ],
+0345:       },
+0346:       conversation: {
+0347:         eyebrow: '오늘의 회화',
+0348:         translation: '아이스 아메리카노 한 잔을 부탁하는 표현입니다.',
+0349:         tip: '한 잔은 음료를 세는 단위이며, 주세요는 공손한 요청 표현입니다.',
+0350:         side_eyebrow: '실생활 한국어',
+0351:         side_title: '실생활에서 한국어를 배우세요',
+0352:         side_body: '상황과 뉘앙스를 함께 이해해 보세요.',
+0353:         button_text: '더 알아보기 →',
+0354:       },
+0355:       books: {
+0356:         eyebrow: '전자책 라이브러리',
+0357:         title: '나에게 맞는 학습 자료',
+0358:         body: '수준과 목표에 맞는 전자책을 찾아보세요.',
+0359:         button_text: '전체 전자책 보기 →',
+0360:         empty_text: '아직 등록된 전자책이 없습니다.',
+0361:       },
+0362:       assessment: {
+0363:         eyebrow: '학습 유형',
+0364:         title: '나에게 맞는 학습법을 찾아보세요',
+0365:         body: '5~7분 설문으로 목표와 학습 습관을 확인하고 실용적인 계획을 세워 보세요.',
+0366:         button_text: '진단 시작하기 →',
+0367:         duration_unit: '분',
+0368:         benefits: ['학습 유형', '맞춤형 학습 계획', '네 가지 영역의 균형'],
+0369:       },
+0370:       why: {
+0371:         eyebrow: '왜 LEARNMINEA일까요?',
+0372:         title: '더 많은 콘텐츠보다 올바른 방향.',
+0373:         reasons: [
+0374:           { title: '필요한 것에 집중', body: '목표에 필요한 내용부터 배웁니다.' },
+0375:           { title: '암기보다 이해', body: '표현의 의미와 사용법을 이해합니다.' },
+0376:           { title: '효율적인 시간 활용', body: '짧은 수업에도 명확한 목표가 있습니다.' },
+0377:           { title: '자료와 학습 가이드', body: '자료 활용 방법까지 안내합니다.' },
+0378:         ],
+0379:       },
+0380:       lifestyle: {
+0381:         eyebrow: '실생활 한국어',
+0382:         title: '바로 사용할 수 있는 표현',
+0383:         body: '카페, 학교, 직장, 교통수단 등 일상에 필요한 표현을 배워요.',
+0384:         tags: ['카페', '학교', '직장', '교통', '일상'],
+0385:       },
+0386:       testimonials: {
+0387:         eyebrow: '학습자 후기',
+0388:         title: 'LearnMinea 학습자 이야기',
+0389:       },
+0390:       registration: {
+0391:         eyebrow: '온라인 수업',
+0392:         title: '온라인 수업 신청',
+0393:         body: '수준에 맞춘 체계적인 수업을 만나 보세요.',
+0394:         button_text: '신청하기',
+0395:       },
+0396:       faq: {
+0397:         eyebrow: '도움말',
+0398:         title: '자주 묻는 질문',
+0399:         items: [
+0400:           { question: '초보자도 시작할 수 있나요?', answer: '네. 현재 수준에 맞는 자료부터 시작할 수 있습니다.' },
+0401:           { question: '전자책 미리보기는 어떻게 하나요?', answer: '전자책 페이지에서 PDF 미리보기를 확인하세요.' },
+0402:           { question: '무료 자료도 있나요?', answer: '공개 자료는 무료이며 유료 자료는 가격이 표시됩니다.' },
+0403:           { question: 'TOPIK 자료도 있나요?', answer: 'TOPIK 및 전자책 메뉴에서 확인할 수 있습니다.' },
+0404:         ],
+0405:       },
+0406:       finalCta: {
+0407:         eyebrow: '시작할 준비가 되셨나요?',
+0408:         title: '나에게 맞는 방법으로 시작하세요.',
+0409:         body: '목표와 시간에 맞는 첫걸음을 찾아보세요.',
+0410:         button_text: '학습 유형 알아보기 →',
+0411:       },
+0412:     },
+0413:   },
+0414: }
+0415: 
+0416: const isObject = value =>
+0417:   value !== null &&
+0418:   typeof value === 'object' &&
+0419:   !Array.isArray(value)
+0420: 
+0421: const text = value =>
+0422:   typeof value === 'string' ? value.trim() : ''
+0423: 
+0424: export function safeImageUrl(value) {
+0425:   try {
+0426:     const url = new URL(text(value))
+0427:     return ['https:', 'http:'].includes(url.protocol) &&
+0428:       !url.username &&
+0429:       !url.password
+0430:       ? url.href
+0431:       : ''
+0432:   } catch {
+0433:     return ''
+0434:   }
+0435: }
+0436: 
+0437: export function safeHomeLink(value) {
+0438:   const link = text(value)
+0439:   if (
+0440:     link.startsWith('/') &&
+0441:     !link.startsWith('//') &&
+0442:     !link.includes('\\')
+0443:   ) return link
+0444: 
+0445:   if (link.startsWith('#') && /^#[a-zA-Z0-9_-]+$/.test(link)) {
+0446:     return link
+0447:   }
+0448: 
+0449:   return safeImageUrl(link)
+0450: }
+0451: 
+0452: function mergeKnown(defaults, input) {
+0453:   if (Array.isArray(defaults)) {
+0454:     if (!Array.isArray(input)) return structuredClone(defaults)
+0455: 
+0456:     return input.slice(0, 30).map((item, index) => {
+0457:       const template = defaults[index] ??
+0458:         defaults[0] ??
+0459:         (isObject(item) ? {} : '')
+0460: 
+0461:       return mergeKnown(template, item)
+0462:     })
+0463:   }
+0464: 
+0465:   if (isObject(defaults)) {
+0466:     const result = {}
+0467: 
+0468:     for (const [key, value] of Object.entries(defaults)) {
+0469:       result[key] = mergeKnown(value, isObject(input) ? input[key] : undefined)
+0470:     }
+0471: 
+0472:     return result
+0473:   }
+0474: 
+0475:   if (typeof defaults === 'boolean') {
+0476:     return typeof input === 'boolean' ? input : defaults
+0477:   }
+0478: 
+0479:   if (typeof defaults === 'number') {
+0480:     const number = Number(input)
+0481:     return input !== undefined && input !== null &&
+0482:       input !== '' && Number.isFinite(number)
+0483:       ? Math.max(0, Math.min(200, number))
+0484:       : defaults
+0485:   }
+0486: 
+0487:   return typeof input === 'string' ? input : defaults
+0488: }
+0489: 
+0490: export function normalizeHomeContent(input) {
+0491:   const source = isObject(input) ? input : {}
+0492:   const result = mergeKnown(homeContentDefaults, source)
+0493: 
+0494:   result.lifestyle.image_url = safeImageUrl(
+0495:     result.lifestyle.image_url
+0496:   )
+0497: 
+0498:   result.lifestyle.tags = result.lifestyle.tags
+0499:     .map(text)
+0500:     .filter(Boolean)
+0501: 
+0502:   result.registration.button_url = googleFormUrl(
+0503:     result.registration.button_url
+0504:   )
+0505: 
+0506:   for (const section of ['conversation', 'books', 'assessment', 'finalCta']) {
+0507:     result[section].button_url =
+0508:       safeHomeLink(result[section].button_url) ||
+0509:       homeContentDefaults[section].button_url
+0510:   }
+0511: 
+0512:   result.footer.instagram = safeImageUrl(result.footer.instagram)
+0513:   result.footer.facebook = safeImageUrl(result.footer.facebook)
+0514: 
+0515:   const email = text(result.footer.email)
+0516:   result.footer.email =
+0517:     /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) ? email : ''
+0518: 
+0519:   result.testimonials.reviews = (
+0520:     Array.isArray(source.testimonials?.reviews)
+0521:       ? source.testimonials.reviews
+0522:       : []
+0523:   ).slice(0, 30).map((review, index) => ({
+0524:     id: text(review?.id) || `review-${index}`,
+0525:     name: text(review?.name),
+0526:     text: text(review?.text),
+0527:     caption: text(review?.caption),
+0528:     published: review?.published === true,
+0529:   }))
+0530: 
+0531:   for (const key of Object.keys(result.assessment.style)) {
+0532:     const original = homeContentDefaults.assessment.style[key]
+0533:     if (typeof original === 'string') {
+0534:       const color = result.assessment.style[key]
+0535:       result.assessment.style[key] =
+0536:         /^#[0-9a-fA-F]{6}$/.test(color) ? color : original
+0537:     }
+0538:   }
+0539: 
+0540:   for (const language of ['EN', 'KR']) {
+0541:     for (const section of ['study', 'conversation', 'books', 'assessment', 'finalCta']) {
+0542:       const translated = result.translations[language]?.[section]
+0543:       if (translated?.button_url) {
+0544:         translated.button_url = safeHomeLink(translated.button_url)
+0545:       }
+0546:     }
+0547:   }
+0548: 
+0549:   return result
+0550: }
+0551: 
+0552: export function parseHomeContent(body) {
+0553:   try {
+0554:     return normalizeHomeContent(
+0555:       typeof body === 'string' ? JSON.parse(body) : body
+0556:     )
+0557:   } catch {
+0558:     return normalizeHomeContent(null)
+0559:   }
+0560: }
+0561: 
+0562: export function localizeHomeContent(content, language = 'MN') {
+0563:   const clean = normalizeHomeContent(content)
+0564: 
+0565:   if (language === 'MN') return clean
+0566: 
+0567:   const translated = clean.translations[
+0568:     language === '한국' ? 'KR' : language
+0569:   ]
+0570: 
+0571:   if (!translated) return clean
+0572: 
+0573:   const result = structuredClone(clean)
+0574: 
+0575:   for (const [section, values] of Object.entries(translated)) {
+0576:     if (!isObject(result[section]) || !isObject(values)) continue
+0577: 
+0578:     for (const [key, value] of Object.entries(values)) {
+0579:       if (Array.isArray(value) && Array.isArray(result[section][key])) {
+0580:         result[section][key] = result[section][key].map((item, index) => {
+0581:           const translatedItem = value[index]
+0582: 
+0583:           if (isObject(item) && isObject(translatedItem)) {
+0584:             return { ...item, ...translatedItem }
+0585:           }
+0586: 
+0587:           return translatedItem ?? item
+0588:         })
+0589:       } else if (
+0590:         typeof value === 'string' &&
+0591:         value !== ''
+0592:       ) {
+0593:         result[section][key] = value
+0594:       }
+0595:     }
+0596:   }
+0597: 
+0598:   return result
+0599: }
+0600: 
+0601: export function publicHomeContent(content) {
+0602:   const clean = normalizeHomeContent(content)
+0603: 
+0604:   clean.testimonials.reviews =
+0605:     clean.testimonials.enabled
+0606:       ? clean.testimonials.reviews.filter(
+0607:           review => review.published && review.text
+0608:         )
+0609:       : []
+0610: 
+0611:   return clean
+0612: }
+0613: 
+0614: export async function getHomeContent(client) {
+0615:   const { data, error } = await client
+0616:     .from('site_content')
+0617:     .select('body,published')
+0618:     .eq('content_key', HOME_CONTENT_KEY)
+0619:     .eq('published', true)
+0620:     .maybeSingle()
+0621: 
+0622:   if (error) {
+0623:     return {
+0624:       content: publicHomeContent(null),
+0625:       error,
+0626:     }
+0627:   }
+0628: 
+0629:   return {
+0630:     content: publicHomeContent(parseHomeContent(data?.body)),
+0631:     error: null,
+0632:   }
+0633: }
+
+
+=================================================================
+FILE: app/admin/content/HomeSectionsEditor.js
+=================================================================
+0001: 
+0002: 'use client'
+0003: 
+0004: import { useEffect, useMemo, useState } from 'react'
+0005: import { supabase } from '../../lib/supabase'
+0006: import {
+0007:   HOME_CONTENT_KEY,
+0008:   normalizeHomeContent,
+0009:   parseHomeContent,
+0010:   localizeHomeContent,
+0011:   safeImageUrl,
+0012: } from '../../lib/homeContent.mjs'
+0013: 
+0014: const BUCKET = 'site-images'
+0015: 
+0016: const sections = [
+0017:   {
+0018:     key: 'hero',
+0019:     title: 'Эхний нүүр / Hero',
+0020:     fields: [
+0021:       ['eyebrow', 'Жижиг гарчиг'],
+0022:       ['title', 'Том гарчиг', true],
+0023:       ['body', 'Тайлбар', true],
+0024:       ['search_placeholder', 'Хайлтын placeholder'],
+0025:       ['search_button', 'Хайлтын товч'],
+0026:     ],
+0027:   },
+0028:   {
+0029:     key: 'study',
+0030:     title: 'Өнөөдөр юу сурах вэ?',
+0031:     fields: [
+0032:       ['eyebrow', 'Жижиг гарчиг'],
+0033:       ['title', 'Том гарчиг'],
+0034:       ['body', 'Тайлбар', true],
+0035:     ],
+0036:     collection: 'cards',
+0037:   },
+0038:   {
+0039:     key: 'conversation',
+0040:     title: 'Өнөөдрийн харилцан яриа',
+0041:     fields: [
+0042:       ['eyebrow', 'Картын гарчиг'],
+0043:       ['korean', 'Солонгос өгүүлбэр'],
+0044:       ['translation', 'Орчуулга'],
+0045:       ['tip', 'Хэллэгийн тайлбар', true],
+0046:       ['side_eyebrow', 'Хажуугийн жижиг гарчиг'],
+0047:       ['side_title', 'Хажуугийн том гарчиг'],
+0048:       ['side_body', 'Хажуугийн тайлбар', true],
+0049:       ['button_text', 'Товчны бичвэр'],
+0050:     ],
+0051:   },
+0052:   {
+0053:     key: 'books',
+0054:     title: 'Цахим ном',
+0055:     fields: [
+0056:       ['eyebrow', 'Жижиг гарчиг'],
+0057:       ['title', 'Том гарчиг'],
+0058:       ['body', 'Тайлбар', true],
+0059:       ['button_text', 'Товчны бичвэр'],
+0060:       ['empty_text', 'Ном байхгүй үеийн бичвэр'],
+0061:     ],
+0062:   },
+0063:   {
+0064:     key: 'why',
+0065:     title: 'Яагаад LEARNMINEA вэ?',
+0066:     fields: [
+0067:       ['eyebrow', 'Жижиг гарчиг'],
+0068:       ['title', 'Том гарчиг', true],
+0069:     ],
+0070:     collection: 'reasons',
+0071:   },
+0072:   {
+0073:     key: 'lifestyle',
+0074:     title: 'Бодит хэрэглээний хэсэг',
+0075:     fields: [
+0076:       ['eyebrow', 'Жижиг гарчиг'],
+0077:       ['title', 'Том гарчиг'],
+0078:       ['body', 'Тайлбар', true],
+0079:     ],
+0080:     image: true,
+0081:   },
+0082:   {
+0083:     key: 'testimonials',
+0084:     title: 'Суралцагчдын сэтгэгдэл',
+0085:     fields: [
+0086:       ['eyebrow', 'Жижиг гарчиг'],
+0087:       ['title', 'Том гарчиг'],
+0088:     ],
+0089:     collection: 'reviews',
+0090:   },
+0091:   {
+0092:     key: 'registration',
+0093:     title: 'Онлайн сургалтын бүртгэл',
+0094:     fields: [
+0095:       ['eyebrow', 'Жижиг гарчиг'],
+0096:       ['title', 'Том гарчиг'],
+0097:       ['body', 'Тайлбар', true],
+0098:       ['button_text', 'Товчны бичвэр'],
+0099:     ],
+0100:   },
+0101:   {
+0102:     key: 'faq',
+0103:     title: 'Түгээмэл асуулт / FAQ',
+0104:     fields: [
+0105:       ['eyebrow', 'Жижиг гарчиг'],
+0106:       ['title', 'Том гарчиг'],
+0107:     ],
+0108:     collection: 'items',
+0109:   },
+0110:   {
+0111:     key: 'finalCta',
+0112:     title: 'Сүүлийн уриалга / CTA',
+0113:     fields: [
+0114:       ['eyebrow', 'Жижиг гарчиг'],
+0115:       ['title', 'Том гарчиг'],
+0116:       ['body', 'Тайлбар', true],
+0117:       ['button_text', 'Товчны бичвэр'],
+0118:     ],
+0119:   },
+0120: ]
+0121: 
+0122: const linkSections = {
+0123:   conversation: 'button_url',
+0124:   books: 'button_url',
+0125:   registration: 'button_url',
+0126:   finalCta: 'button_url',
+0127: }
+0128: 
+0129: const footerFields = [
+0130:   ['description', 'Логоны доорх тайлбар'],
+0131:   ['learn_heading', 'Сурах баганын гарчиг'],
+0132:   ['topik', 'TOPIK цэс'],
+0133:   ['kdrama', 'K-Drama цэс'],
+0134:   ['books', 'Цахим ном цэс'],
+0135:   ['site_heading', 'Сайтын баганын гарчиг'],
+0136:   ['home', 'Нүүр цэс'],
+0137:   ['assessment', 'Сурах арга барил цэс'],
+0138:   ['faq', 'Түгээмэл асуулт цэс'],
+0139:   ['contact', 'Холбоо барих цэс'],
+0140:   ['copyright', 'Copyright'],
+0141:   ['rights', 'Эрхийн мэдээлэл'],
+0142: ]
+0143: 
+0144: const inputStyle = {
+0145:   width: '100%',
+0146:   minWidth: 0,
+0147:   boxSizing: 'border-box',
+0148:   padding: '12px 14px',
+0149:   border: '1px solid #dce5f0',
+0150:   borderRadius: 10,
+0151:   color: '#25354a',
+0152:   background: '#fff',
+0153:   fontFamily: 'inherit',
+0154:   fontSize: 14,
+0155: }
+0156: 
+0157: const buttonStyle = {
+0158:   padding: '11px 16px',
+0159:   background: '#eaf4ff',
+0160:   color: '#0879d1',
+0161:   border: '1px solid #cde2f8',
+0162:   borderRadius: 10,
+0163:   fontWeight: 800,
+0164:   cursor: 'pointer',
+0165: }
+0166: 
+0167: function Field({ label, value, onChange, multiline, type = 'text' }) {
+0168:   return (
+0169:     <label className="field">
+0170:       <span>{label}</span>
+0171:       {multiline ? (
+0172:         <textarea
+0173:           value={value ?? ''}
+0174:           onChange={event => onChange(event.target.value)}
+0175:           rows={3}
+0176:           style={{ ...inputStyle, resize: 'vertical', lineHeight: 1.6 }}
+0177:         />
+0178:       ) : (
+0179:         <input
+0180:           type={type}
+0181:           value={value ?? ''}
+0182:           onChange={event => onChange(event.target.value)}
+0183:           style={inputStyle}
+0184:         />
+0185:       )}
+0186:     </label>
+0187:   )
+0188: }
+0189: 
+0190: function MiniPreview({ section, data }) {
+0191:   const value = data[section] || {}
+0192: 
+0193:   return (
+0194:     <div className={`miniPreview mini-${section}`}>
+0195:       <div className="miniEyebrow">
+0196:         {value.eyebrow || 'LEARNMINEA'}
+0197:       </div>
+0198: 
+0199:       {section === 'conversation' ? (
+0200:         <div className="miniConversation">
+0201:           <div className="miniTalk">
+0202:             <span>▶</span>
+0203:             <h3 lang="ko">{value.korean}</h3>
+0204:             <p>{value.translation}</p>
+0205:             <small>{value.tip}</small>
+0206:           </div>
+0207:           <div>
+0208:             <div className="miniEyebrow">
+0209:               {value.side_eyebrow}
+0210:             </div>
+0211:             <h3>{value.side_title}</h3>
+0212:             <p>{value.side_body}</p>
+0213:             <strong>{value.button_text}</strong>
+0214:           </div>
+0215:         </div>
+0216:       ) : (
+0217:         <>
+0218:           <h3>{value.title}</h3>
+0219:           {value.body && <p>{value.body}</p>}
+0220:         </>
+0221:       )}
+0222: 
+0223:       {section === 'hero' && (
+0224:         <div className="miniSearch">
+0225:           <span>{value.search_placeholder}</span>
+0226:           <strong>{value.search_button}</strong>
+0227:         </div>
+0228:       )}
+0229: 
+0230:       {section === 'study' && (
+0231:         <div className="miniGrid">
+0232:           {(value.cards || []).map((item, index) => (
+0233:             <div className="miniTile" key={index}>
+0234:               <b>{item.symbol}</b>
+0235:               <strong>{item.title}</strong>
+0236:               <small>{item.body}</small>
+0237:             </div>
+0238:           ))}
+0239:         </div>
+0240:       )}
+0241: 
+0242:       {section === 'books' && (
+0243:         <div className="miniGrid">
+0244:           {['01', '02', '03', '04'].map(item => (
+0245:             <div className="miniBook" key={item}>
+0246:               <div>LEARNMINEA</div>
+0247:               <strong>{item}</strong>
+0248:             </div>
+0249:           ))}
+0250:         </div>
+0251:       )}
+0252: 
+0253:       {section === 'why' && (
+0254:         <div className="miniReasons">
+0255:           {(value.reasons || []).map((item, index) => (
+0256:             <div key={index}>
+0257:               <small>0{index + 1}</small>
+0258:               <strong>{item.title}</strong>
+0259:               <p>{item.body}</p>
+0260:             </div>
+0261:           ))}
+0262:         </div>
+0263:       )}
+0264: 
+0265:       {section === 'lifestyle' && (
+0266:         <>
+0267:           {value.image_url ? (
+0268:             <img
+0269:               src={safeImageUrl(value.image_url)}
+0270:               alt="Бодит хэрэглээ"
+0271:               className="miniImage"
+0272:             />
+0273:           ) : (
+0274:             <div className="miniScene">
+0275:               ☁　✦　CAFE　✦　☁
+0276:             </div>
+0277:           )}
+0278:           <div className="miniTags">
+0279:             {(value.tags || []).map((tag, index) => (
+0280:               <span key={index}>{tag}</span>
+0281:             ))}
+0282:           </div>
+0283:         </>
+0284:       )}
+0285: 
+0286:       {section === 'testimonials' && (
+0287:         <div className="miniGrid">
+0288:           {(value.reviews || [])
+0289:             .filter(item => item.published)
+0290:             .slice(0, 3)
+0291:             .map((item, index) => (
+0292:               <div className="miniTile" key={index}>
+0293:                 <p>“{item.text}”</p>
+0294:                 <strong>{item.name}</strong>
+0295:                 <small>{item.caption}</small>
+0296:               </div>
+0297:             ))}
+0298:           {!value.reviews?.some(item => item.published) && (
+0299:             <small>Нийтлэгдсэн сэтгэгдэл байхгүй.</small>
+0300:           )}
+0301:         </div>
+0302:       )}
+0303: 
+0304:       {section === 'faq' && (
+0305:         <div className="miniFaq">
+0306:           {(value.items || []).map((item, index) => (
+0307:             <div key={index}>
+0308:               <strong>{item.question}</strong>
+0309:               <span>＋</span>
+0310:             </div>
+0311:           ))}
+0312:         </div>
+0313:       )}
+0314: 
+0315:       {['registration', 'finalCta', 'books'].includes(section) && (
+0316:         <div className="miniButton">
+0317:           {value.button_text}
+0318:         </div>
+0319:       )}
+0320:     </div>
+0321:   )
+0322: }
+0323: 
+0324: export default function HomeSectionsEditor() {
+0325:   const [content, setContent] = useState(() =>
+0326:     normalizeHomeContent(null)
+0327:   )
+0328:   const [rowId, setRowId] = useState(null)
+0329:   const [loading, setLoading] = useState(true)
+0330:   const [saving, setSaving] = useState(false)
+0331:   const [message, setMessage] = useState('')
+0332:   const [loadError, setLoadError] = useState(false)
+0333:   const [language, setLanguage] = useState('MN')
+0334:   const [opened, setOpened] = useState({})
+0335:   const [file, setFile] = useState(null)
+0336:   const [previewUrl, setPreviewUrl] = useState('')
+0337: 
+0338:   const localized = useMemo(
+0339:     () => localizeHomeContent(content, language),
+0340:     [content, language]
+0341:   )
+0342: 
+0343:   useEffect(() => {
+0344:     let active = true
+0345: 
+0346:     async function load() {
+0347:       const { data, error } = await supabase
+0348:         .from('site_content')
+0349:         .select('id,body')
+0350:         .eq('content_key', HOME_CONTENT_KEY)
+0351:         .maybeSingle()
+0352: 
+0353:       if (!active) return
+0354: 
+0355:       if (error) {
+0356:         setLoadError(true)
+0357:         setMessage(error.message)
+0358:       } else {
+0359:         setRowId(data?.id || null)
+0360:         setContent(parseHomeContent(data?.body))
+0361:       }
+0362: 
+0363:       setLoading(false)
+0364:     }
+0365: 
+0366:     load()
+0367: 
+0368:     return () => {
+0369:       active = false
+0370:     }
+0371:   }, [])
+0372: 
+0373:   useEffect(() => {
+0374:     if (!file) {
+0375:       setPreviewUrl('')
+0376:       return
+0377:     }
+0378: 
+0379:     const url = URL.createObjectURL(file)
+0380:     setPreviewUrl(url)
+0381: 
+0382:     return () => URL.revokeObjectURL(url)
+0383:   }, [file])
+0384: 
+0385:   function change(section, field, value) {
+0386:     setContent(current => {
+0387:       if (language === 'MN') {
+0388:         return {
+0389:           ...current,
+0390:           [section]: {
+0391:             ...current[section],
+0392:             [field]: value,
+0393:           },
+0394:         }
+0395:       }
+0396: 
+0397:       return {
+0398:         ...current,
+0399:         translations: {
+0400:           ...current.translations,
+0401:           [language]: {
+0402:             ...current.translations[language],
+0403:             [section]: {
+0404:               ...current.translations[language]?.[section],
+0405:               [field]: value,
+0406:             },
+0407:           },
+0408:         },
+0409:       }
+0410:     })
+0411:   }
+0412: 
+0413:   function changeArray(section, field, index, key, value) {
+0414:     setContent(current => {
+0415:       const original = language === 'MN'
+0416:         ? current[section]
+0417:         : current.translations[language]?.[section]
+0418: 
+0419:       const sourceItems = Array.isArray(original?.[field])
+0420:         ? original[field]
+0421:         : []
+0422: 
+0423:       const baseItems = localized[section]?.[field] || []
+0424: 
+0425:       const items = baseItems.map((item, i) => {
+0426:         if (i !== index) return item
+0427: 
+0428:         if (typeof item === 'string') return value
+0429: 
+0430:         return { ...item, [key]: value }
+0431:       })
+0432: 
+0433:       if (language === 'MN') {
+0434:         return {
+0435:           ...current,
+0436:           [section]: {
+0437:             ...current[section],
+0438:             [field]: items,
+0439:           },
+0440:         }
+0441:       }
+0442: 
+0443:       return {
+0444:         ...current,
+0445:         translations: {
+0446:           ...current.translations,
+0447:           [language]: {
+0448:             ...current.translations[language],
+0449:             [section]: {
+0450:               ...current.translations[language]?.[section],
+0451:               [field]: items.map((item, i) => {
+0452:                 const existing = sourceItems[i]
+0453:                 if (typeof item === 'string') return item
+0454: 
+0455:                 return {
+0456:                   ...(existing || {}),
+0457:                   ...item,
+0458:                 }
+0459:               }),
+0460:             },
+0461:           },
+0462:         },
+0463:       }
+0464:     })
+0465:   }
+0466: 
+0467:   function replaceArray(section, field, items) {
+0468:     setContent(current => {
+0469:       if (language === 'MN') {
+0470:         return {
+0471:           ...current,
+0472:           [section]: {
+0473:             ...current[section],
+0474:             [field]: items,
+0475:           },
+0476:         }
+0477:       }
+0478: 
+0479:       return {
+0480:         ...current,
+0481:         translations: {
+0482:           ...current.translations,
+0483:           [language]: {
+0484:             ...current.translations[language],
+0485:             [section]: {
+0486:               ...current.translations[language]?.[section],
+0487:               [field]: items,
+0488:             },
+0489:           },
+0490:         },
+0491:       }
+0492:     })
+0493:   }
+0494: 
+0495:   function changeFooter(field, value, shared = false) {
+0496:     setContent(current => ({
+0497:       ...current,
+0498:       footer: shared
+0499:         ? {
+0500:             ...current.footer,
+0501:             [field]: value,
+0502:           }
+0503:         : {
+0504:             ...current.footer,
+0505:             [language]: {
+0506:               ...current.footer[language],
+0507:               [field]: value,
+0508:             },
+0509:           },
+0510:     }))
+0511:   }
+0512: 
+0513:   function toggle(key) {
+0514:     setOpened(current => ({
+0515:       ...current,
+0516:       [key]: !current[key],
+0517:     }))
+0518:   }
+0519: 
+0520:   async function uploadImage(selectedFile) {
+0521:     if (!['image/jpeg', 'image/png', 'image/webp'].includes(
+0522:       selectedFile.type
+0523:     )) {
+0524:       throw new Error('JPG, PNG эсвэл WEBP зураг сонгоно уу.')
+0525:     }
+0526: 
+0527:     if (selectedFile.size > 5 * 1024 * 1024) {
+0528:       throw new Error('Зураг 5 MB-аас их байж болохгүй.')
+0529:     }
+0530: 
+0531:     const extension =
+0532:       selectedFile.type === 'image/png'
+0533:         ? 'png'
+0534:         : selectedFile.type === 'image/webp'
+0535:           ? 'webp'
+0536:           : 'jpg'
+0537: 
+0538:     const path = `home/lifestyle-${crypto.randomUUID()}.${extension}`
+0539: 
+0540:     const { error } = await supabase.storage
+0541:       .from(BUCKET)
+0542:       .upload(path, selectedFile, {
+0543:         contentType: selectedFile.type,
+0544:         upsert: false,
+0545:       })
+0546: 
+0547:     if (error) throw error
+0548: 
+0549:     const { data } = supabase.storage
+0550:       .from(BUCKET)
+0551:       .getPublicUrl(path)
+0552: 
+0553:     const url = safeImageUrl(data?.publicUrl)
+0554: 
+0555:     if (!url) {
+0556:       throw new Error('Зургийн URL үүссэнгүй.')
+0557:     }
+0558: 
+0559:     return url
+0560:   }
+0561: 
+0562:   async function save() {
+0563:     if (saving || loading || loadError) return
+0564: 
+0565:     setSaving(true)
+0566:     setMessage('')
+0567: 
+0568:     try {
+0569:       let next = normalizeHomeContent(content)
+0570: 
+0571:       if (file) {
+0572:         const imageUrl = await uploadImage(file)
+0573: 
+0574:         next = normalizeHomeContent({
+0575:           ...next,
+0576:           lifestyle: {
+0577:             ...next.lifestyle,
+0578:             image_url: imageUrl,
+0579:           },
+0580:         })
+0581:       }
+0582: 
+0583:       const payload = {
+0584:         content_key: HOME_CONTENT_KEY,
+0585:         body: JSON.stringify(next),
+0586:         published: true,
+0587:         updated_at: new Date().toISOString(),
+0588:       }
+0589: 
+0590:       const query = rowId
+0591:         ? supabase
+0592:             .from('site_content')
+0593:             .update(payload)
+0594:             .eq('id', rowId)
+0595:         : supabase
+0596:             .from('site_content')
+0597:             .insert(payload)
+0598: 
+0599:       const { data, error } = await query
+0600:         .select('id')
+0601:         .single()
+0602: 
+0603:       if (error) throw error
+0604: 
+0605:       setRowId(data.id)
+0606:       setContent(next)
+0607:       setFile(null)
+0608:       setMessage('Амжилттай хадгаллаа. Нүүр хуудсаа refresh хийж шалгаарай.')
+0609:     } catch (error) {
+0610:       setMessage(`Алдаа: ${error.message}`)
+0611:     } finally {
+0612:       setSaving(false)
+0613:     }
+0614:   }
+0615: 
+0616:   if (loading) {
+0617:     return <div className="editorLoading">Мэдээллийг ачаалж байна...</div>
+0618:   }
+0619: 
+0620:   return (
+0621:     <div className="homeEditor">
+0622:       <div className="languageBar">
+0623:         <div>
+0624:           <strong>Засварлах хэл</strong>
+0625:           <p>Хэл солиход тухайн хэлний бичвэр, preview гарна.</p>
+0626:         </div>
+0627: 
+0628:         <div className="languageButtons">
+0629:           {['MN', 'EN', 'KR'].map(item => (
+0630:             <button
+0631:               type="button"
+0632:               key={item}
+0633:               className={language === item ? 'active' : ''}
+0634:               onClick={() => setLanguage(item)}
+0635:             >
+0636:               {item === 'KR' ? '한국' : item}
+0637:             </button>
+0638:           ))}
+0639:         </div>
+0640:       </div>
+0641: 
+0642:       {sections.map((section, index) => {
+0643:         const value = localized[section.key] || {}
+0644:         const isOpen = Boolean(opened[section.key])
+0645: 
+0646:         return (
+0647:           <section className="editorCard" key={section.key}>
+0648:             <div className="cardHeader">
+0649:               <span className="number">
+0650:                 {String(index + 1).padStart(2, '0')}
+0651:               </span>
+0652: 
+0653:               <div>
+0654:                 <h2>{section.title}</h2>
+0655:                 <p>Сайтын бодит хэсгийн жижиг preview</p>
+0656:               </div>
+0657: 
+0658:               {['lifestyle', 'testimonials', 'registration'].includes(
+0659:                 section.key
+0660:               ) && (
+0661:                 <span className="state">
+0662:                   {content[section.key].enabled ? 'Идэвхтэй' : 'Нуусан'}
+0663:                 </span>
+0664:               )}
+0665:             </div>
+0666: 
+0667:             <MiniPreview
+0668:               section={section.key}
+0669:               data={localized}
+0670:             />
+0671: 
+0672:             <button
+0673:               type="button"
+0674:               className="editButton"
+0675:               onClick={() => toggle(section.key)}
+0676:             >
+0677:               {isOpen
+0678:                 ? 'Засварлах хэсгийг хаах −'
+0679:                 : 'Бичвэрийг засах +'}
+0680:             </button>
+0681: 
+0682:             {isOpen && (
+0683:               <div className="fields">
+0684:                 {['lifestyle', 'testimonials', 'registration'].includes(
+0685:                   section.key
+0686:                 ) && (
+0687:                   <label className="checkRow">
+0688:                     <input
+0689:                       type="checkbox"
+0690:                       checked={content[section.key].enabled}
+0691:                       onChange={event => {
+0692:                         setContent(current => ({
+0693:                           ...current,
+0694:                           [section.key]: {
+0695:                             ...current[section.key],
+0696:                             enabled: event.target.checked,
+0697:                           },
+0698:                         }))
+0699:                       }}
+0700:                     />
+0701:                     Сайтад харуулах
+0702:                   </label>
+0703:                 )}
+0704: 
+0705:                 {section.fields.map(([key, label, multiline]) => (
+0706:                   <Field
+0707:                     key={key}
+0708:                     label={label}
+0709:                     value={value[key]}
+0710:                     multiline={Boolean(multiline)}
+0711:                     onChange={text =>
+0712:                       change(section.key, key, text)
+0713:                     }
+0714:                   />
+0715:                 ))}
+0716: 
+0717:                 {linkSections[section.key] && (
+0718:                   <Field
+0719:                     label="Товчны холбоос"
+0720:                     value={content[section.key]?.button_url}
+0721:                     onChange={text => {
+0722:                       setContent(current => ({
+0723:                         ...current,
+0724:                         [section.key]: {
+0725:                           ...current[section.key],
+0726:                           button_url: text,
+0727:                         },
+0728:                       }))
+0729:                     }}
+0730:                   />
+0731:                 )}
+0732: 
+0733:                 {section.collection === 'cards' && (
+0734:                   <div className="nested">
+0735:                     <h3>Сурах 4 карт</h3>
+0736:                     {(value.cards || []).map((item, itemIndex) => (
+0737:                       <div className="nestedItem" key={itemIndex}>
+0738:                         <strong>Карт {itemIndex + 1}</strong>
+0739: 
+0740:                         {language === 'MN' && (
+0741:                           <>
+0742:                             <Field
+0743:                               label="Тэмдэг"
+0744:                               value={item.symbol}
+0745:                               onChange={text =>
+0746:                                 changeArray('study', 'cards', itemIndex, 'symbol', text)
+0747:                               }
+0748:                             />
+0749:                             <Field
+0750:                               label="Холбоос"
+0751:                               value={item.url}
+0752:                               onChange={text =>
+0753:                                 changeArray('study', 'cards', itemIndex, 'url', text)
+0754:                               }
+0755:                             />
+0756:                           </>
+0757:                         )}
+0758: 
+0759:                         <Field
+0760:                           label="Гарчиг"
+0761:                           value={item.title}
+0762:                           onChange={text =>
+0763:                             changeArray('study', 'cards', itemIndex, 'title', text)
+0764:                           }
+0765:                         />
+0766:                         <Field
+0767:                           label="Тайлбар"
+0768:                           value={item.body}
+0769:                           onChange={text =>
+0770:                             changeArray('study', 'cards', itemIndex, 'body', text)
+0771:                           }
+0772:                         />
+0773:                       </div>
+0774:                     ))}
+0775:                   </div>
+0776:                 )}
+0777: 
+0778:                 {section.collection === 'reasons' && (
+0779:                   <div className="nested">
+0780:                     <h3>Давуу талууд</h3>
+0781:                     {(value.reasons || []).map((item, itemIndex) => (
+0782:                       <div className="nestedItem" key={itemIndex}>
+0783:                         <strong>Шалтгаан {itemIndex + 1}</strong>
+0784:                         <Field
+0785:                           label="Гарчиг"
+0786:                           value={item.title}
+0787:                           onChange={text =>
+0788:                             changeArray('why', 'reasons', itemIndex, 'title', text)
+0789:                           }
+0790:                         />
+0791:                         <Field
+0792:                           label="Тайлбар"
+0793:                           value={item.body}
+0794:                           multiline
+0795:                           onChange={text =>
+0796:                             changeArray('why', 'reasons', itemIndex, 'body', text)
+0797:                           }
+0798:                         />
+0799:                         <button
+0800:                           type="button"
+0801:                           className="smallButton"
+0802:                           onClick={() =>
+0803:                             replaceArray(
+0804:                               'why',
+0805:                               'reasons',
+0806:                               value.reasons.filter((_, i) => i !== itemIndex)
+0807:                             )
+0808:                           }
+0809:                         >
+0810:                           Устгах
+0811:                         </button>
+0812:                       </div>
+0813:                     ))}
+0814:                     <button
+0815:                       type="button"
+0816:                       className="smallButton"
+0817:                       onClick={() =>
+0818:                         replaceArray('why', 'reasons', [
+0819:                           ...(value.reasons || []),
+0820:                           { title: '', body: '' },
+0821:                         ])
+0822:                       }
+0823:                     >
+0824:                       + Шалтгаан нэмэх
+0825:                     </button>
+0826:                   </div>
+0827:                 )}
+0828: 
+0829:                 {section.collection === 'items' && (
+0830:                   <div className="nested">
+0831:                     <h3>Асуулт, хариултууд</h3>
+0832:                     {(value.items || []).map((item, itemIndex) => (
+0833:                       <div className="nestedItem" key={itemIndex}>
+0834:                         <strong>Асуулт {itemIndex + 1}</strong>
+0835:                         <Field
+0836:                           label="Асуулт"
+0837:                           value={item.question}
+0838:                           onChange={text =>
+0839:                             changeArray('faq', 'items', itemIndex, 'question', text)
+0840:                           }
+0841:                         />
+0842:                         <Field
+0843:                           label="Хариулт"
+0844:                           value={item.answer}
+0845:                           multiline
+0846:                           onChange={text =>
+0847:                             changeArray('faq', 'items', itemIndex, 'answer', text)
+0848:                           }
+0849:                         />
+0850:                         <button
+0851:                           type="button"
+0852:                           className="smallButton"
+0853:                           onClick={() =>
+0854:                             replaceArray(
+0855:                               'faq',
+0856:                               'items',
+0857:                               value.items.filter((_, i) => i !== itemIndex)
+0858:                             )
+0859:                           }
+0860:                         >
+0861:                           Устгах
+0862:                         </button>
+0863:                       </div>
+0864:                     ))}
+0865:                     <button
+0866:                       type="button"
+0867:                       className="smallButton"
+0868:                       onClick={() =>
+0869:                         replaceArray('faq', 'items', [
+0870:                           ...(value.items || []),
+0871:                           { question: '', answer: '' },
+0872:                         ])
+0873:                       }
+0874:                     >
+0875:                       + Асуулт нэмэх
+0876:                     </button>
+0877:                   </div>
+0878:                 )}
+0879: 
+0880:                 {section.image && (
+0881:                   <div className="imageSettings">
+0882:                     <h3>Зургийн тохиргоо</h3>
+0883:                     <p>JPG, PNG, WEBP · 5 MB хүртэл</p>
+0884: 
+0885:                     {language === 'MN' && (
+0886:                       <>
+0887:                         <label className="uploadButton">
+0888:                           <span>↑ Зураг сонгох</span>
+0889:                           <input
+0890:                             type="file"
+0891:                             accept="image/jpeg,image/png,image/webp"
+0892:                             onChange={event => {
+0893:                               const selected = event.target.files?.[0] || null
+0894:                               if (selected && selected.size > 5 * 1024 * 1024) {
+0895:                                 setMessage('Зураг 5 MB-аас бага байх ёстой.')
+0896:                                 event.target.value = ''
+0897:                                 return
+0898:                               }
+0899:                               setFile(selected)
+0900:                             }}
+0901:                           />
+0902:                         </label>
+0903: 
+0904:                         {(previewUrl || value.image_url) && (
+0905:                           <div className="imagePreview">
+0906:                             <img
+0907:                               src={previewUrl || safeImageUrl(value.image_url)}
+0908:                               alt="Сонгосон зураг"
+0909:                             />
+0910:                             {file && <small>{file.name}</small>}
+0911:                           </div>
+0912:                         )}
+0913: 
+0914:                         <Field
+0915:                           label="Зургийн URL (сонголттой)"
+0916:                           value={content.lifestyle.image_url}
+0917:                           onChange={text =>
+0918:                             change('lifestyle', 'image_url', text)
+0919:                           }
+0920:                         />
+0921:                       </>
+0922:                     )}
+0923: 
+0924:                     <Field
+0925:                       label="Сэдвийн шошгууд (таслалаар тусгаарлана)"
+0926:                       value={(value.tags || []).join(', ')}
+0927:                       onChange={text =>
+0928:                         change(
+0929:                           'lifestyle',
+0930:                           'tags',
+0931:                           text.split(',').map(item => item.trim())
+0932:                         )
+0933:                       }
+0934:                     />
+0935:                   </div>
+0936:                 )}
+0937: 
+0938:                 {section.collection === 'reviews' && (
+0939:                   <div className="nested">
+0940:                     <h3>Суралцагчдын сэтгэгдэл</h3>
+0941: 
+0942:                     {(content.testimonials.reviews || []).map(
+0943:                       (item, itemIndex) => (
+0944:                         <div className="nestedItem" key={item.id}>
+0945:                           <strong>Сэтгэгдэл {itemIndex + 1}</strong>
+0946:                           <Field
+0947:                             label="Нэр"
+0948:                             value={item.name}
+0949:                             onChange={text => {
+0950:                               const items = content.testimonials.reviews.map(
+0951:                                 (review, i) =>
+0952:                                   i === itemIndex
+0953:                                     ? { ...review, name: text }
+0954:                                     : review
+0955:                               )
+0956:                               replaceArray('testimonials', 'reviews', items)
+0957:                             }}
+0958:                           />
+0959:                           <Field
+0960:                             label="Сэтгэгдэл"
+0961:                             value={item.text}
+0962:                             multiline
+0963:                             onChange={text => {
+0964:                               const items = content.testimonials.reviews.map(
+0965:                                 (review, i) =>
+0966:                                   i === itemIndex
+0967:                                     ? { ...review, text }
+0968:                                     : review
+0969:                               )
+0970:                               replaceArray('testimonials', 'reviews', items)
+0971:                             }}
+0972:                           />
+0973:                           <Field
+0974:                             label="Тайлбар"
+0975:                             value={item.caption}
+0976:                             onChange={text => {
+0977:                               const items = content.testimonials.reviews.map(
+0978:                                 (review, i) =>
+0979:                                   i === itemIndex
+0980:                                     ? { ...review, caption: text }
+0981:                                     : review
+0982:                               )
+0983:                               replaceArray('testimonials', 'reviews', items)
+0984:                             }}
+0985:                           />
+0986:                           <label className="checkRow">
+0987:                             <input
+0988:                               type="checkbox"
+0989:                               checked={item.published}
+0990:                               onChange={event => {
+0991:                                 const items = content.testimonials.reviews.map(
+0992:                                   (review, i) =>
+0993:                                     i === itemIndex
+0994:                                       ? { ...review, published: event.target.checked }
+0995:                                       : review
+0996:                                 )
+0997:                                 replaceArray('testimonials', 'reviews', items)
+0998:                               }}
+0999:                             />
+1000:                             Нийтлэх
+1001:                           </label>
+1002:                           <button
+1003:                             type="button"
+1004:                             className="smallButton"
+1005:                             onClick={() =>
+1006:                               replaceArray(
+1007:                                 'testimonials',
+1008:                                 'reviews',
+1009:                                 content.testimonials.reviews.filter(
+1010:                                   (_, i) => i !== itemIndex
+1011:                                 )
+1012:                               )
+1013:                             }
+1014:                           >
+1015:                             Устгах
+1016:                           </button>
+1017:                         </div>
+1018:                       )
+1019:                     )}
+1020: 
+1021:                     <button
+1022:                       type="button"
+1023:                       className="smallButton"
+1024:                       onClick={() =>
+1025:                         replaceArray('testimonials', 'reviews', [
+1026:                           ...content.testimonials.reviews,
+1027:                           {
+1028:                             id: crypto.randomUUID(),
+1029:                             name: '',
+1030:                             text: '',
+1031:                             caption: '',
+1032:                             published: false,
+1033:                           },
+1034:                         ])
+1035:                       }
+1036:                     >
+1037:                       + Сэтгэгдэл нэмэх
+1038:                     </button>
+1039:                   </div>
+1040:                 )}
+1041:               </div>
+1042:             )}
+1043:           </section>
+1044:         )
+1045:       })}
+1046: 
+1047:       <section className="editorCard">
+1048:         <div className="cardHeader">
+1049:           <span className="number">11</span>
+1050:           <div>
+1051:             <h2>Footer / Холбоо барих</h2>
+1052:             <p>Сайтын хамгийн доод хэсэг</p>
+1053:           </div>
+1054:         </div>
+1055: 
+1056:         <div className="miniFooter">
+1057:           <div>
+1058:             <h3>{content.footer.logo}<span>.</span></h3>
+1059:             <p>{content.footer[language]?.description}</p>
+1060:             <small>Instagram　 Facebook　✉</small>
+1061:           </div>
+1062:           <div>
+1063:             <strong>{content.footer[language]?.learn_heading}</strong>
+1064:             <p>{content.footer[language]?.topik}</p>
+1065:             <p>{content.footer[language]?.kdrama}</p>
+1066:             <p>{content.footer[language]?.books}</p>
+1067:           </div>
+1068:           <div>
+1069:             <strong>{content.footer[language]?.site_heading}</strong>
+1070:             <p>{content.footer[language]?.home}</p>
+1071:             <p>{content.footer[language]?.assessment}</p>
+1072:             <p>{content.footer[language]?.faq}</p>
+1073:             <p>{content.footer[language]?.contact}</p>
+1074:           </div>
+1075:           <div className="miniCopyright">
+1076:             {content.footer[language]?.copyright}
+1077:             <span>{content.footer[language]?.rights}</span>
+1078:           </div>
+1079:         </div>
+1080: 
+1081:         <button
+1082:           type="button"
+1083:           className="editButton"
+1084:           onClick={() => toggle('footer')}
+1085:         >
+1086:           {opened.footer
+1087:             ? 'Засварлах хэсгийг хаах −'
+1088:             : 'Footer засах +'}
+1089:         </button>
+1090: 
+1091:         {opened.footer && (
+1092:           <div className="fields">
+1093:             {language === 'MN' && (
+1094:               <>
+1095:                 <Field
+1096:                   label="Лого"
+1097:                   value={content.footer.logo}
+1098:                   onChange={text => changeFooter('logo', text, true)}
+1099:                 />
+1100:                 <Field
+1101:                   label="Instagram холбоос"
+1102:                   value={content.footer.instagram}
+1103:                   onChange={text => changeFooter('instagram', text, true)}
+1104:                 />
+1105:                 <Field
+1106:                   label="Facebook холбоос"
+1107:                   value={content.footer.facebook}
+1108:                   onChange={text => changeFooter('facebook', text, true)}
+1109:                 />
+1110:                 <Field
+1111:                   label="Gmail / И-мэйл хаяг"
+1112:                   value={content.footer.email}
+1113:                   onChange={text => changeFooter('email', text, true)}
+1114:                 />
+1115:               </>
+1116:             )}
+1117: 
+1118:             {footerFields.map(([key, label]) => (
+1119:               <Field
+1120:                 key={`${language}-${key}`}
+1121:                 label={label}
+1122:                 value={content.footer[language]?.[key]}
+1123:                 multiline={['description', 'copyright', 'rights'].includes(key)}
+1124:                 onChange={text => changeFooter(key, text)}
+1125:               />
+1126:             ))}
+1127:           </div>
+1128:         )}
+1129:       </section>
+1130: 
+1131:       <div className="saveBar">
+1132:         <p role="status">
+1133:           {message || 'Өөрчлөлтөө хадгалсны дараа нүүр хуудсаа refresh хийнэ.'}
+1134:         </p>
+1135:         <button
+1136:           type="button"
+1137:           onClick={save}
+1138:           disabled={saving || loadError}
+1139:         >
+1140:           {saving ? 'Хадгалж байна...' : 'Бүгдийг хадгалах'}
+1141:         </button>
+1142:       </div>
+1143: 
+1144:       <style jsx global>{`
+1145:         /* CONTENT ADMIN TOP SAVE LAYOUT */
+1146: 
+1147:         .contentAdmin .contentWrap {
+1148:           position: relative;
+1149:         }
+1150: 
+1151:         .contentAdmin .top {
+1152:           position: relative;
+1153:           padding-right: 220px;
+1154:           min-height: 130px;
+1155:         }
+1156: 
+1157:         .contentAdmin .top .viewSite {
+1158:           position: absolute;
+1159:           top: 0;
+1160:           right: 0;
+1161:           display: flex;
+1162:           align-items: center;
+1163:           justify-content: center;
+1164:           width: 190px;
+1165:           min-height: 42px;
+1166:           padding: 9px 14px;
+1167:           border: 1px solid #d6e0ed;
+1168:           border-radius: 12px;
+1169:           background: #fff;
+1170:           color: #243449;
+1171:           font-size: 13px;
+1172:           font-weight: 600;
+1173:           text-decoration: none;
+1174:           box-sizing: border-box;
+1175:         }
+1176: 
+1177:         .contentAdmin .homeEditor .saveBar {
+1178:           position: absolute;
+1179:           top: 52px;
+1180:           right: 0;
+1181:           bottom: auto;
+1182:           left: auto;
+1183:           z-index: 5;
+1184:           width: 190px;
+1185:           padding: 0;
+1186:           margin: 0;
+1187:           border: 0;
+1188:           border-radius: 0;
+1189:           background: transparent;
+1190:           box-shadow: none;
+1191:           display: block;
+1192:         }
+1193: 
+1194:         .contentAdmin .homeEditor .saveBar p {
+1195:           display: none;
+1196:         }
+1197: 
+1198:         .contentAdmin .homeEditor .saveBar button {
+1199:           display: block;
+1200:           width: 100%;
+1201:           min-height: 44px;
+1202:           padding: 11px 14px;
+1203:           border: 0;
+1204:           border-radius: 12px;
+1205:           background: #0879d1;
+1206:           color: #fff;
+1207:           font-size: 13px;
+1208:           font-weight: 700;
+1209:           cursor: pointer;
+1210:         }
+1211: 
+1212:         .contentAdmin .homeEditor .saveBar button:disabled {
+1213:           opacity: 0.6;
+1214:           cursor: not-allowed;
+1215:         }
+1216: 
+1217:         @media (max-width: 700px) {
+1218:           .contentAdmin .top {
+1219:             padding-right: 0;
+1220:             padding-top: 115px;
+1221:           }
+1222: 
+1223:           .contentAdmin .top .viewSite {
+1224:             top: 0;
+1225:             right: 0;
+1226:             width: 170px;
+1227:           }
+1228: 
+1229:           .contentAdmin .homeEditor .saveBar {
+1230:             top: 52px;
+1231:             right: 0;
+1232:             width: 170px;
+1233:           }
+1234:         }
+1235: 
+1236:         /* END CONTENT ADMIN TOP SAVE LAYOUT */
+1237: 
+1238:         .homeEditor {
+1239:           display: grid;
+1240:           gap: 18px;
+1241:           color: #24364a;
+1242:         }
+1243: 
+1244:         .languageBar,
+1245:         .editorCard,
+1246:         .saveBar {
+1247:           background: white;
+1248:           border: 1px solid #e0e7f0;
+1249:           border-radius: 20px;
+1250:           padding: 22px;
+1251:         }
+1252: 
+1253:         .languageBar {
+1254:           display: flex;
+1255:           align-items: center;
+1256:           justify-content: space-between;
+1257:           gap: 16px;
+1258:         }
+1259: 
+1260:         .languageBar strong {
+1261:           font-size: 17px;
+1262:         }
+1263: 
+1264:         .languageBar p,
+1265:         .cardHeader p {
+1266:           color: #8490a2;
+1267:           font-size: 12px;
+1268:           margin: 5px 0 0;
+1269:         }
+1270: 
+1271:         .languageButtons {
+1272:           display: flex;
+1273:           gap: 6px;
+1274:         }
+1275: 
+1276:         .languageButtons button {
+1277:           padding: 10px 14px;
+1278:           border: 1px solid #dce5f0;
+1279:           background: white;
+1280:           border-radius: 9px;
+1281:           cursor: pointer;
+1282:           font-weight: 800;
+1283:         }
+1284: 
+1285:         .languageButtons button.active {
+1286:           background: #0879d1;
+1287:           color: white;
+1288:           border-color: #0879d1;
+1289:         }
+1290: 
+1291:         .cardHeader {
+1292:           display: flex;
+1293:           align-items: center;
+1294:           gap: 13px;
+1295:           margin-bottom: 18px;
+1296:         }
+1297: 
+1298:         .cardHeader h2 {
+1299:           margin: 0;
+1300:           font-size: 19px;
+1301:         }
+1302: 
+1303:         .number {
+1304:           display: grid;
+1305:           place-items: center;
+1306:           width: 38px;
+1307:           height: 38px;
+1308:           flex-shrink: 0;
+1309:           border-radius: 11px;
+1310:           background: #e9f4ff;
+1311:           color: #0879d1;
+1312:           font-weight: 900;
+1313:           font-size: 12px;
+1314:         }
+1315: 
+1316:         .state {
+1317:           margin-left: auto;
+1318:           color: #0879d1;
+1319:           font-size: 11px;
+1320:           font-weight: 800;
+1321:         }
+1322: 
+1323:         .miniPreview {
+1324:           padding: 25px;
+1325:           border-radius: 16px;
+1326:           background: #f5f9fe;
+1327:           border: 1px solid #e6eef7;
+1328:           margin-bottom: 16px;
+1329:           overflow: hidden;
+1330:         }
+1331: 
+1332:         .miniEyebrow {
+1333:           color: #0879d1;
+1334:           font-size: 10px;
+1335:           font-weight: 900;
+1336:           letter-spacing: 1.5px;
+1337:           margin-bottom: 10px;
+1338:         }
+1339: 
+1340:         .miniPreview h3 {
+1341:           font-size: clamp(20px, 3vw, 28px);
+1342:           line-height: 1.25;
+1343:           margin: 0 0 12px;
+1344:           white-space: pre-line;
+1345:         }
+1346: 
+1347:         .miniPreview p {
+1348:           font-size: 13px;
+1349:           line-height: 1.7;
+1350:           margin: 0 0 14px;
+1351:           color: #6c7c90;
+1352:         }
+1353: 
+1354:         .mini-hero {
+1355:           background: linear-gradient(135deg, #0879d1, #79b6fa);
+1356:           color: white;
+1357:           min-height: 190px;
+1358:         }
+1359: 
+1360:         .mini-hero .miniEyebrow,
+1361:         .mini-hero p {
+1362:           color: white;
+1363:         }
+1364: 
+1365:         .miniSearch {
+1366:           display: flex;
+1367:           justify-content: space-between;
+1368:           gap: 10px;
+1369:           background: white;
+1370:           color: #66768b;
+1371:           padding: 12px;
+1372:           border-radius: 10px;
+1373:           font-size: 12px;
+1374:           margin-top: 16px;
+1375:         }
+1376: 
+1377:         .miniSearch strong {
+1378:           color: #0879d1;
+1379:         }
+1380: 
+1381:         .miniGrid {
+1382:           display: grid;
+1383:           grid-template-columns: repeat(4, 1fr);
+1384:           gap: 9px;
+1385:           margin-top: 18px;
+1386:         }
+1387: 
+1388:         .miniTile {
+1389:           display: grid;
+1390:           gap: 7px;
+1391:           background: white;
+1392:           border: 1px solid #e1e9f2;
+1393:           padding: 13px;
+1394:           border-radius: 11px;
+1395:         }
+1396: 
+1397:         .miniTile b {
+1398:           font-size: 21px;
+1399:           color: #0879d1;
+1400:         }
+1401: 
+1402:         .miniTile strong {
+1403:           font-size: 12px;
+1404:         }
+1405: 
+1406:         .miniTile small {
+1407:           font-size: 10px;
+1408:           color: #8490a2;
+1409:           line-height: 1.5;
+1410:         }
+1411: 
+1412:         .miniConversation {
+1413:           display: grid;
+1414:           grid-template-columns: 1fr 1fr;
+1415:           gap: 18px;
+1416:           align-items: center;
+1417:         }
+1418: 
+1419:         .miniTalk {
+1420:           background: white;
+1421:           border-radius: 12px;
+1422:           padding: 20px;
+1423:         }
+1424: 
+1425:         .miniTalk span {
+1426:           color: #0879d1;
+1427:         }
+1428: 
+1429:         .miniTalk h3 {
+1430:           font-size: 21px;
+1431:           margin-top: 10px;
+1432:         }
+1433: 
+1434:         .miniTalk small {
+1435:           display: block;
+1436:           background: #eff7ff;
+1437:           border-radius: 8px;
+1438:           padding: 10px;
+1439:           line-height: 1.6;
+1440:         }
+1441: 
+1442:         .miniBook {
+1443:           display: grid;
+1444:           place-items: center;
+1445:           min-height: 95px;
+1446:           border-radius: 8px;
+1447:           background: linear-gradient(145deg, #d8e9ff, #8cbef4);
+1448:           color: #264b72;
+1449:           font-size: 10px;
+1450:         }
+1451: 
+1452:         .miniBook strong {
+1453:           font-size: 25px;
+1454:         }
+1455: 
+1456:         .miniReasons {
+1457:           display: grid;
+1458:           grid-template-columns: 1fr 1fr;
+1459:           gap: 12px;
+1460:         }
+1461: 
+1462:         .miniReasons > div {
+1463:           border-top: 1px solid #d5e0ed;
+1464:           padding-top: 12px;
+1465:         }
+1466: 
+1467:         .miniReasons small {
+1468:           color: #0879d1;
+1469:           margin-right: 10px;
+1470:         }
+1471: 
+1472:         .miniReasons strong {
+1473:           font-size: 13px;
+1474:         }
+1475: 
+1476:         .miniReasons p {
+1477:           margin: 8px 0 0;
+1478:         }
+1479: 
+1480:         .miniImage {
+1481:           width: 100%;
+1482:           max-height: 180px;
+1483:           object-fit: cover;
+1484:           border-radius: 12px;
+1485:         }
+1486: 
+1487:         .miniScene {
+1488:           background: #dbeeff;
+1489:           border-radius: 12px;
+1490:           padding: 30px;
+1491:           text-align: center;
+1492:           color: #0879d1;
+1493:           letter-spacing: 3px;
+1494:         }
+1495: 
+1496:         .miniTags {
+1497:           display: flex;
+1498:           flex-wrap: wrap;
+1499:           gap: 6px;
+1500:           margin-top: 14px;
+1501:         }
+1502: 
+1503:         .miniTags span {
+1504:           padding: 6px 10px;
+1505:           border-radius: 20px;
+1506:           background: white;
+1507:           font-size: 11px;
+1508:         }
+1509: 
+1510:         .miniFaq {
+1511:           display: grid;
+1512:           gap: 8px;
+1513:         }
+1514: 
+1515:         .miniFaq > div {
+1516:           display: flex;
+1517:           justify-content: space-between;
+1518:           gap: 10px;
+1519:           padding: 13px;
+1520:           background: white;
+1521:           border-radius: 10px;
+1522:           font-size: 12px;
+1523:         }
+1524: 
+1525:         .miniButton {
+1526:           display: inline-block;
+1527:           background: #0879d1;
+1528:           color: white;
+1529:           padding: 10px 15px;
+1530:           border-radius: 30px;
+1531:           font-size: 12px;
+1532:           font-weight: 800;
+1533:         }
+1534: 
+1535:         .mini-registration,
+1536:         .mini-finalCta {
+1537:           background: #191919;
+1538:           color: white;
+1539:         }
+1540: 
+1541:         .mini-registration .miniEyebrow,
+1542:         .mini-finalCta .miniEyebrow {
+1543:           color: #e6c9bd;
+1544:         }
+1545: 
+1546:         .mini-registration p,
+1547:         .mini-finalCta p {
+1548:           color: #a3a3aa;
+1549:         }
+1550: 
+1551:         .mini-registration .miniButton,
+1552:         .mini-finalCta .miniButton {
+1553:           background: white;
+1554:           color: #191919;
+1555:         }
+1556: 
+1557:         .editButton,
+1558:         .smallButton {
+1559:           background: #eaf4ff;
+1560:           color: #0879d1;
+1561:           border: 1px solid #cde2f8;
+1562:           padding: 11px 16px;
+1563:           border-radius: 10px;
+1564:           cursor: pointer;
+1565:           font-weight: 800;
+1566:         }
+1567: 
+1568:         .fields {
+1569:           display: grid;
+1570:           gap: 16px;
+1571:           border-top: 1px solid #e7edf4;
+1572:           margin-top: 20px;
+1573:           padding-top: 20px;
+1574:         }
+1575: 
+1576:         .fields :global(.field) {
+1577:           display: grid;
+1578:           gap: 7px;
+1579:           font-size: 13px;
+1580:           font-weight: 800;
+1581:         }
+1582: 
+1583:         .checkRow {
+1584:           display: flex;
+1585:           gap: 10px;
+1586:           align-items: center;
+1587:           font-size: 13px;
+1588:           font-weight: 800;
+1589:         }
+1590: 
+1591:         .nested {
+1592:           display: grid;
+1593:           gap: 12px;
+1594:           margin-top: 10px;
+1595:         }
+1596: 
+1597:         .nested h3,
+1598:         .imageSettings h3 {
+1599:           font-size: 16px;
+1600:           margin: 0;
+1601:         }
+1602: 
+1603:         .nestedItem {
+1604:           display: grid;
+1605:           gap: 13px;
+1606:           padding: 18px;
+1607:           border-radius: 13px;
+1608:           background: #f7faff;
+1609:           border: 1px solid #e7eef7;
+1610:         }
+1611: 
+1612:         .imageSettings {
+1613:           display: grid;
+1614:           gap: 16px;
+1615:           padding: 18px;
+1616:           background: #f7faff;
+1617:           border-radius: 13px;
+1618:         }
+1619: 
+1620:         .imageSettings p {
+1621:           margin: 0;
+1622:           font-size: 12px;
+1623:           color: #7b8ba0;
+1624:         }
+1625: 
+1626:         .uploadButton {
+1627:           position: relative;
+1628:           display: inline-flex;
+1629:           width: fit-content;
+1630:           padding: 13px 18px;
+1631:           background: #0879d1;
+1632:           color: white;
+1633:           border-radius: 11px;
+1634:           font-weight: 800;
+1635:           cursor: pointer;
+1636:           overflow: hidden;
+1637:         }
+1638: 
+1639:         .uploadButton input {
+1640:           position: absolute;
+1641:           inset: 0;
+1642:           opacity: 0;
+1643:           cursor: pointer;
+1644:         }
+1645: 
+1646:         .imagePreview img {
+1647:           display: block;
+1648:           max-width: 100%;
+1649:           max-height: 260px;
+1650:           border-radius: 12px;
+1651:           object-fit: contain;
+1652:         }
+1653: 
+1654:         .imagePreview small {
+1655:           display: block;
+1656:           margin-top: 8px;
+1657:         }
+1658: 
+1659:         .miniFooter {
+1660:           display: grid;
+1661:           grid-template-columns: 2fr 1fr 1fr;
+1662:           gap: 20px;
+1663:           padding: 25px;
+1664:           background: #191919;
+1665:           color: white;
+1666:           border-radius: 15px;
+1667:           margin-bottom: 18px;
+1668:         }
+1669: 
+1670:         .miniFooter h3 {
+1671:           margin: 0 0 10px;
+1672:           font-size: 23px;
+1673:         }
+1674: 
+1675:         .miniFooter h3 span {
+1676:           color: #0879d1;
+1677:         }
+1678: 
+1679:         .miniFooter p,
+1680:         .miniFooter small {
+1681:           color: #a3a3aa;
+1682:           font-size: 12px;
+1683:           line-height: 1.6;
+1684:         }
+1685: 
+1686:         .miniFooter strong {
+1687:           font-size: 11px;
+1688:           letter-spacing: 1px;
+1689:         }
+1690: 
+1691:         .miniCopyright {
+1692:           grid-column: 1 / -1;
+1693:           display: flex;
+1694:           justify-content: space-between;
+1695:           gap: 16px;
+1696:           border-top: 1px solid #454545;
+1697:           padding-top: 14px;
+1698:           color: #a3a3aa;
+1699:           font-size: 10px;
+1700:         }
+1701: 
+1702:         .saveBar {
+1703:           position: sticky;
+1704:           bottom: 12px;
+1705:           z-index: 10;
+1706:           display: flex;
+1707:           justify-content: space-between;
+1708:           align-items: center;
+1709:           gap: 18px;
+1710:           box-shadow: 0 8px 35px rgba(20,40,70,.1);
+1711:         }
+1712: 
+1713:         .saveBar p {
+1714:           margin: 0;
+1715:           color: #66768b;
+1716:           font-size: 13px;
+1717:         }
+1718: 
+1719:         .saveBar button {
+1720:           background: #0879d1;
+1721:           color: white;
+1722:           border: 0;
+1723:           border-radius: 11px;
+1724:           padding: 14px 22px;
+1725:           font-weight: 800;
+1726:           cursor: pointer;
+1727:           white-space: nowrap;
+1728:         }
+1729: 
+1730:         .saveBar button:disabled {
+1731:           opacity: .5;
+1732:         }
+1733: 
+1734:         .editorLoading {
+1735:           padding: 30px;
+1736:           background: white;
+1737:           border-radius: 15px;
+1738:         }
+1739: 
+1740:         @media (max-width: 650px) {
+1741:           .languageBar,
+1742:           .saveBar {
+1743:             flex-direction: column;
+1744:             align-items: stretch;
+1745:           }
+1746: 
+1747:           .miniGrid {
+1748:             grid-template-columns: 1fr 1fr;
+1749:           }
+1750: 
+1751:           .miniConversation,
+1752:           .miniReasons,
+1753:           .miniFooter {
+1754:             grid-template-columns: 1fr;
+1755:           }
+1756: 
+1757:           .miniCopyright {
+1758:             flex-direction: column;
+1759:           }
+1760:         }
+1761:       `}</style>
+1762:     </div>
+1763:   )
+1764: }
+
+
+=================================================================
+FILE: app/admin/content/page.js
+=================================================================
+0001: 
+0002: 'use client'
+0003: 
+0004: import Link from 'next/link'
+0005: import HomeSectionsEditor from './HomeSectionsEditor'
+0006: 
+0007: export default function AdminContentPage() {
+0008:   return (
+0009:     <main className="contentAdmin">
+0010:       <div className="contentWrap">
+0011:         <div className="top">
+0012:           <div>
+0013:             <p className="eyebrow">
+0014:               LEARN·MINEA / ADMIN
+0015:             </p>
+0016:             <h1>Нүүр хуудасны удирдлага</h1>
+0017:             <p className="description">
+0018:               Сайтын хэсэг бүрийг жижиг харагдацаар
+0019:               шалгаж, текст, зураг, товч, холбоос болон
+0020:               MN / EN / 한국 орчуулгыг засна.
+0021:             </p>
+0022:           </div>
+0023: 
+0024:           <Link
+0025:             href="/"
+0026:             target="_blank"
+0027:             className="viewSite"
+0028:           >
+0029:             Сайтыг нээх ↗
+0030:           </Link>
+0031:         </div>
+0032: 
+0033:         <div className="info">
+0034:           <span>✓</span>
+0035:           <p>
+0036:             Энд зассан мэдээлэл нүүр хуудсанд
+0037:             харагдана. Судалгааны өнгө, хэмжээ болон
+0038:             Google Form-ийн тохиргоо
+0039:             <Link href="/admin/survey">
+0040:               {' '}Судалгаа{' '}
+0041:             </Link>
+0042:             хэсэгт тусдаа байна.
+0043:           </p>
+0044:         </div>
+0045: 
+0046:         <HomeSectionsEditor />
+0047:       </div>
+0048: 
+0049:       <style jsx>{`
+0050:         .contentAdmin {
+0051:           min-height: 100vh;
+0052:           background: #f5f7fb;
+0053:           padding: 34px 24px 100px;
+0054:         }
+0055: 
+0056:         .contentWrap {
+0057:           max-width: 1100px;
+0058:           margin: 0 auto;
+0059:         }
+0060: 
+0061:         .top {
+0062:           display: flex;
+0063:           justify-content: space-between;
+0064:           align-items: flex-start;
+0065:           gap: 24px;
+0066:           margin-bottom: 24px;
+0067:         }
+0068: 
+0069:         .eyebrow {
+0070:           color: #0879d1;
+0071:           font-size: 12px;
+0072:           font-weight: 800;
+0073:           letter-spacing: 1.7px;
+0074:           margin: 0 0 12px;
+0075:         }
+0076: 
+0077:         h1 {
+0078:           font-size: clamp(27px, 4vw, 38px);
+0079:           color: #1d2939;
+0080:           margin: 0 0 12px;
+0081:         }
+0082: 
+0083:         .description {
+0084:           color: #718096;
+0085:           font-size: 15px;
+0086:           line-height: 1.8;
+0087:           max-width: 700px;
+0088:           margin: 0;
+0089:         }
+0090: 
+0091:         .viewSite {
+0092:           white-space: nowrap;
+0093:           display: inline-flex;
+0094:           align-items: center;
+0095:           justify-content: center;
+0096:           background: #0879d1;
+0097:           color: white;
+0098:           text-decoration: none;
+0099:           padding: 13px 18px;
+0100:           border-radius: 12px;
+0101:           font-size: 13px;
+0102:           font-weight: 800;
+0103:         }
+0104: 
+0105:         .info {
+0106:           display: flex;
+0107:           gap: 12px;
+0108:           padding: 16px 18px;
+0109:           border: 1px solid #d6e8fa;
+0110:           border-radius: 14px;
+0111:           background: #edf6ff;
+0112:           color: #37516c;
+0113:           margin-bottom: 24px;
+0114:         }
+0115: 
+0116:         .info span {
+0117:           color: #0879d1;
+0118:           font-weight: 900;
+0119:         }
+0120: 
+0121:         .info p {
+0122:           margin: 0;
+0123:           line-height: 1.7;
+0124:           font-size: 13px;
+0125:         }
+0126: 
+0127:         .info :global(a) {
+0128:           color: #0879d1;
+0129:           font-weight: 800;
+0130:         }
+0131: 
+0132:         @media (max-width: 650px) {
+0133:           .contentAdmin {
+0134:             padding: 20px 12px 90px;
+0135:           }
+0136: 
+0137:           .top {
+0138:             flex-direction: column;
+0139:           }
+0140:         }
+0141:       `}</style>
+0142:     </main>
+0143:   )
+0144: }
+
+
+=================================================================
+FILE: app/admin/editor/page.js
+=================================================================
+0001: 
+0002: 'use client'
+0003: 
+0004: import { useEffect, useRef, useState } from 'react'
+0005: import './unified-editor.css'
+0006: import Link from 'next/link'
+0007: import { useRouter } from 'next/navigation'
+0008: import { supabase } from '../../lib/supabase'
+0009: 
+0010: const DEFAULTS = {
+0011:   heroTitle: 'Хэл сурахад ихийг биш, зөвийг сур.',
+0012:   heroSubtitle:
+0013:     'Хэл сурахад ихийг биш, зөвийг сур. Өөрийн түвшин, зорилго, сурах арга барилдаа тохирсон материалуудаа нэг дороос олоорой.',
+0014:   heroEyebrow: 'ӨӨРИЙН ХЭМНЭЛЭЭР, БОДИТ ХЭРЭГЛЭЭНЭЭС',
+0015:   heroImage: '',
+0016:   heroFontSize: 72,
+0017:   heroTextSize: 18,
+0018:   headingFontSize: 48,
+0019:   primaryColor: '#0879D1',
+0020:   heroColor: '#79B6FA',
+0021:   ticketTop: 44,
+0022:   ticketLeft: 58,
+0023:   ticketScale: 0.68,
+0024:   ticketRotate: 5,
+0025:   ticketTitle: 'LEARN ✦ MINEA',
+0026:   ticketSubtitle: 'KOREAN LEARNING · STUDENT PASS',
+0027:   ticketLabels: 'Суралцагч\\nСургалт\\nСистем\\nАхиц',
+0028:   ticketValues: 'Таны нэр\\nТаны сонголт\\nВидео + Quiz\\nProgress tracking',
+0029:   ticketBottom: 'START LEARNING →',
+0030:   ticketBackground: '#fffdfb',
+0031:   ticketTextColor: '#222032',
+0032:   ticketAccentColor: '#ff747b',
+0033: 
+0034:   heroTitleHtml: '',
+0035:   heroSubtitleHtml: '',
+0036:   heroEyebrowHtml: '',
+0037: }
+0038: 
+0039: function escapeHtml(value) {
+0040:   return String(value ?? '')
+0041:     .replace(/&/g, '&amp;')
+0042:     .replace(/</g, '&lt;')
+0043:     .replace(/>/g, '&gt;')
+0044:     .replace(/"/g, '&quot;')
+0045:     .replace(/\n/g, '<br>')
+0046: }
+0047: 
+0048: function safeUrl(value) {
+0049:   try {
+0050:     const url = new URL(value)
+0051:     return ['http:', 'https:'].includes(url.protocol)
+0052:   } catch {
+0053:     return false
+0054:   }
+0055: }
+0056: 
+0057: function RichEditor({
+0058:   label, value, html, onChange,
+0059:   fontSize, onFontSizeChange,
+0060:   lineHeight, onLineHeightChange,
+0061:   letterSpacing, onLetterSpacingChange,
+0062: }) {
+0063:   const editorRef = useRef(null)
+0064:   const selectionRef = useRef(null)
+0065:   const initializedRef = useRef(false)
+0066: 
+0067:   useEffect(() => {
+0068:     if (!editorRef.current || initializedRef.current) return
+0069: 
+0070:     editorRef.current.innerHTML = html || escapeHtml(value)
+0071:     initializedRef.current = true
+0072:   }, [html, value])
+0073: 
+0074:   function rememberSelection() {
+0075:     const selection = window.getSelection()
+0076: 
+0077:     if (
+0078:       selection?.rangeCount &&
+0079:       editorRef.current?.contains(selection.anchorNode)
+0080:     ) {
+0081:       selectionRef.current = selection.getRangeAt(0).cloneRange()
+0082:     }
+0083:   }
+0084: 
+0085:   function sync() {
+0086:     if (!editorRef.current) return
+0087: 
+0088:     onChange(
+0089:       editorRef.current.innerText,
+0090:       editorRef.current.innerHTML
+0091:     )
+0092:   }
+0093: 
+0094:   function command(name, argument) {
+0095:     if (!editorRef.current) return
+0096: 
+0097:     editorRef.current.focus()
+0098: 
+0099:     if (selectionRef.current) {
+0100:       const selection = window.getSelection()
+0101:       selection.removeAllRanges()
+0102:       selection.addRange(selectionRef.current)
+0103:     }
+0104: 
+0105:     document.execCommand(name, false, argument)
+0106:     sync()
+0107:     rememberSelection()
+0108:   }
+0109: 
+0110:   function addLink() {
+0111:     const url = window.prompt('Холбоосын URL оруулна уу:')
+0112: 
+0113:     if (!url) return
+0114: 
+0115:     const cleanUrl = url.trim()
+0116: 
+0117:     if (!safeUrl(cleanUrl)) {
+0118:       window.alert('http:// эсвэл https:// холбоос оруулна уу.')
+0119:       return
+0120:     }
+0121: 
+0122:     command('createLink', cleanUrl)
+0123:   }
+0124: 
+0125:   function addImage() {
+0126:     const url = window.prompt('Зургийн URL оруулна уу:')
+0127: 
+0128:     if (!url) return
+0129: 
+0130:     const cleanUrl = url.trim()
+0131: 
+0132:     if (!safeUrl(cleanUrl)) {
+0133:       window.alert('Зургийн зөв холбоос оруулна уу.')
+0134:       return
+0135:     }
+0136: 
+0137:     command('insertImage', cleanUrl)
+0138:   }
+0139: 
+0140:   const tools = [
+0141:     { title: 'Bold', label: <b>B</b>, action: () => command('bold') },
+0142:     { title: 'Italic', label: <i>I</i>, action: () => command('italic') },
+0143:     { title: 'Underline', label: <u>U</u>, action: () => command('underline') },
+0144:     { title: 'Quote', label: '❞', action: () => command('formatBlock', 'blockquote') },
+0145:     { title: 'Code', label: '</>', action: () => command('formatBlock', 'pre') },
+0146:     { title: 'Холбоос', label: '🔗', action: addLink },
+0147:     { title: 'Зураг', label: '▣', action: addImage },
+0148:     { title: 'Дугаартай жагсаалт', label: '1.', action: () => command('insertOrderedList') },
+0149:     { title: 'Жагсаалт', label: '☷', action: () => command('insertUnorderedList') },
+0150:     { title: 'Зүүн талд', label: '☰', action: () => command('justifyLeft') },
+0151:     { title: 'Голлуулах', label: '≡', action: () => command('justifyCenter') },
+0152:     { title: 'Баруун талд', label: '☷', action: () => command('justifyRight') },
+0153:     { title: 'Формат арилгах', label: 'Tx', action: () => command('removeFormat') },
+0154:   ]
+0155: 
+0156:   return (
+0157:     <div className="richField">
+0158:       <label className="fieldLabel">{label}</label>
+0159: 
+0160:       <div className="richBox">
+0161:         <div className="toolbar">
+0162:           <select
+0163:             aria-label="Фонт"
+0164:             defaultValue="Arial"
+0165:             onChange={e => command('fontName', e.target.value)}
+0166:           >
+0167:             <option value="Arial">Sans Serif</option>
+0168:             <option value="Georgia">Serif</option>
+0169:             <option value="Times New Roman">Times New Roman</option>
+0170:             <option value="Courier New">Monospace</option>
+0171:           </select>
+0172: 
+0173:           <select
+0174:             aria-label="Бичвэрийн формат"
+0175:             defaultValue="p"
+0176:             onChange={e => command('formatBlock', e.target.value)}
+0177:           >
+0178:             <option value="p">Normal</option>
+0179:             <option value="h1">Heading 1</option>
+0180:             <option value="h2">Heading 2</option>
+0181:             <option value="h3">Heading 3</option>
+0182:           </select>
+0183: 
+0184:           <label className="mineaToolbarField">
+0185:             <span>Хэмжээ</span>
+0186:             <input
+0187:               type="number"
+0188:               min="8"
+0189:               max="160"
+0190:               step="1"
+0191:               value={fontSize ?? 18}
+0192:               onChange={e => onFontSizeChange?.(Number(e.target.value))}
+0193:               aria-label={`${label} үсгийн хэмжээ`}
+0194:             />
+0195:             <span>px</span>
+0196:           </label>
+0197: 
+0198:           <label className="mineaToolbarField">
+0199:             <span>Мөрийн зай</span>
+0200:             <input
+0201:               type="number"
+0202:               min="0.8"
+0203:               max="3"
+0204:               step="0.1"
+0205:               value={lineHeight ?? 1.3}
+0206:               onChange={e => onLineHeightChange?.(Number(e.target.value))}
+0207:             />
+0208:           </label>
+0209: 
+0210:           <label className="mineaToolbarField">
+0211:             <span>Үсгийн зай</span>
+0212:             <input
+0213:               type="number"
+0214:               min="-5"
+0215:               max="20"
+0216:               step="0.5"
+0217:               value={letterSpacing ?? 0}
+0218:               onChange={e => onLetterSpacingChange?.(Number(e.target.value))}
+0219:             />
+0220:             <span>px</span>
+0221:           </label>
+0222: 
+0223:           {tools.map(tool => (
+0224:             <button
+0225:               key={tool.title}
+0226:               type="button"
+0227:               title={tool.title}
+0228:               onMouseDown={e => e.preventDefault()}
+0229:               onClick={tool.action}
+0230:             >
+0231:               {tool.label}
+0232:             </button>
+0233:           ))}
+0234: 
+0235:           <label className="colorTool" title="Бичвэрийн өнгө">
+0236:             A
+0237:             <input
+0238:               type="color"
+0239:               defaultValue="#242237"
+0240:               onChange={e => command('foreColor', e.target.value)}
+0241:             />
+0242:           </label>
+0243: 
+0244:           <label className="colorTool" title="Тодруулагч">
+0245:             ▧
+0246:             <input
+0247:               type="color"
+0248:               defaultValue="#fff3b0"
+0249:               onChange={e => command('hiliteColor', e.target.value)}
+0250:             />
+0251:           </label>
+0252:         </div>
+0253: 
+0254:         <div
+0255:           ref={editorRef}
+0256:           className="editableArea"
+0257:           style={{
+0258:             fontSize: `${Number(fontSize) || 18}px`,
+0259:             lineHeight: Number(lineHeight) || 1.3,
+0260:             letterSpacing: `${Number(letterSpacing) || 0}px`,
+0261:           }}
+0262:           contentEditable
+0263:           suppressContentEditableWarning
+0264:           onInput={sync}
+0265:           onKeyUp={rememberSelection}
+0266:           onMouseUp={rememberSelection}
+0267:           role="textbox"
+0268:           aria-label={label}
+0269:           aria-multiline="true"
+0270:         />
+0271:       </div>
+0272:     </div>
+0273:   )
+0274: }
+0275: 
+0276: function Field({ label, children }) {
+0277:   return (
+0278:     <label className="field">
+0279:       <span>{label}</span>
+0280:       {children}
+0281:     </label>
+0282:   )
+0283: }
+0284: 
+0285: export default function SiteEditorPage() {
+0286:   const router = useRouter()
+0287: 
+0288:   const [settings, setSettings] = useState(DEFAULTS)
+0289:   const [loading, setLoading] = useState(true)
+0290:   const [saving, setSaving] = useState(false)
+0291:   const [uploading, setUploading] = useState(false)
+0292:   const [message, setMessage] = useState('')
+0293: 
+0294:   useEffect(() => {
+0295:     let active = true
+0296: 
+0297:     async function initialize() {
+0298:       try {
+0299:         const { data: auth, error: authError } =
+0300:           await supabase.auth.getUser()
+0301: 
+0302:         if (authError) throw authError
+0303: 
+0304:         if (!auth?.user) {
+0305:           router.replace('/login')
+0306:           return
+0307:         }
+0308: 
+0309:         const { data: allowed, error: roleError } =
+0310:           await supabase.rpc('is_admin')
+0311: 
+0312:         if (roleError || allowed !== true) {
+0313:           router.replace('/')
+0314:           return
+0315:         }
+0316: 
+0317:         const { data, error } = await supabase
+0318:           .from('site_editor_settings')
+0319:           .select('content')
+0320:           .eq('id', 'homepage')
+0321:           .maybeSingle()
+0322: 
+0323:         if (error) throw error
+0324: 
+0325:         if (active && data?.content) {
+0326:           setSettings({
+0327:             ...DEFAULTS,
+0328:             ...data.content,
+0329:           })
+0330:         }
+0331:       } catch (error) {
+0332:         if (active) {
+0333:           setMessage(`Ачаалж чадсангүй: ${error.message}`)
+0334:         }
+0335:       } finally {
+0336:         if (active) setLoading(false)
+0337:       }
+0338:     }
+0339: 
+0340:     initialize()
+0341: 
+0342:     return () => {
+0343:       active = false
+0344:     }
+0345:   }, [router])
+0346: 
+0347:   function change(key, value) {
+0348:     setSettings(previous => ({
+0349:       ...previous,
+0350:       [key]: value,
+0351:     }))
+0352:     setMessage('')
+0353:   }
+0354: 
+0355:   function changeRich(key, text, html) {
+0356:     setSettings(previous => ({
+0357:       ...previous,
+0358:       [key]: text,
+0359:       [`${key}Html`]: html,
+0360:     }))
+0361:     setMessage('')
+0362:   }
+0363: 
+0364:   async function uploadImage(event) {
+0365:     const file = event.target.files?.[0]
+0366:     if (!file) return
+0367: 
+0368:     if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
+0369:       setMessage('JPG, PNG эсвэл WEBP зураг сонгоно уу.')
+0370:       return
+0371:     }
+0372: 
+0373:     if (file.size > 10 * 1024 * 1024) {
+0374:       setMessage('Зураг 10 MB-аас бага байх ёстой.')
+0375:       return
+0376:     }
+0377: 
+0378:     setUploading(true)
+0379:     setMessage('')
+0380: 
+0381:     try {
+0382:       const extension =
+0383:         file.type === 'image/png'
+0384:           ? 'png'
+0385:           : file.type === 'image/webp'
+0386:           ? 'webp'
+0387:           : 'jpg'
+0388: 
+0389:       const path = `homepage/${crypto.randomUUID()}.${extension}`
+0390: 
+0391:       const { error } = await supabase.storage
+0392:         .from('site-images')
+0393:         .upload(path, file, {
+0394:           contentType: file.type,
+0395:           upsert: false,
+0396:         })
+0397: 
+0398:       if (error) throw error
+0399: 
+0400:       const { data } = supabase.storage
+0401:         .from('site-images')
+0402:         .getPublicUrl(path)
+0403: 
+0404:       change('heroImage', data.publicUrl)
+0405:       setMessage('Зураг орлоо. Одоо Хадгалах товчийг дарна уу.')
+0406:     } catch (error) {
+0407:       setMessage(`Зураг оруулахад алдаа гарлаа: ${error.message}`)
+0408:     } finally {
+0409:       setUploading(false)
+0410:       event.target.value = ''
+0411:     }
+0412:   }
+0413: 
+0414:   async function save() {
+0415:     setSaving(true)
+0416:     setMessage('')
+0417: 
+0418:     try {
+0419:       const { error } = await supabase
+0420:         .from('site_editor_settings')
+0421:         .upsert(
+0422:           {
+0423:             id: 'homepage',
+0424:             content: settings,
+0425:             updated_at: new Date().toISOString(),
+0426:           },
+0427:           { onConflict: 'id' }
+0428:         )
+0429: 
+0430:       if (error) throw error
+0431: 
+0432:       setMessage('Тохиргоо Supabase-д амжилттай хадгалагдлаа.')
+0433:     } catch (error) {
+0434:       setMessage(`Хадгалахад алдаа гарлаа: ${error.message}`)
+0435:     } finally {
+0436:       setSaving(false)
+0437:     }
+0438:   }
+0439: 
+0440:   if (loading) {
+0441:     return <div style={{ padding: 60 }}>Admin эрх шалгаж байна...</div>
+0442:   }
+0443: 
+0444:   return (
+0445:     <main className="siteEditor">
+0446:       <header className="pageHeading">
+0447:           <div className="mineaEditorActions">
+0448:             <a href="/" target="_blank" rel="noopener noreferrer" className="mineaOpenSite">
+0449:               Сайтыг нээх ↗
+0450:             </a>
+0451:             <button
+0452:               type="button"
+0453:               className="saveButton"
+0454:               onClick={save}
+0455:               disabled={saving || uploading}
+0456:             >
+0457:               {saving ? 'Хадгалж байна...' : 'Бүгдийг хадгалах'}
+0458:             </button>
+0459:           </div>
+0460:         <Link href="/admin">← Admin руу буцах</Link>
+0461:         <h1>Сайтын редактор</h1>
+0462:         <p>LEARN·MINEA · Homepage Settings</p>
+0463:       </header>
+0464: 
+0465:       {message && (
+0466:         <div className="notice" role="status">
+0467:           {message}
+0468:         </div>
+0469:       )}
+0470: 
+0471:       <div className="editorGrid">
+0472:         <div className="controls">
+0473:           <section className="panel">
+0474:             <h2>01. Нүүр хуудасны текст</h2>
+0475: 
+0476:             <RichEditor
+0477:               label="Жижиг гарчиг"
+0478:               value={settings.heroEyebrow}
+0479:               html={settings.heroEyebrowHtml}
+0480:               fontSize={settings.heroEyebrowFontSize ?? 14}
+0481:               onFontSizeChange={value => change('heroEyebrowFontSize', value)}
+0482:               lineHeight={settings.heroEyebrowLineHeight ?? 1.3}
+0483:               onLineHeightChange={value => change('heroEyebrowLineHeight', value)}
+0484:               letterSpacing={settings.heroEyebrowLetterSpacing ?? 0}
+0485:               onLetterSpacingChange={value => change('heroEyebrowLetterSpacing', value)}
+0486:               onChange={(text, html) =>
+0487:                 changeRich('heroEyebrow', text, html)
+0488:               }
+0489:             />
+0490: 
+0491:             <RichEditor
+0492:               label="Үндсэн гарчиг"
+0493:               value={settings.heroTitle}
+0494:               html={settings.heroTitleHtml}
+0495:               fontSize={settings.heroFontSize ?? 72}
+0496:               onFontSizeChange={value => change('heroFontSize', value)}
+0497:               lineHeight={settings.heroTitleLineHeight ?? 1.3}
+0498:               onLineHeightChange={value => change('heroTitleLineHeight', value)}
+0499:               letterSpacing={settings.heroTitleLetterSpacing ?? 0}
+0500:               onLetterSpacingChange={value => change('heroTitleLetterSpacing', value)}
+0501:               onChange={(text, html) =>
+0502:                 changeRich('heroTitle', text, html)
+0503:               }
+0504:             />
+0505: 
+0506:             <RichEditor
+0507:               label="Тайлбар"
+0508:               value={settings.heroSubtitle}
+0509:               html={settings.heroSubtitleHtml}
+0510:               fontSize={settings.heroTextSize ?? 18}
+0511:               onFontSizeChange={value => change('heroTextSize', value)}
+0512:               lineHeight={settings.heroSubtitleLineHeight ?? 1.3}
+0513:               onLineHeightChange={value => change('heroSubtitleLineHeight', value)}
+0514:               letterSpacing={settings.heroSubtitleLetterSpacing ?? 0}
+0515:               onLetterSpacingChange={value => change('heroSubtitleLetterSpacing', value)}
+0516:               onChange={(text, html) =>
+0517:                 changeRich('heroSubtitle', text, html)
+0518:               }
+0519:             />
+0520:           </section>
+0521: 
+0522: <section className="panel">
+0523:             <h2>02. Өнгө</h2>
+0524: 
+0525:             <Field label="Үндсэн цэнхэр">
+0526:               <input
+0527:                 type="color"
+0528:                 value={settings.primaryColor}
+0529:                 onChange={e => change('primaryColor', e.target.value)}
+0530:               />
+0531:             </Field>
+0532: 
+0533:             <Field label="Hero дэвсгэр">
+0534:               <input
+0535:                 type="color"
+0536:                 value={settings.heroColor}
+0537:                 onChange={e => change('heroColor', e.target.value)}
+0538:               />
+0539:             </Field>
+0540:           </section>
+0541: 
+0542:           <section className="panel">
+0543:             <h2>04. Зураг</h2>
+0544: 
+0545:             <Field label="Зураг оруулах">
+0546:               <input
+0547:                 type="file"
+0548:                 accept="image/png,image/jpeg,image/webp"
+0549:                 onChange={uploadImage}
+0550:                 disabled={uploading}
+0551:               />
+0552:             </Field>
+0553: 
+0554:             {uploading && <p>Зураг оруулж байна...</p>}
+0555: 
+0556:             <Field label="Зургийн URL">
+0557:               <input
+0558:                 type="url"
+0559:                 value={settings.heroImage}
+0560:                 onChange={e => change('heroImage', e.target.value)}
+0561:                 placeholder="https://..."
+0562:               />
+0563:             </Field>
+0564: 
+0565:             {settings.heroImage && safeUrl(settings.heroImage) && (
+0566:               <img
+0567:                 className="uploadedImage"
+0568:                 src={settings.heroImage}
+0569:                 alt="Hero preview"
+0570:               />
+0571:             )}
+0572: 
+0573:             <button
+0574:               type="button"
+0575:               className="secondaryButton"
+0576:               onClick={() => change('heroImage', '')}
+0577:             >
+0578:               Зургийг тохиргооноос хасах
+0579:             </button>
+0580:           </section>
+0581: 
+0582:           <section className="panel">
+0583:             <h2>05. Ticket байрлал</h2>
+0584: <h3>Ticket бичвэр</h3>
+0585: {[
+0586:   ['ticketTitle', 'Гарчиг'],
+0587:   ['ticketSubtitle', 'Дэд гарчиг'],
+0588:   ['ticketLabels', 'Зүүн талын 4 мөр'],
+0589:   ['ticketValues', 'Баруун талын 4 мөр'],
+0590:   ['ticketBottom', 'Доод бичвэр'],
+0591: ].map(([key, label]) => (
+0592:   <Field key={key} label={label}>
+0593:     <textarea
+0594:       className="ticketTextInput"
+0595:       rows={key === 'ticketLabels' || key === 'ticketValues' ? 4 : 2}
+0596:       value={String(settings[key] ?? '').replace(/\\n/g, '\n')}
+0597:       onChange={e => change(key, e.target.value)}
+0598:     />
+0599:   </Field>
+0600: ))}
+0601: 
+0602: <h3>Ticket өнгө</h3>
+0603: <div className="ticketColorRow">
+0604:   {[
+0605:     ['ticketBackground', 'Дэвсгэр'],
+0606:     ['ticketTextColor', 'Бичвэр'],
+0607:     ['ticketAccentColor', 'Тодруулга'],
+0608:   ].map(([key, label]) => (
+0609:     <Field key={key} label={label}>
+0610:       <input
+0611:         type="color"
+0612:         value={settings[key] ?? '#ffffff'}
+0613:         onChange={e => change(key, e.target.value)}
+0614:       />
+0615:     </Field>
+0616:   ))}
+0617: </div>
+0618: 
+0619: 
+0620:             {[
+0621:               ['ticketTop', 'Дээрээс', 0, 100, 1, '%'],
+0622:               ['ticketLeft', 'Зүүнээс', 0, 100, 1, '%'],
+0623:               ['ticketScale', 'Хэмжээ', 0.3, 1.2, 0.01, ''],
+0624:               ['ticketRotate', 'Хазайлт', -20, 20, 1, '°'],
+0625:             ].map(([key, label, min, max, step, unit]) => (
+0626:               <Field
+0627:                 key={key}
+0628:                 label={`${label} — ${settings[key]}${unit}`}
+0629:               >
+0630:                 <input
+0631:                   type="range"
+0632:                   min={min}
+0633:                   max={max}
+0634:                   step={step}
+0635:                   value={settings[key]}
+0636:                   onChange={e => change(key, Number(e.target.value))}
+0637:                 />
+0638:               </Field>
+0639:             ))}
+0640:           </section>
+0641: 
+0642: 
+0643:         </div>
+0644: 
+0645:         <aside className="previewPanel">
+0646:           <div className="previewHeading">
+0647:             <h2>Live Preview</h2>
+0648:             <p>Зөв хэмжээтэй багасгасан жишээ</p>
+0649:           </div>
+0650: 
+0651:           <div
+0652:             className="heroPreview"
+0653:             style={{ background: settings.heroColor }}
+0654:           >
+0655:             <div className="previewText">
+0656:               <small>{settings.heroEyebrow}</small>
+0657: 
+0658:               <h2
+0659:                 style={{
+0660:                   fontSize: `clamp(24px, ${
+0661:                     Number(settings.heroFontSize) * 0.45
+0662:                   }px, 42px)`,
+0663:                 }}
+0664:               >
+0665:                 {settings.heroTitle}
+0666:               </h2>
+0667: 
+0668:               <p
+0669:                 style={{
+0670:                   fontSize: `${Math.max(
+0671:                     11,
+0672:                     Number(settings.heroTextSize) * 0.75
+0673:                   )}px`,
+0674:                 }}
+0675:               >
+0676:                 {settings.heroSubtitle}
+0677:               </p>
+0678:             </div>
+0679: 
+0680:             {settings.heroImage && safeUrl(settings.heroImage) && (
+0681:               <img
+0682:                 className="heroPreviewImage"
+0683:                 src={settings.heroImage}
+0684:                 alt=""
+0685:               />
+0686:             )}
+0687: 
+0688:             <div className="ticketArea">
+0689:               <div
+0690:                 className="ticketPreview"
+0691:                 style={{
+0692:                   top: `${settings.ticketTop}%`,
+0693:                   left: `${settings.ticketLeft}%`,
+0694:                   transform: `translate(-50%, -50%) rotate(${settings.ticketRotate}deg) scale(${settings.ticketScale})`,
+0695:                 }}
+0696:               >
+0697:                 <strong>
+0698:                   LEARN <span>✦</span> MINEA
+0699:                 </strong>
+0700: 
+0701:                 <small>KOREAN LEARNING · STUDENT PASS</small>
+0702:                 <hr />
+0703: 
+0704:                 <div>
+0705:                   <span>Суралцагч</span>
+0706:                   <b>Таны нэр</b>
+0707:                 </div>
+0708: 
+0709:                 <div>
+0710:                   <span>Сургалт</span>
+0711:                   <b>Таны сонголт</b>
+0712:                 </div>
+0713: 
+0714:                 <div>
+0715:                   <span>Систем</span>
+0716:                   <b>Видео + Quiz</b>
+0717:                 </div>
+0718: 
+0719:                 <div>
+0720:                   <span>Ахиц</span>
+0721:                   <b>Progress tracking</b>
+0722:                 </div>
+0723: 
+0724:                 <hr />
+0725:                 <em>START LEARNING →</em>
+0726:               </div>
+0727:             </div>
+0728:           </div>
+0729: 
+0730:           <p className="previewNote">
+0731:             Энэ бол редакторын багасгасан жишээ.
+0732:             Нүүр хуудасны яг ижил rendering биш.
+0733:           </p>
+0734:         </aside>
+0735:       </div>
+0736: 
+0737:       <style>{`
+0738:         .siteEditor {
+0739:           --blue: #0879d1;
+0740:           --brown: #592d1f;
+0741:           min-height: 100vh;
+0742:           padding: 30px;
+0743:           background: #f5f7fa;
+0744:           color: #202126;
+0745:           font-family: Arial, Helvetica, sans-serif;
+0746:         }
+0747: 
+0748:         .siteEditor * {
+0749:           box-sizing: border-box;
+0750:         }
+0751: 
+0752:         .pageHeading {
+0753:           margin-bottom: 25px;
+0754:         }
+0755: 
+0756:         .pageHeading a {
+0757:           color: var(--blue);
+0758:           text-decoration: none;
+0759:           font-size: 13px;
+0760:         }
+0761: 
+0762:         .pageHeading h1 {
+0763:           font-size: 30px;
+0764:           font-weight: 750;
+0765:           margin: 12px 0 8px;
+0766:         }
+0767: 
+0768:         .pageHeading p {
+0769:           color: #818793;
+0770:           font-size: 13px;
+0771:           margin: 0;
+0772:         }
+0773: 
+0774:         .notice {
+0775:           background: #e7f2ff;
+0776:           border: 1px solid #b9dbfb;
+0777:           padding: 13px 16px;
+0778:           border-radius: 10px;
+0779:           margin-bottom: 20px;
+0780:           font-size: 13px;
+0781:         }
+0782: 
+0783:         .editorGrid {
+0784:           display: grid;
+0785:           grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
+0786:           gap: 22px;
+0787:           align-items: start;
+0788:         }
+0789: 
+0790:         .controls {
+0791:           display: flex;
+0792:           flex-direction: column;
+0793:           gap: 20px;
+0794:           min-width: 0;
+0795:         }
+0796: 
+0797:         .panel,
+0798:         .previewPanel {
+0799:           background: white;
+0800:           border: 1px solid #dfe5ed;
+0801:           border-radius: 18px;
+0802:           padding: 25px;
+0803:           min-width: 0;
+0804:         }
+0805: 
+0806:         .panel h2,
+0807:         .previewHeading h2 {
+0808:           font-size: 18px;
+0809:           font-weight: 700;
+0810:           margin: 0 0 24px;
+0811:         }
+0812: 
+0813:         .field,
+0814:         .richField {
+0815:           display: flex;
+0816:           flex-direction: column;
+0817:           gap: 9px;
+0818:           margin-bottom: 23px;
+0819:         }
+0820: 
+0821:         .field > span,
+0822:         .fieldLabel {
+0823:           font-size: 13px;
+0824:           font-weight: 700;
+0825:           color: #25272d;
+0826:         }
+0827: 
+0828:         .field input:not([type=range]):not([type=color]) {
+0829:           width: 100%;
+0830:           max-width: 100%;
+0831:           border: 1px solid #dfe5ed;
+0832:           border-radius: 10px;
+0833:           padding: 12px;
+0834:           background: white;
+0835:           color: #202126;
+0836:           font-size: 14px;
+0837:         }
+0838: 
+0839:         .field input[type=file] {
+0840:           font-size: 13px;
+0841:         }
+0842: 
+0843:         .field input[type=file]::file-selector-button {
+0844:           background: #e7f2ff;
+0845:           color: #0879d1;
+0846:           border: 1px solid #b9dbfb;
+0847:           border-radius: 8px;
+0848:           padding: 8px 12px;
+0849:           margin-right: 14px;
+0850:           cursor: pointer;
+0851:         }
+0852: 
+0853:         .field input[type=range] {
+0854:           width: 100%;
+0855:           accent-color: var(--blue);
+0856:         }
+0857: 
+0858:         .field input[type=color] {
+0859:           width: 78px;
+0860:           height: 44px;
+0861:           padding: 3px;
+0862:           border: 1px solid #dfe5ed;
+0863:           border-radius: 8px;
+0864:           background: white;
+0865:         }
+0866: 
+0867:         .richBox {
+0868:           border: 1px solid #cbd0d5;
+0869:           border-radius: 10px;
+0870:           overflow: hidden;
+0871:           background: white;
+0872:         }
+0873: 
+0874:         .toolbar {
+0875:           display: flex;
+0876:           flex-wrap: wrap;
+0877:           gap: 5px;
+0878:           align-items: center;
+0879:           padding: 10px;
+0880:           border-bottom: 1px solid #e1e4e8;
+0881:         }
+0882: 
+0883:         .toolbar select {
+0884:           background: white;
+0885:           border: 0;
+0886:           padding: 7px 5px;
+0887:           font-size: 13px;
+0888:           color: #454545;
+0889:           max-width: 145px;
+0890:         }
+0891: 
+0892:         .toolbar button {
+0893:           border: 0;
+0894:           background: white;
+0895:           min-width: 29px;
+0896:           height: 30px;
+0897:           padding: 4px;
+0898:           border-radius: 5px;
+0899:           font-size: 15px;
+0900:           cursor: pointer;
+0901:           color: #454545;
+0902:         }
+0903: 
+0904:         .toolbar button:hover {
+0905:           background: #e7f2ff;
+0906:           color: var(--blue);
+0907:         }
+0908: 
+0909:         .colorTool {
+0910:           display: inline-flex;
+0911:           flex-direction: column;
+0912:           align-items: center;
+0913:           justify-content: center;
+0914:           font-size: 16px;
+0915:           font-weight: bold;
+0916:           width: 30px;
+0917:           height: 32px;
+0918:           cursor: pointer;
+0919:         }
+0920: 
+0921:         .colorTool input {
+0922:           width: 28px;
+0923:           height: 7px;
+0924:           border: 0;
+0925:           padding: 0;
+0926:           cursor: pointer;
+0927:         }
+0928: 
+0929:         .editableArea {
+0930:           min-height: 135px;
+0931:           padding: 16px;
+0932:           outline: none;
+0933:           color: #222;
+0934:           font-size: 15px;
+0935:           line-height: 1.6;
+0936:           overflow-wrap: anywhere;
+0937:         }
+0938: 
+0939:         .editableArea:focus {
+0940:           box-shadow: inset 0 0 0 2px #b7dafa;
+0941:         }
+0942: 
+0943:         .editableArea img {
+0944:           max-width: 100%;
+0945:           height: auto;
+0946:         }
+0947: 
+0948:         .editableArea a {
+0949:           color: var(--blue);
+0950:         }
+0951: 
+0952:         .uploadedImage {
+0953:           display: block;
+0954:           width: 100%;
+0955:           max-width: 300px;
+0956:           max-height: 220px;
+0957:           object-fit: contain;
+0958:           border-radius: 12px;
+0959:           margin: 15px 0;
+0960:         }
+0961: 
+0962:         .secondaryButton {
+0963:           background: #e7f2ff;
+0964:           color: #0879d1;
+0965:           border: 0;
+0966:           border-radius: 10px;
+0967:           padding: 11px 15px;
+0968:           cursor: pointer;
+0969:         }
+0970: 
+0971:         .saveFooter {
+0972:           display: flex;
+0973:           justify-content: flex-start;
+0974:           padding-bottom: 20px;
+0975:         }
+0976: 
+0977:         .saveButton {
+0978:           background: #168b57;
+0979:           color: white;
+0980:           border: 0;
+0981:           border-radius: 10px;
+0982:           padding: 14px 32px;
+0983:           font-size: 15px;
+0984:           font-weight: 700;
+0985:           cursor: pointer;
+0986:         }
+0987: 
+0988:         .saveButton:disabled {
+0989:           opacity: 0.6;
+0990:         }
+0991: 
+0992:         .previewPanel {
+0993:           position: sticky;
+0994:           top: 20px;
+0995:         }
+0996: 
+0997:         .previewHeading p {
+0998:           color: #818793;
+0999:           font-size: 12px;
+1000:           margin: -14px 0 20px;
+1001:         }
+1002: 
+1003:         .heroPreview {
+1004:           position: relative;
+1005:           min-height: 390px;
+1006:           border-radius: 15px;
+1007:           padding: 28px;
+1008:           overflow: hidden;
+1009:         }
+1010: 
+1011:         .previewText {
+1012:           position: relative;
+1013:           z-index: 2;
+1014:           max-width: 60%;
+1015:           color: #202126;
+1016:         }
+1017: 
+1018:         .previewText small {
+1019:           display: block;
+1020:           font-size: 9px;
+1021:           letter-spacing: 1px;
+1022:           font-weight: bold;
+1023:           margin-bottom: 15px;
+1024:         }
+1025: 
+1026:         .previewText h2 {
+1027:           line-height: 1.1;
+1028:           margin: 0 0 15px;
+1029:           font-weight: 800;
+1030:         }
+1031: 
+1032:         .previewText p {
+1033:           font-size: 13px;
+1034:           line-height: 1.5;
+1035:         }
+1036: 
+1037:         .heroPreviewImage {
+1038:           position: absolute;
+1039:           right: 5%;
+1040:           bottom: 8%;
+1041:           width: 30%;
+1042:           max-height: 75%;
+1043:           object-fit: contain;
+1044:         }
+1045: 
+1046:         .ticketArea {
+1047:           position: absolute;
+1048:           inset: 0;
+1049:           pointer-events: none;
+1050:         }
+1051: 
+1052:         .ticketPreview {
+1053:           position: absolute;
+1054:           width: 210px;
+1055:           background: white;
+1056:           border: 1px solid #e5e5e5;
+1057:           border-radius: 14px;
+1058:           padding: 17px;
+1059:           box-shadow: 0 10px 28px #0000001a;
+1060:           transform-origin: center;
+1061:           color: #592d1f;
+1062:         }
+1063: 
+1064:         .ticketPreview > strong {
+1065:           display: block;
+1066:           font-size: 15px;
+1067:           white-space: nowrap;
+1068:         }
+1069: 
+1070:         .ticketPreview > strong span {
+1071:           color: #0879d1;
+1072:         }
+1073: 
+1074:         .ticketPreview > small {
+1075:           display: block;
+1076:           font-size: 7px;
+1077:           margin: 8px 0;
+1078:         }
+1079: 
+1080:         .ticketPreview hr {
+1081:           border: 0;
+1082:           border-top: 1px dashed #d9d9d9;
+1083:           margin: 12px 0;
+1084:         }
+1085: 
+1086:         .ticketPreview div {
+1087:           display: flex;
+1088:           justify-content: space-between;
+1089:           gap: 8px;
+1090:           font-size: 9px;
+1091:           margin: 9px 0;
+1092:         }
+1093: 
+1094:         .ticketPreview div span {
+1095:           color: #888;
+1096:         }
+1097: 
+1098:         .ticketPreview em {
+1099:           font-size: 9px;
+1100:           font-style: normal;
+1101:           font-weight: bold;
+1102:         }
+1103: 
+1104:         .previewNote {
+1105:           color: #818793;
+1106:           font-size: 12px;
+1107:           line-height: 1.7;
+1108:           margin: 20px 0 0;
+1109:         }
+1110: 
+1111:         @media (max-width: 1100px) {
+1112:           .editorGrid {
+1113:             grid-template-columns: 1fr;
+1114:           }
+1115: 
+1116:           .previewPanel {
+1117:             position: static;
+1118:           }
+1119:         }
+1120: 
+1121:         @media (max-width: 600px) {
+1122:           .siteEditor {
+1123:             padding: 15px;
+1124:           }
+1125: 
+1126:           .panel,
+1127:           .previewPanel {
+1128:             padding: 18px;
+1129:           }
+1130: 
+1131:           .heroPreview {
+1132:             min-height: 320px;
+1133:           }
+1134: 
+1135:           .previewText {
+1136:             max-width: 70%;
+1137:           }
+1138:         }
+1139:       `}</style>
+1140:     </main>
+1141:   )
+1142: }
+
+
+=================================================================
+FILE: app/admin/editor/unified-editor.css
+=================================================================
+0001: 
+0002: .mineaToolbarField {
+0003:   display: inline-flex;
+0004:   align-items: center;
+0005:   gap: 5px;
+0006:   font-size: 12px;
+0007:   white-space: nowrap;
+0008: }
+0009: 
+0010: .mineaToolbarField input {
+0011:   width: 58px;
+0012:   min-width: 58px;
+0013:   padding: 6px;
+0014:   border: 1px solid #cbd5e1;
+0015:   border-radius: 6px;
+0016:   background: #fff;
+0017:   color: #243449;
+0018:   font-size: 13px;
+0019: }
+0020: 
+0021: 
+0022: .pageHeading {
+0023:   position: relative;
+0024:   padding-right: 260px;
+0025:   min-height: 130px;
+0026: }
+0027: 
+0028: .mineaEditorActions {
+0029:   position: absolute;
+0030:   top: 0;
+0031:   right: 0;
+0032:   display: flex;
+0033:   flex-direction: column;
+0034:   align-items: stretch;
+0035:   gap: 12px;
+0036:   width: 230px;
+0037:   z-index: 2;
+0038: }
+0039: 
+0040: .mineaOpenSite {
+0041:   display: block;
+0042:   text-align: center;
+0043:   padding: 12px 16px;
+0044:   text-decoration: none;
+0045:   color: #243449;
+0046:   font-size: 16px;
+0047: }
+0048: 
+0049: .mineaEditorActions .saveButton {
+0050:   width: 100%;
+0051:   padding: 15px 18px;
+0052: }
+0053: 
+0054: @media (max-width: 700px) {
+0055:   .pageHeading {
+0056:     padding-right: 0;
+0057:     padding-bottom: 120px;
+0058:   }
+0059: 
+0060:   .mineaEditorActions {
+0061:     top: auto;
+0062:     bottom: 0;
+0063:     right: 0;
+0064:     width: 100%;
+0065:   }
+0066: }
+0067: 
+0068: 
+0069: /* Ticket admin: compact form layout */
+0070: .ticketTextInput {
+0071:   display: block;
+0072:   width: 100%;
+0073:   min-height: 85px;
+0074:   padding: 14px 16px;
+0075:   border: 1px solid #cbd8ed;
+0076:   border-radius: 10px;
+0077:   background: #fff;
+0078:   color: #1d2939;
+0079:   font: inherit;
+0080:   font-size: 15px;
+0081:   line-height: 1.55;
+0082:   resize: vertical;
+0083:   box-sizing: border-box;
+0084: }
+0085: 
+0086: .ticketTextInput:focus {
+0087:   outline: 2px solid #0879d1;
+0088:   outline-offset: 1px;
+0089: }
+0090: 
+0091: .ticketColorRow {
+0092:   display: grid;
+0093:   grid-template-columns: repeat(3, minmax(0, 1fr));
+0094:   gap: 16px;
+0095:   align-items: start;
+0096: }
+0097: 
+0098: .ticketColorRow > * {
+0099:   min-width: 0;
+0100: }
+0101: 
+0102: .ticketColorRow input[type="color"] {
+0103:   width: 100%;
+0104:   max-width: 100px;
+0105:   height: 44px;
+0106:   cursor: pointer;
+0107: }
+0108: 
+0109: @media (max-width: 520px) {
+0110:   .ticketColorRow {
+0111:     gap: 8px;
+0112:   }
+0113: 
+0114:   .ticketColorRow input[type="color"] {
+0115:     max-width: 100%;
+0116:   }
+0117: }
+0118: 
+0119: 
+0120: /* LEARNMINEA EDITOR HEADER ACTIONS FIX */
+0121: 
+0122: .siteEditor .pageHeading {
+0123:   position: relative;
+0124:   padding-right: 230px;
+0125:   min-height: 145px;
+0126: }
+0127: 
+0128: .siteEditor .pageHeading .mineaEditorActions {
+0129:   position: absolute;
+0130:   top: 18px;
+0131:   right: 18px;
+0132:   left: auto;
+0133:   bottom: auto;
+0134:   display: flex;
+0135:   flex-direction: column;
+0136:   align-items: stretch;
+0137:   gap: 10px;
+0138:   width: 190px;
+0139:   max-width: calc(100% - 36px);
+0140:   z-index: 3;
+0141: }
+0142: 
+0143: .siteEditor .mineaOpenSite {
+0144:   display: flex;
+0145:   justify-content: center;
+0146:   align-items: center;
+0147:   min-height: 40px;
+0148:   padding: 9px 14px;
+0149:   border: 1px solid #d6e0ed;
+0150:   border-radius: 12px;
+0151:   background: #ffffff;
+0152:   color: #243449;
+0153:   font-size: 13px;
+0154:   font-weight: 600;
+0155:   text-decoration: none;
+0156:   box-sizing: border-box;
+0157: }
+0158: 
+0159: .siteEditor .mineaOpenSite:hover {
+0160:   background: #f2f7ff;
+0161:   border-color: #9cbfe9;
+0162: }
+0163: 
+0164: .siteEditor .mineaEditorActions .saveButton {
+0165:   display: block;
+0166:   width: 100%;
+0167:   min-height: 44px;
+0168:   padding: 11px 14px;
+0169:   border: 0;
+0170:   border-radius: 12px;
+0171:   background: #0879d1;
+0172:   color: white;
+0173:   font-size: 13px;
+0174:   font-weight: 700;
+0175:   cursor: pointer;
+0176:   box-sizing: border-box;
+0177: }
+0178: 
+0179: .siteEditor .mineaEditorActions .saveButton:hover:not(:disabled) {
+0180:   background: #0667b4;
+0181: }
+0182: 
+0183: @media (max-width: 700px) {
+0184:   .siteEditor .pageHeading {
+0185:     padding-right: 0;
+0186:     padding-top: 130px;
+0187:     min-height: 0;
+0188:   }
+0189: 
+0190:   .siteEditor .pageHeading .mineaEditorActions {
+0191:     top: 12px;
+0192:     right: 12px;
+0193:     width: 170px;
+0194:   }
+0195: }
+0196: 
+0197: /* END EDITOR HEADER ACTIONS FIX */
+
+
+=================================================================
+FILE: app/site-compact.css
+=================================================================
+0001: 
+0002: /* LEARNMINEA COMPACT SIZES */
+0003: 
+0004: /* Ерөнхий гарчиг, тайлбар */
+0005: .site .section h2 {
+0006:   font-size: clamp(34px, 3.5vw, 56px);
+0007: }
+0008: 
+0009: .site .sub {
+0010:   font-size: 18px;
+0011: }
+0012: 
+0013: .site .studyCard h3 {
+0014:   font-size: 29px;
+0015: }
+0016: 
+0017: .site .studyCard p {
+0018:   font-size: 15px;
+0019: }
+0020: 
+0021: .site .splitCopy > p,
+0022: .site .method .split > div > p {
+0023:   font-size: 18px;
+0024: }
+0025: 
+0026: .site .talkCard > p {
+0027:   font-size: 19px;
+0028: }
+0029: 
+0030: .site .tip {
+0031:   font-size: 15px;
+0032: }
+0033: 
+0034: .site .booksHead > p {
+0035:   font-size: 16px;
+0036: }
+0037: 
+0038: .site .bookItem h3 {
+0039:   font-size: 21px;
+0040: }
+0041: 
+0042: .site .bookItem p {
+0043:   font-size: 14px;
+0044: }
+0045: 
+0046: .site .reason h3 {
+0047:   font-size: 29px;
+0048: }
+0049: 
+0050: .site .reason p {
+0051:   font-size: 15px;
+0052: }
+0053: 
+0054: .site .faqItem button {
+0055:   font-size: 25px;
+0056: }
+0057: 
+0058: .site .faqItem p {
+0059:   font-size: 16px;
+0060: }
+0061: 
+0062: /* FOOTER — бүхэлд нь жижигрүүлэх */
+0063: .site .footer {
+0064:   padding: 34px 0 18px !important;
+0065: }
+0066: 
+0067: .site .footerGrid {
+0068:   gap: 24px;
+0069: }
+0070: 
+0071: .site .footer .logo {
+0072:   font-size: 27px;
+0073: }
+0074: 
+0075: .site .footerGrid p {
+0076:   font-size: 13px;
+0077:   line-height: 1.5;
+0078:   max-width: 260px;
+0079:   margin: 12px 0;
+0080: }
+0081: 
+0082: .site .footerGrid > div:not(:first-child) {
+0083:   gap: 10px;
+0084: }
+0085: 
+0086: .site .footerGrid strong {
+0087:   font-size: 10px;
+0088: }
+0089: 
+0090: .site .footerGrid a:not(.logo) {
+0091:   font-size: 13px;
+0092: }
+0093: 
+0094: .site .footerSocials {
+0095:   gap: 12px;
+0096: }
+0097: 
+0098: .site .footerSocials svg {
+0099:   width: 18px;
+0100:   height: 18px;
+0101: }
+0102: 
+0103: .site .footerBottom {
+0104:   margin-top: 28px;
+0105:   padding-top: 14px;
+0106:   font-size: 10px;
+0107: }
+0108: 
+0109: /* Утасны харагдац */
+0110: @media (max-width: 700px) {
+0111:   .site .section h2 {
+0112:     font-size: clamp(29px, 7vw, 40px);
+0113:   }
+0114: 
+0115:   .site .studyCard h3 {
+0116:     font-size: 24px;
+0117:   }
+0118: 
+0119:   .site .footer {
+0120:     padding: 28px 0 16px !important;
+0121:   }
+0122: 
+0123:   .site .footer .logo {
+0124:     font-size: 25px;
+0125:   }
+0126: 
+0127:   .site .footerGrid {
+0128:     gap: 20px;
+0129:   }
+0130: 
+0131:   .site .footerBottom {
+0132:     margin-top: 22px;
+0133:   }
+0134: }
+0135: 
+0136: 
+0137: /* Ticket layout fix */
+0138: .site .ticket {
+0139:   width: 300px;
+0140:   padding: 19px 18px;
+0141:   border-radius: 9px;
+0142:   overflow: hidden;
+0143: }
+0144: 
+0145: .site .ticketRows {
+0146:   display: grid;
+0147:   grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr);
+0148:   gap: 10px;
+0149:   padding: 12px 0;
+0150: }
+0151: 
+0152: .site .ticketLabels,
+0153: .site .ticketValues {
+0154:   display: flex;
+0155:   flex-direction: column;
+0156:   gap: 5px;
+0157:   min-width: 0;
+0158: }
+0159: 
+0160: .site .ticketLabels span,
+0161: .site .ticketValues strong {
+0162:   display: block;
+0163:   font-size: 11px;
+0164:   line-height: 1.5;
+0165:   white-space: nowrap;
+0166: }
+0167: 
+0168: .site .ticketLabels span {
+0169:   color: #85818b;
+0170: }
+0171: 
+0172: .site .ticketValues strong {
+0173:   text-align: right;
+0174:   color: #252235;
+0175: }
+0176: 
+0177: @media (max-width: 700px) {
+0178:   .site .ticket {
+0179:     width: 240px;
+0180:   }
+0181: 
+0182:   .site .ticketLabels span,
+0183:   .site .ticketValues strong {
+0184:     font-size: 9px;
+0185:   }
+0186: }

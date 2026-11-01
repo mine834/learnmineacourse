@@ -34,6 +34,7 @@ export default function CoursesPage() {
           await supabase
             .from("courses")
             .select("*")
+            .eq("published", true)
             .order("created_at", { ascending: false });
 
         if (courseError) throw courseError;

@@ -1,0 +1,144 @@
+
+/* LearnMinea TOPIK custom */
+.lmTopikPage #topik-about,
+.lmTopikPage #topik-register {
+  scroll-margin-top: 110px;
+}
+.lmTopikAbout {line-height:1.8}
+.lmTopikAbout > p {font-size:18px;color:#677789}
+.lmTopikAbout > a {color:#007bdf;font-weight:700}
+.lmTopikLevels {
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:20px;
+  margin:28px 0;
+}
+.lmTopikLevels article {
+  border-radius:20px;
+  padding:28px;
+  background:#eff7ff;
+  border:1px solid #d3e7fc;
+}
+.lmTopikLevels h3 {font-size:26px;margin:0 0 14px}
+.lmTopikLevels p {color:#64778b;line-height:1.6}
+
+.lmTopikRegistration {
+  background:#191a1d;
+  border-radius:30px;
+  padding:44px;
+  color:#fff;
+  margin-top:65px;
+}
+.lmTopikRegistrationHead {
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:30px;
+  margin-bottom:35px;
+}
+.lmTopikEyebrow {
+  color:#91c9ff!important;
+  letter-spacing:3px;
+  font-weight:700;
+  font-size:14px;
+}
+.lmTopikRegistration h2 {
+  color:#fff;
+  font-size:clamp(32px,3.5vw,56px);
+  line-height:1.15;
+  margin:16px 0;
+}
+.lmTopikRegistrationHead p {color:#b6bac4}
+.lmTopikOfficial {
+  display:inline-block;
+  padding:18px 25px;
+  background:#fff;
+  color:#191a1d!important;
+  border-radius:40px;
+  white-space:nowrap;
+}
+.lmTopikRegistrationGrid {
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:16px;
+  align-items:start;
+}
+.lmTopikRegistrationGrid details {
+  background:#272a30;
+  border:1px solid #414a56;
+  border-radius:18px;
+  overflow:hidden;
+  min-width:0;
+}
+.lmTopikRegistrationGrid summary {
+  display:flex;
+  flex-direction:column;
+  gap:14px;
+  cursor:pointer;
+  padding:25px;
+  list-style:none;
+  position:relative;
+}
+.lmTopikRegistrationGrid summary::-webkit-details-marker {display:none}
+.lmTopikRegistrationGrid summary span {color:#8fc8ff;font-size:14px}
+.lmTopikRegistrationGrid summary strong {font-size:20px;line-height:1.4}
+.lmTopikRegistrationGrid summary b {
+  position:absolute;
+  right:20px;
+  top:20px;
+  color:#9dccff;
+  font-size:22px;
+}
+.lmTopikRegistrationGrid details[open] summary b {transform:rotate(45deg)}
+.lmTopikRegistrationBody {padding:0 25px 25px}
+.lmTopikRegistrationBody p,
+.lmTopikRegistrationBody li {color:#d1d9e5;line-height:1.7;font-size:15px}
+.lmTopikRegistrationBody ol {padding-left:20px}
+.lmTopikRegistrationBody a {color:#9bd0ff!important;font-weight:700}
+@media(max-width:850px) {
+  .lmTopikRegistrationGrid {grid-template-columns:1fr}
+  .lmTopikRegistrationHead {align-items:flex-start;flex-direction:column}
+}
+@media(max-width:600px) {
+  .lmTopikLevels {grid-template-columns:1fr}
+  .lmTopikRegistration {padding:24px;border-radius:22px}
+}
+
+/* TOPIK direct registration cards */
+.lmTopikRegistrationGrid .lmTopikDirectCard {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  position: relative;
+  padding: 25px;
+  background: #272a30;
+  border: 1px solid #414a56;
+  border-radius: 18px;
+  color: #fff !important;
+  text-decoration: none;
+  min-width: 0;
+  transition: background .2s, transform .2s;
+}
+
+.lmTopikRegistrationGrid .lmTopikDirectCard:hover {
+  background: #303e50;
+  transform: translateY(-3px);
+}
+
+.lmTopikDirectCard span {
+  color: #8fc8ff;
+  font-size: 14px;
+}
+
+.lmTopikDirectCard strong {
+  font-size: 20px;
+  line-height: 1.4;
+}
+
+.lmTopikDirectCard b {
+  position: absolute;
+  right: 20px;
+  top: 20px;
+  color: #9dccff;
+  font-size: 22px;
+}

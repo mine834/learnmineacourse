@@ -1,6 +1,8 @@
 
 import Link from 'next/link'
-import { createClient } from '@supabase/supabase-js'
+import PublicHeader, { PageIntro } from '../components/PublicHeader'
+import { getPublishedCatalog } from '../lib/catalog.mjs'
+import { createPublicCatalogClient } from '../lib/publicCatalog'
 
 export const dynamic = 'force-dynamic'
 
@@ -11,84 +13,127 @@ const colors = {
   muted: '#818592',
 }
 
-export default async function BooksPage() {
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-  )
+const categoryOptions = [
+  ['all', 'Бүгд'],
+  ['vocabulary', 'Үг'],
+  ['grammar', 'Дүрэм'],
+  ['conversation', 'Харилцан яриа'],
+  ['topik', 'TOPIK'],
+  ['kdrama', 'K-Drama'],
+]
 
-  const { data: books, error } = await supabase
-    .from('book_previews')
-    .select('id,title,description,price,cover_url')
-    .eq('is_published', true)
-    .order('created_at', { ascending: false })
+function canonicalCategory(value) {
+  const key = String(value || '').trim().toLowerCase()
+  const aliases = {
+    'үг': 'vocabulary', 'үгийн сан': 'vocabulary', 'vocab': 'vocabulary',
+    'дүрэм': 'grammar', 'яриа': 'conversation', 'харилцан яриа': 'conversation',
+    'topik ii': 'topik', 'топик': 'topik',
+  }
+  return aliases[key] || key
+}
+
+export default async function BooksPage({ searchParams }) {
+  const params = await searchParams
+  const selectedCategory = canonicalCategory(params?.category || 'all')
+  const search = String(params?.search || '').trim().toLocaleLowerCase()
+
+  const { books, errors } = await getPublishedCatalog(createPublicCatalogClient())
+  if (errors.length) console.error('Public catalog query failed', errors)
+  const filteredBooks = books.filter(book =>
+    (selectedCategory === 'all' || canonicalCategory(book.category) === selectedCategory) &&
+    (!search || `${book.title || ''} ${book.description || ''} ${book.short_description || ''}`.toLocaleLowerCase().includes(search))
+  )
 
   return (
     <main className="booksPage">
-      {/* HEADER */}
-      <header className="booksHeader">
-        <Link href="/" className="booksLogo">
-          learnminea<span>.</span>
-        </Link>
+      <PublicHeader active="/books" />
+      {/* LEARNMINEA BOOKS SUPER INTRO */}
+      <section className="mineabooksIntro">
+        <div className="mineabooksIntroInner">
+          <div className="mineabooksIntroCopy">
+            <div className="mineabooksEyebrow">
+              LEARNMINEA · DIGITAL LIBRARY
+            </div>
 
-        <nav className="booksNav">
-          <Link href="/">Нүүр</Link>
-          <Link href="/topik">TOPIK</Link>
-          <Link href="/k-drama">K-Drama</Link>
-          <Link href="/books" className="active">
-            Цахим ном
-          </Link>
-          <Link href="/survey">Сурах</Link>
-        </nav>
-      </header>
+            <h1>
+              Сурах зүйлээ
+              <br />
+              <span>өөрийнхөөрөө</span> сонго.
+            </h1>
 
-      {/* BLUE INTRO */}
-      <section className="booksHero">
-        <div className="booksContainer">
-          <p className="booksEyebrow">ЦАХИМ НОМ</p>
+            <p>
+              Үгийн сан, дүрэм, TOPIK болон өдөр тутмын
+              хэрэглээний цахим ном, материалаа нэг дороос
+              олж, өөрийн хурдаар суралцаарай.
+            </p>
 
-          <h1>Цахим номын сан</h1>
+            <a className="mineabooksExplore" href="#book-catalog">
+              Номуудыг үзэх <span>↗</span>
+            </a>
 
-          <p className="booksDescription">
-            Түвшин, зорилгодоо тохирсон цахим ном,
-            гарын авлагаа сонгоод хаанаас ч сураарай.
-          </p>
+            <div className="mineabooksNote">
+              Өөрийн түвшинд тохирсон материалаас эхлээрэй.
+            </div>
+          </div>
+
+          <div className="mineabooksArtwork" aria-hidden="true">
+            <div className="mineabooksSticker stickerOne">가</div>
+            <div className="mineabooksSticker stickerTwo">✦</div>
+
+            <div className="mineabooksBook bookBack">
+              <span>LEARNMINEA</span>
+              <strong>TOPIK</strong>
+              <small>STUDY NOTES</small>
+            </div>
+
+            <div className="mineabooksBook bookFront">
+              <span>LEARNMINEA</span>
+              <strong>나의 한국어</strong>
+              <small>MY KOREAN NOTEBOOK</small>
+              <div className="mineabooksBookLabel">
+                <span>NAME</span>
+                <b>my study journey</b>
+                <span>LEVEL</span>
+                <b>01 — 06</b>
+              </div>
+            </div>
+
+            <div className="mineabooksScribble">
+              made for your learning journey ↗
+            </div>
+          </div>
         </div>
       </section>
 
       {/* BOOK CATALOG */}
-      <section className="booksCatalog">
+      <section className="booksCatalog" id="book-catalog">
         <div className="booksContainer">
-          <div className="catalogHeading">
-            <div>
-              <p className="booksEyebrow">LEARNMINEA LIBRARY</p>
-              <h2>Сурах материалаа сонго</h2>
+          {errors.length > 0 && (
+            <div className="booksMessage" role="alert">
+              Номын мэдээллийг бүрэн ачаалж чадсангүй. Түр хүлээгээд дахин оролдоно уу.
             </div>
-
-            <p>
-              Ном бүрийн танилцуулга болон эхний
-              жишээ хуудсуудыг үнэгүй уншаарай.
-            </p>
-          </div>
-
-          {error ? (
-            <div className="booksMessage">
-              Номуудыг ачаалж чадсангүй: {error.message}
-            </div>
-          ) : !books?.length ? (
+          )}
+          <nav className="mineabooksCategoryNav" aria-label="Номын ангилал">
+            {categoryOptions.map(([key, label]) => (
+              <Link key={key} href={key === 'all' ? '/books#book-catalog' : `/books?category=${key}#book-catalog`}
+                className={selectedCategory === key ? 'selected' : ''}
+                aria-current={selectedCategory === key ? 'page' : undefined}>{label}</Link>
+            ))}
+          </nav>
+          {!filteredBooks.length ? (errors.length ? null : (
             <div className="booksEmpty">
               <div className="emptyIcon">📖</div>
               <h3>Тун удахгүй</h3>
               <p>
-                Одоогоор ном нэмэгдээгүй байна.
-                Шинэ материалууд удахгүй нийтлэгдэнэ.
+                {selectedCategory !== 'all' || search ? 'Энэ ангилалд тохирох ном одоогоор алга байна.' : 'Одоогоор ном нэмэгдээгүй байна. Шинэ материалууд удахгүй нийтлэгдэнэ.'}
               </p>
             </div>
-          ) : (
+          )) : (
             <div className="booksGrid">
-              {books.map((book, index) => (
-                <article className="bookItem" key={book.id}>
+              {filteredBooks.map((book, index) => (
+                <article className="bookItem" key={book.source + book.id}>
                   <Link
+                    prefetch={false}
                     href={`/books/${book.id}`}
                     className={`bookCover cover${index % 4}`}
                     aria-label={`${book.title} номыг үзэх`}
@@ -115,25 +160,17 @@ export default async function BooksPage() {
                       ДИЖИТАЛ МАТЕРИАЛ · PDF
                     </p>
 
-                    <h3>{book.title}</h3>
-
-                    <p className="bookDescription">
-                      {book.description ||
-                        'Солонгос хэл сурахад зориулсан цахим материал.'}
-                    </p>
-
+                    <h3><Link prefetch={false} href={`/books/${book.id}`}>{book.title}</Link></h3>
+                    {Boolean(book.short_description || book.shortDescription) && (
+                      <p className="mineaCatalogShort">{book.short_description || book.shortDescription}</p>
+                    )}
                     {book.price != null && (
-                      <strong className="bookPrice">
-                        {Number(book.price).toLocaleString('en-US')}₮
-                      </strong>
+                      <div className="bookPrices">
+                        <strong className="bookPrice">{Number(book.price).toLocaleString('en-US')}₮</strong>
+                        {book.old_price > book.price && <del>{Number(book.old_price).toLocaleString('en-US')}₮</del>}
+                      </div>
                     )}
 
-                    <Link
-                      href={`/books/${book.id}`}
-                      className="previewLink"
-                    >
-                      PDF Preview унших <span>→</span>
-                    </Link>
                   </div>
                 </article>
               ))}
@@ -151,7 +188,7 @@ export default async function BooksPage() {
             <br />
             зөвийг сурахаас эхэлнэ.
           </h2>
-          <Link href="/survey">
+          <Link href="/assessment/questions">
             Өөрийн сурах аргаа олох →
           </Link>
         </div>
@@ -173,9 +210,9 @@ export default async function BooksPage() {
           <nav>
             <Link href="/">Нүүр</Link>
             <Link href="/topik">TOPIK</Link>
-            <Link href="/k-drama">K-Drama</Link>
+            <Link href="/kdrama">K-Drama</Link>
             <Link href="/books">Цахим ном</Link>
-            <Link href="/survey">Сурах арга барил</Link>
+            <Link href="/assessment/questions">Сурах арга барил</Link>
           </nav>
         </div>
 
@@ -185,6 +222,263 @@ export default async function BooksPage() {
       </footer>
 
       <style>{`
+.mineabooksCategoryNav{display:flex;flex-wrap:wrap;gap:10px;margin:0 0 28px}
+.mineabooksCategoryNav a{padding:11px 19px;border:1px solid #c9dbea;border-radius:100px;background:white;color:#253b50;text-decoration:none;font-weight:600}
+.mineabooksCategoryNav a.selected,.mineabooksCategoryNav a:hover{background:#009dff;color:white;border-color:#009dff}
+
+
+/* LEARNMINEA BOOKS UNIFIED BACKGROUND */
+/* Зөвхөн цахим номын хуудасны арын өнгө */
+
+.booksPage,
+.booksPage .mineabooksIntro,
+.booksPage .booksCatalog,
+.booksPage .booksBottom,
+.booksPage .booksFooter {
+  background: #F5FAFF !important;
+}
+
+.booksPage .bottomInner,
+.booksPage .footerInner,
+.booksPage .footerCopyright {
+  background-color: transparent !important;
+}
+
+
+/* LEARNMINEA BOOKS SUPER INTRO */
+
+.booksPage .mineabooksIntro {
+  background: #f5faff;
+  overflow: hidden;
+  padding: 105px 32px 115px;
+}
+
+.booksPage .mineabooksIntroInner {
+  max-width: 1180px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 1.1fr 0.9fr;
+  gap: 50px;
+  align-items: center;
+}
+
+.booksPage .mineabooksEyebrow {
+  font-family: Arial, sans-serif;
+  color: #007de0;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 3px;
+  margin-bottom: 30px;
+}
+
+.booksPage .mineabooksIntro h1 {
+  font-family: Georgia, serif;
+  font-weight: 400;
+  font-size: clamp(48px, 6.5vw, 94px);
+  line-height: 1.08;
+  letter-spacing: -2px;
+  color: #18191b;
+  margin: 0 0 30px;
+}
+
+.booksPage .mineabooksIntro h1 span {
+  color: #008ff0;
+  font-family: Georgia, serif;
+}
+
+.booksPage .mineabooksIntroCopy > p {
+  max-width: 560px;
+  font-family: Arial, sans-serif;
+  font-size: 19px;
+  line-height: 1.75;
+  color: #727b8c;
+  margin-bottom: 30px;
+}
+
+.booksPage .mineabooksExplore {
+  display: inline-flex;
+  gap: 28px;
+  align-items: center;
+  padding: 15px 25px;
+  border: 1.5px solid #008ff0;
+  border-radius: 20px;
+  background: #fff;
+  color: #007de0;
+  font: 600 16px Arial, sans-serif;
+  box-shadow: 0 3px 0 #c9e6ff;
+  transition: transform 200ms ease, box-shadow 200ms ease;
+}
+
+.booksPage .mineabooksExplore:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 6px 0 #c9e6ff;
+}
+
+.booksPage .mineabooksNote {
+  margin-top: 20px;
+  font: 14px Arial, sans-serif;
+  color: #8791a0;
+}
+
+.booksPage .mineabooksArtwork {
+  position: relative;
+  height: 470px;
+  perspective: 1000px;
+}
+
+.booksPage .mineabooksBook {
+  position: absolute;
+  width: 265px;
+  height: 365px;
+  border-radius: 15px;
+  padding: 28px;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 12px 20px 35px rgba(20, 70, 130, .14);
+  border: 1px solid rgba(0, 65, 140, .1);
+  font-family: Arial, sans-serif;
+}
+
+.booksPage .mineabooksBook > span {
+  font-size: 12px;
+  letter-spacing: 2px;
+  font-weight: 700;
+}
+
+.booksPage .mineabooksBook > strong {
+  font-family: Georgia, serif;
+  font-size: 37px;
+  line-height: 1.2;
+  margin-top: 55px;
+}
+
+.booksPage .mineabooksBook > small {
+  font-size: 11px;
+  letter-spacing: 1.5px;
+  margin-top: 12px;
+}
+
+.booksPage .bookBack {
+  background: #d3e8ff;
+  color: #1264a3;
+  top: 25px;
+  left: 32px;
+  transform: rotate(-13deg);
+  animation: mineaBookFloatBack 6s ease-in-out infinite;
+}
+
+.booksPage .bookFront {
+  background: #087bd2;
+  color: #fff;
+  top: 75px;
+  left: 155px;
+  transform: rotate(8deg);
+  animation: mineaBookFloatFront 5.5s ease-in-out infinite;
+}
+
+.booksPage .mineabooksBookLabel {
+  margin-top: auto;
+  background: #fff;
+  color: #18191b;
+  border-radius: 8px;
+  padding: 15px;
+  display: grid;
+  gap: 5px;
+  transform: rotate(-3deg);
+}
+
+.booksPage .mineabooksBookLabel span {
+  font: 10px Arial, sans-serif;
+  color: #8992a0;
+  letter-spacing: 1px;
+}
+
+.booksPage .mineabooksBookLabel b {
+  font: 15px Georgia, serif;
+  border-bottom: 1px solid #d9e3ed;
+  padding-bottom: 5px;
+}
+
+.booksPage .mineabooksSticker {
+  position: absolute;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  z-index: 2;
+  box-shadow: 0 6px 15px rgba(0, 80, 150, .1);
+}
+
+.booksPage .stickerOne {
+  width: 75px;
+  height: 75px;
+  top: 8px;
+  right: 35px;
+  background: #fff;
+  color: #008ff0;
+  border: 2px solid #008ff0;
+  font: 35px Georgia, serif;
+  transform: rotate(13deg);
+}
+
+.booksPage .stickerTwo {
+  width: 55px;
+  height: 55px;
+  bottom: 40px;
+  left: 25px;
+  background: #b5dcff;
+  color: #006bc3;
+  font-size: 28px;
+}
+
+.booksPage .mineabooksScribble {
+  position: absolute;
+  bottom: 4px;
+  right: 0;
+  color: #007de0;
+  font: italic 17px Georgia, serif;
+  transform: rotate(-6deg);
+}
+
+@keyframes mineaBookFloatBack {
+  0%, 100% { translate: 0 0; }
+  50% { translate: 0 -11px; }
+}
+
+@keyframes mineaBookFloatFront {
+  0%, 100% { translate: 0 0; }
+  50% { translate: 0 -16px; }
+}
+
+@media (max-width: 850px) {
+  .booksPage .mineabooksIntro {
+    padding: 65px 22px 55px;
+  }
+
+  .booksPage .mineabooksIntroInner {
+    grid-template-columns: 1fr;
+    gap: 30px;
+  }
+
+  .booksPage .mineabooksIntro h1 {
+    font-size: clamp(42px, 9vw, 65px);
+  }
+
+  .booksPage .mineabooksArtwork {
+    height: 410px;
+    max-width: 450px;
+    width: 100%;
+    margin: 0 auto;
+    transform: scale(.82);
+    transform-origin: center top;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .booksPage .mineabooksBook {
+    animation: none !important;
+  }
+}
+
         .booksPage {
           min-height: 100vh;
           background: #fff;
@@ -201,7 +495,7 @@ export default async function BooksPage() {
         }
 
         .booksContainer {
-          max-width: 1240px;
+          max-width: 1120px;
           margin: 0 auto;
           padding: 0 32px;
         }
@@ -291,7 +585,7 @@ export default async function BooksPage() {
         /* CATALOG */
 
         .booksCatalog {
-          padding: 100px 0 120px;
+          padding: 72px 0 88px;
           background: #fff;
         }
 
@@ -326,19 +620,19 @@ export default async function BooksPage() {
         .booksGrid {
           display: grid;
           grid-template-columns: repeat(4, minmax(0, 1fr));
-          gap: 26px;
+          gap: 22px;
         }
 
         .bookItem {
           min-width: 0;
         }
 
-        .bookCover {
+        .bookCover{position:relative;
           display: block;
           position: relative;
           width: 100%;
-          aspect-ratio: 0.76;
-          border-radius: 7px 22px 22px 7px;
+          aspect-ratio: .76;
+          border-radius: 16px;
           overflow: hidden;
           box-shadow: 0 12px 25px rgba(0,0,0,.08);
           transition: transform .2s, box-shadow .2s;
@@ -349,12 +643,7 @@ export default async function BooksPage() {
           box-shadow: 0 18px 30px rgba(0,0,0,.12);
         }
 
-        .bookCover img {
-          width: 100%;
-          height: 100%;
-          object-fit: cover;
-          display: block;
-        }
+        .bookCover img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center top;display:block;}
 
         .cover0,
         .cover3 {
@@ -419,6 +708,10 @@ export default async function BooksPage() {
           margin: 0 0 9px;
         }
 
+        .bookPrices { display:flex; align-items:baseline; gap:12px; flex-wrap:wrap; }
+        .bookPrices del { color:#969aa5; font-size:16px; }
+        .bookInfo h3 a { color:inherit; }
+        .bookInfo h3 { font-family:Arial,sans-serif; font-weight:750; }
         .bookDescription {
           color: #818592;
           font-size: 13px;
@@ -458,7 +751,7 @@ export default async function BooksPage() {
           text-align: center;
           padding: 100px 20px;
           background: #f8f9fb;
-          border-radius: 22px;
+          border-radius: 16px;
         }
 
         .emptyIcon {
@@ -607,7 +900,7 @@ export default async function BooksPage() {
           }
 
           .booksCatalog {
-            padding: 70px 0;
+            padding: 48px 0;
           }
 
           .catalogHeading {
@@ -636,21 +929,111 @@ export default async function BooksPage() {
         }
 
         @media (max-width: 430px) {
-          .booksGrid {
-            grid-template-columns: 1fr;
-            max-width: 330px;
-            margin: auto;
-          }
-
-          .bookCover {
-            aspect-ratio: 0.8;
-          }
-
-          .booksLogo {
-            font-size: 27px;
-          }
+          .booksGrid { grid-template-columns:repeat(2,minmax(0,1fr));gap:24px 14px; }
+          .booksContainer { padding:0 20px; }
+          .bookInfo h3 { font-size:16px;line-height:1.45; }
+          .bookType { font-size:9px;letter-spacing:.6px; }
+          .bookPrice { font-size:16px; }
+          .placeholderCover strong { font-size:20px; }
         }
-      `}</style>
+      
+/* MINEA_BOOKS_BOX_V2 */
+
+.booksPage .booksGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 24px;
+  align-items: stretch;
+}
+
+.booksPage .bookItem {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  height: 100%;
+  padding: 16px;
+  background: #fff;
+  border: 1px solid #e5eaf0;
+  border-radius: 18px;
+  box-shadow: 0 4px 18px rgba(25,45,70,.035);
+  transition: transform .2s, box-shadow .2s;
+}
+
+.booksPage .bookItem:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 28px rgba(25,45,70,.09);
+}
+
+.booksPage .bookCover {
+  width: 100%;
+  aspect-ratio: 4 / 5;
+  border-radius: 12px;
+  overflow: hidden;
+  margin-bottom: 16px;
+  box-shadow: none;
+}
+
+.booksPage .bookCover:hover {
+  transform: none;
+  box-shadow: none;
+}
+
+.booksPage .bookCover img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  object-position: center;
+}
+
+.booksPage .bookInfo {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.booksPage .bookInfo h3 {
+  font-size: 19px;
+  line-height: 1.4;
+}
+
+@media (max-width: 1000px) {
+  .booksPage .booksGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 600px) {
+  .booksPage .booksGrid {
+    gap: 12px;
+  }
+
+  .booksPage .bookItem {
+    padding: 10px;
+    border-radius: 13px;
+  }
+
+  .booksPage .bookInfo h3 {
+    font-size: 15px;
+  }
+
+  .booksPage .bookCover {
+    border-radius: 8px;
+  }
+}
+
+
+/* MINEA_BOOK_CATALOG_BOX_V3 */
+.booksPage .booksGrid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:24px;align-items:stretch}
+.booksPage .bookItem{display:flex;flex-direction:column;height:100%;min-width:0;padding:16px;border:1px solid #e6e8f1;border-radius:20px;background:#fff;box-shadow:0 4px 18px rgba(22,35,70,.035)}
+.booksPage .bookCover{width:100%;aspect-ratio:4/5;border-radius:13px;overflow:hidden;box-shadow:none}
+.booksPage .bookCover img{object-fit:contain}
+.booksPage .bookInfo{display:flex;flex-direction:column;flex:1}
+.booksPage .mineaCatalogShort{font-size:14px;line-height:1.55;color:#858a97;margin:10px 0 18px;flex:1}
+.booksPage .bookPrices{margin-top:auto}
+@media(max-width:1000px){.booksPage .booksGrid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:600px){.booksPage .booksGrid{gap:12px}.booksPage .bookItem{padding:10px;border-radius:14px}.booksPage .mineaCatalogShort{font-size:12px}}
+
+`}</style>
     </main>
   )
 }

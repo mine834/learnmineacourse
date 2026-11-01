@@ -1,0 +1,14 @@
+
+> learn-minea@0.1.0 build
+> next build
+
+▲ Next.js 16.3.4 (Turbopack)
+- Environments: .env.local
+✓ Running next.config.ts took 26ms
+
+  Creating an optimized production build ...
+✓ Compiled successfully in 1004ms
+  Running TypeScript ...
+app/OriginalHome.js(4,40): error TS1005: ';' expected.
+Failed to type check.
+

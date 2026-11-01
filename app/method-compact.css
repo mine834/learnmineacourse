@@ -1,0 +1,97 @@
+
+/* Зөвхөн нүүр хуудасны Сурах арга барил хэсэг */
+
+.method.section,
+section.method {
+  padding-top: 64px !important;
+  padding-bottom: 64px !important;
+}
+
+.method .wrap {
+  width: min(1120px, 88%) !important;
+}
+
+.method .split {
+  gap: 64px !important;
+  align-items: center !important;
+}
+
+.method h2 {
+  font-size: clamp(32px, 3.2vw, 48px) !important;
+  line-height: 1.12 !important;
+  margin-bottom: 20px !important;
+}
+
+.method .split > div > p {
+  font-size: 16px !important;
+  line-height: 1.55 !important;
+  margin: 18px 0 28px !important;
+}
+
+.method .methodCard {
+  min-height: 0 !important;
+  padding: 30px 34px !important;
+  border-radius: 24px !important;
+}
+
+.method .methodCard strong {
+  font-size: 68px !important;
+  line-height: 1.05 !important;
+}
+
+.method .methodCard p {
+  font-size: 16px !important;
+  line-height: 1.45 !important;
+  margin: 10px 0 !important;
+}
+
+.method .methodCard hr {
+  margin: 18px 0 !important;
+}
+
+.method .btn {
+  font-size: 15px !important;
+  padding: 14px 22px !important;
+}
+
+@media (max-width: 768px) {
+  .method .wrap {
+    width: 90% !important;
+  }
+
+  .method .split {
+    gap: 28px !important;
+  }
+
+  .method h2 {
+    font-size: 34px !important;
+  }
+
+  .method .methodCard {
+    padding: 26px !important;
+  }
+}
+
+/* LearnMinea — uniform book covers */
+.booksGrid .bookCover {
+  width: 100%;
+  aspect-ratio: 3 / 4;
+  height: auto !important;
+  overflow: hidden;
+  border-radius: 20px !important;
+  background: #fff !important;
+  box-shadow: none !important;
+}
+
+.booksGrid .bookCover img {
+  display: block;
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: contain !important;
+  border-radius: 20px !important;
+}
+
+.booksGrid .bookItem {
+  min-width: 0;
+}
+

@@ -80,6 +80,7 @@ export default function StudentCoursePage() {
           await supabase
             .from("lessons")
             .select("*")
+            .eq("published", true)
             .in("module_id", moduleIds)
             .order("position", { ascending: true });
 

@@ -1,4 +1,33 @@
 'use client'
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
-const words=[['진짜?','Нээрээ юу?','Гайхах · Casual'],['말도 안 돼','Байж боломжгүй.','Итгэхгүй байх'],['됐어','Боллоо · За боль · Хэрэггүй','Өнгө аясаас хамаарна']]
-export default function KDrama(){const speak=(t)=>{if(typeof window==='undefined'||!window.speechSynthesis)return;window.speechSynthesis.cancel();const a=new SpeechSynthesisUtterance(t);a.lang='ko-KR';a.rate=.85;window.speechSynthesis.speak(a)};return <main style={{fontFamily:'Arial,sans-serif',color:'#191a1c',maxWidth:1150,margin:'auto',padding:'25px 7% 100px'}}><Link href="/" style={{font:'30px Georgia',textDecoration:'none',color:'#191a1c'}}>learnminea.</Link><div style={{marginTop:90,color:'#0079df',letterSpacing:3}}>K-DRAMA</div><h1 style={{font:'clamp(45px,6vw,90px) Georgia',margin:'25px 0'}}>K-Drama дээр сонсдог тэр хэллэгүүд</h1><p style={{fontSize:23,color:'#858995'}}>Зүгээр орчуулгыг нь биш, өнгө аястай нь ойлго.</p><div style={{marginTop:60}}>{words.map(([ko,mn,note],i)=><div key={ko} style={{display:'grid',gridTemplateColumns:'55px 1fr 65px',gap:20,alignItems:'center',borderTop:'1px solid #e1e3e8',padding:'32px 0'}}><span style={{color:'#0079df'}}>0{i+1}</span><div><div style={{font:'45px Georgia'}}>{ko}</div><p style={{fontSize:21,margin:'12px 0'}}>{mn}</p><small style={{color:'#858995'}}>{note}</small></div><button onClick={()=>speak(ko)} aria-label={`${ko} сонсох`} style={{background:'white',border:'1px solid #ddd',borderRadius:'50%',width:55,height:55,color:'#0079df',fontSize:25,cursor:'pointer'}}>♫</button></div>)}</div><Link href="/books" style={{display:'block',width:'fit-content',background:'#009afa',color:'white',textDecoration:'none',borderRadius:35,padding:'20px 30px',margin:'50px auto'}}>Цахим ном үзэх →</Link></main>}
+import PublicHeader, { PageIntro } from '../components/PublicHeader'
+import styles from '../components/PublicPages.module.css'
+const words = [['진짜?','Нээрээ юу?','Гайхах · Casual'],['말도 안 돼','Байж боломжгүй.','Итгэхгүй байх'],['됐어','Боллоо · За боль · Хэрэггүй','Өнгө аясаас хамаарна']]
+export default function KDrama() {
+  const [message, setMessage] = useState('')
+  const [playing, setPlaying] = useState('')
+  useEffect(() => () => window.speechSynthesis?.cancel(), [])
+  function speak(text) {
+    if (!window.speechSynthesis) { setMessage('Энэ browser дуудлага тоглуулахыг дэмжихгүй байна.'); return }
+    window.speechSynthesis.cancel()
+    const utterance = new SpeechSynthesisUtterance(text)
+    utterance.lang = 'ko-KR'; utterance.rate = .85
+    utterance.onend = () => setPlaying('')
+    utterance.onerror = () => { setPlaying(''); setMessage('Дуудлага тоглуулж чадсангүй. Дахин оролдоно уу.') }
+    setMessage(''); setPlaying(text); window.speechSynthesis.speak(utterance)
+  }
+  return <main className={styles.page}>
+    <PublicHeader active="/kdrama" />
+    <PageIntro eyebrow="K-DRAMA" title="K-Drama хэллэг">Драманд байнга сонсогддог үг, хэллэгийг нөхцөл, өнгө аястай нь ойлго.</PageIntro>
+    <section className={`${styles.container} ${styles.content}`}>
+      <h2 className={styles.sectionTitle}>K-Drama дээр сонсдог тэр хэллэгүүд</h2><p className={styles.subtext}>Зүгээр орчуулгыг нь биш, өнгө аястай нь ойлго.</p>
+      <div className={styles.phraseList}>{words.map(([ko,mn,note],index) => <div className={styles.phraseRow} key={ko}>
+        <span className={styles.number}>0{index+1}</span><div><h3 lang="ko" className={styles.korean}>{ko}</h3><p className={styles.meaning}>{mn}</p><span className={styles.nuance}>{note}</span></div>
+        <button type="button" className={styles.sound} onClick={() => speak(ko)} aria-label={`${ko} дуудлага сонсох`} aria-pressed={playing === ko}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4V5Z"/><path d="M15 8a6 6 0 0 1 0 8m3-11a10 10 0 0 1 0 14"/></svg></button>
+      </div>)}</div>
+      {message && <p role="status" className={styles.audioStatus}>{message}</p>}
+      <div className={styles.center}><Link href="/books" className={styles.blueButton}>K-Drama цахим ном үзэх <span>→</span></Link></div>
+    </section>
+  </main>
+}

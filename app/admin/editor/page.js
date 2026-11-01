@@ -2,6 +2,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
+import './unified-editor.css'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { supabase } from '../../lib/supabase'
@@ -21,52 +22,84 @@ const DEFAULTS = {
   ticketLeft: 58,
   ticketScale: 0.68,
   ticketRotate: 5,
+  ticketTitle: 'LEARN ✦ MINEA',
+  ticketSubtitle: 'KOREAN LEARNING · STUDENT PASS',
+  ticketLabels: 'Суралцагч\\nСургалт\\nСистем\\nАхиц',
+  ticketValues: 'Таны нэр\\nТаны сонголт\\nВидео + Quiz\\nProgress tracking',
+  ticketBottom: 'START LEARNING →',
+  ticketBackground: '#fffdfb',
+  ticketTextColor: '#222032',
+  ticketAccentColor: '#ff747b',
+
   heroTitleHtml: '',
   heroSubtitleHtml: '',
   heroEyebrowHtml: '',
 }
 
-const escapeHtml = value =>
-  String(value ?? '')
+function escapeHtml(value) {
+  return String(value ?? '')
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
     .replace(/\n/g, '<br>')
+}
 
-function RichEditor({ label, value, html, onChange }) {
-  const ref = useRef(null)
-  const selection = useRef(null)
+function safeUrl(value) {
+  try {
+    const url = new URL(value)
+    return ['http:', 'https:'].includes(url.protocol)
+  } catch {
+    return false
+  }
+}
+
+function RichEditor({
+  label, value, html, onChange,
+  fontSize, onFontSizeChange,
+  lineHeight, onLineHeightChange,
+  letterSpacing, onLetterSpacingChange,
+}) {
+  const editorRef = useRef(null)
+  const selectionRef = useRef(null)
+  const initializedRef = useRef(false)
 
   useEffect(() => {
-    if (ref.current && !ref.current.dataset.initialized) {
-      ref.current.innerHTML = html || escapeHtml(value)
-      ref.current.dataset.initialized = 'true'
-    }
+    if (!editorRef.current || initializedRef.current) return
+
+    editorRef.current.innerHTML = html || escapeHtml(value)
+    initializedRef.current = true
   }, [html, value])
 
   function rememberSelection() {
-    const sel = window.getSelection()
+    const selection = window.getSelection()
+
     if (
-      sel?.rangeCount &&
-      ref.current?.contains(sel.anchorNode)
+      selection?.rangeCount &&
+      editorRef.current?.contains(selection.anchorNode)
     ) {
-      selection.current = sel.getRangeAt(0).cloneRange()
+      selectionRef.current = selection.getRangeAt(0).cloneRange()
     }
   }
 
   function sync() {
-    if (!ref.current) return
-    onChange(ref.current.innerText, ref.current.innerHTML)
+    if (!editorRef.current) return
+
+    onChange(
+      editorRef.current.innerText,
+      editorRef.current.innerHTML
+    )
   }
 
   function command(name, argument) {
-    ref.current?.focus()
+    if (!editorRef.current) return
 
-    if (selection.current) {
-      const sel = window.getSelection()
-      sel.removeAllRanges()
-      sel.addRange(selection.current)
+    editorRef.current.focus()
+
+    if (selectionRef.current) {
+      const selection = window.getSelection()
+      selection.removeAllRanges()
+      selection.addRange(selectionRef.current)
     }
 
     document.execCommand(name, false, argument)
@@ -75,59 +108,72 @@ function RichEditor({ label, value, html, onChange }) {
   }
 
   function addLink() {
-    const url = window.prompt('Холбоосын URL (https://...)')
+    const url = window.prompt('Холбоосын URL оруулна уу:')
+
     if (!url) return
 
-    if (!/^https?:\/\//i.test(url)) {
-      window.alert('https:// эсвэл http:// холбоос оруулна уу.')
+    const cleanUrl = url.trim()
+
+    if (!safeUrl(cleanUrl)) {
+      window.alert('http:// эсвэл https:// холбоос оруулна уу.')
       return
     }
 
-    command('createLink', url)
+    command('createLink', cleanUrl)
   }
 
   function addImage() {
-    const url = window.prompt('Зургийн URL (https://...)')
+    const url = window.prompt('Зургийн URL оруулна уу:')
+
     if (!url) return
 
-    if (!/^https:\/\//i.test(url)) {
-      window.alert('https:// зургийн холбоос оруулна уу.')
+    const cleanUrl = url.trim()
+
+    if (!safeUrl(cleanUrl)) {
+      window.alert('Зургийн зөв холбоос оруулна уу.')
       return
     }
 
-    command('insertImage', url)
+    command('insertImage', cleanUrl)
   }
+
+  const tools = [
+    { title: 'Bold', label: <b>B</b>, action: () => command('bold') },
+    { title: 'Italic', label: <i>I</i>, action: () => command('italic') },
+    { title: 'Underline', label: <u>U</u>, action: () => command('underline') },
+    { title: 'Quote', label: '❞', action: () => command('formatBlock', 'blockquote') },
+    { title: 'Code', label: '</>', action: () => command('formatBlock', 'pre') },
+    { title: 'Холбоос', label: '🔗', action: addLink },
+    { title: 'Зураг', label: '▣', action: addImage },
+    { title: 'Дугаартай жагсаалт', label: '1.', action: () => command('insertOrderedList') },
+    { title: 'Жагсаалт', label: '☷', action: () => command('insertUnorderedList') },
+    { title: 'Зүүн талд', label: '☰', action: () => command('justifyLeft') },
+    { title: 'Голлуулах', label: '≡', action: () => command('justifyCenter') },
+    { title: 'Баруун талд', label: '☷', action: () => command('justifyRight') },
+    { title: 'Формат арилгах', label: 'Tx', action: () => command('removeFormat') },
+  ]
 
   return (
     <div className="richField">
       <label className="fieldLabel">{label}</label>
 
       <div className="richBox">
-        <div
-          className="toolbar"
-          onMouseUp={rememberSelection}
-        >
+        <div className="toolbar">
           <select
             aria-label="Фонт"
             defaultValue="Arial"
-            onChange={e =>
-              command('fontName', e.target.value)
-            }
+            onChange={e => command('fontName', e.target.value)}
           >
             <option value="Arial">Sans Serif</option>
             <option value="Georgia">Serif</option>
-            <option value="Times New Roman">
-              Times New Roman
-            </option>
+            <option value="Times New Roman">Times New Roman</option>
             <option value="Courier New">Monospace</option>
           </select>
 
           <select
             aria-label="Бичвэрийн формат"
             defaultValue="p"
-            onChange={e =>
-              command('formatBlock', e.target.value)
-            }
+            onChange={e => command('formatBlock', e.target.value)}
           >
             <option value="p">Normal</option>
             <option value="h1">Heading 1</option>
@@ -135,176 +181,84 @@ function RichEditor({ label, value, html, onChange }) {
             <option value="h3">Heading 3</option>
           </select>
 
-          <select
-            aria-label="Фонтын хэмжээ"
-            defaultValue="3"
-            onChange={e =>
-              command('fontSize', e.target.value)
-            }
-          >
-            <option value="1">Small</option>
-            <option value="3">Normal</option>
-            <option value="5">Large</option>
-            <option value="7">Extra large</option>
-          </select>
+          <label className="mineaToolbarField">
+            <span>Хэмжээ</span>
+            <input
+              type="number"
+              min="8"
+              max="160"
+              step="1"
+              value={fontSize ?? 18}
+              onChange={e => onFontSizeChange?.(Number(e.target.value))}
+              aria-label={`${label} үсгийн хэмжээ`}
+            />
+            <span>px</span>
+          </label>
 
-          <button
-            type="button"
-            title="Bold"
-            onMouseDown={e => e.preventDefault()}
-            onClick={() => command('bold')}
-          >
-            <b>B</b>
-          </button>
+          <label className="mineaToolbarField">
+            <span>Мөрийн зай</span>
+            <input
+              type="number"
+              min="0.8"
+              max="3"
+              step="0.1"
+              value={lineHeight ?? 1.3}
+              onChange={e => onLineHeightChange?.(Number(e.target.value))}
+            />
+          </label>
 
-          <button
-            type="button"
-            title="Italic"
-            onMouseDown={e => e.preventDefault()}
-            onClick={() => command('italic')}
-          >
-            <i>I</i>
-          </button>
+          <label className="mineaToolbarField">
+            <span>Үсгийн зай</span>
+            <input
+              type="number"
+              min="-5"
+              max="20"
+              step="0.5"
+              value={letterSpacing ?? 0}
+              onChange={e => onLetterSpacingChange?.(Number(e.target.value))}
+            />
+            <span>px</span>
+          </label>
 
-          <button
-            type="button"
-            title="Underline"
-            onMouseDown={e => e.preventDefault()}
-            onClick={() => command('underline')}
-          >
-            <u>U</u>
-          </button>
+          {tools.map(tool => (
+            <button
+              key={tool.title}
+              type="button"
+              title={tool.title}
+              onMouseDown={e => e.preventDefault()}
+              onClick={tool.action}
+            >
+              {tool.label}
+            </button>
+          ))}
 
-          <button
-            type="button"
-            title="Quote"
-            onMouseDown={e => e.preventDefault()}
-            onClick={() =>
-              command('formatBlock', 'blockquote')
-            }
-          >
-            ❞
-          </button>
-
-          <button
-            type="button"
-            title="Code"
-            onMouseDown={e => e.preventDefault()}
-            onClick={() =>
-              command('formatBlock', 'pre')
-            }
-          >
-            {'</>'}
-          </button>
-
-          <button
-            type="button"
-            title="Холбоос"
-            onMouseDown={e => e.preventDefault()}
-            onClick={addLink}
-          >
-            🔗
-          </button>
-
-          <button
-            type="button"
-            title="Зураг"
-            onMouseDown={e => e.preventDefault()}
-            onClick={addImage}
-          >
-            ▣
-          </button>
-
-          <button
-            type="button"
-            title="Дугаартай жагсаалт"
-            onMouseDown={e => e.preventDefault()}
-            onClick={() =>
-              command('insertOrderedList')
-            }
-          >
-            ☷
-          </button>
-
-          <button
-            type="button"
-            title="Жагсаалт"
-            onMouseDown={e => e.preventDefault()}
-            onClick={() =>
-              command('insertUnorderedList')
-            }
-          >
-            ≡
-          </button>
-
-          <button
-            type="button"
-            title="Зүүн талд"
-            onMouseDown={e => e.preventDefault()}
-            onClick={() => command('justifyLeft')}
-          >
-            ☰
-          </button>
-
-          <button
-            type="button"
-            title="Голлуулах"
-            onMouseDown={e => e.preventDefault()}
-            onClick={() => command('justifyCenter')}
-          >
-            ≡
-          </button>
-
-          <button
-            type="button"
-            title="Баруун талд"
-            onMouseDown={e => e.preventDefault()}
-            onClick={() => command('justifyRight')}
-          >
-            ☷
-          </button>
-
-          <label
-            className="colorTool"
-            title="Бичвэрийн өнгө"
-          >
+          <label className="colorTool" title="Бичвэрийн өнгө">
             A
             <input
               type="color"
               defaultValue="#242237"
-              onChange={e =>
-                command('foreColor', e.target.value)
-              }
+              onChange={e => command('foreColor', e.target.value)}
             />
           </label>
 
-          <label
-            className="colorTool"
-            title="Тодруулагч"
-          >
+          <label className="colorTool" title="Тодруулагч">
             ▧
             <input
               type="color"
               defaultValue="#fff3b0"
-              onChange={e =>
-                command('hiliteColor', e.target.value)
-              }
+              onChange={e => command('hiliteColor', e.target.value)}
             />
           </label>
-
-          <button
-            type="button"
-            title="Формат арилгах"
-            onMouseDown={e => e.preventDefault()}
-            onClick={() => command('removeFormat')}
-          >
-            Tx
-          </button>
         </div>
 
         <div
-          ref={ref}
+          ref={editorRef}
           className="editableArea"
+          style={{
+            fontSize: `${Number(fontSize) || 18}px`,
+            lineHeight: Number(lineHeight) || 1.3,
+            letterSpacing: `${Number(letterSpacing) || 0}px`,
+          }}
           contentEditable
           suppressContentEditableWarning
           onInput={sync}
@@ -338,44 +292,56 @@ export default function SiteEditorPage() {
   const [message, setMessage] = useState('')
 
   useEffect(() => {
+    let active = true
+
     async function initialize() {
-      const { data: auth } =
-        await supabase.auth.getUser()
+      try {
+        const { data: auth, error: authError } =
+          await supabase.auth.getUser()
 
-      if (!auth?.user) {
-        router.replace('/login')
-        return
+        if (authError) throw authError
+
+        if (!auth?.user) {
+          router.replace('/login')
+          return
+        }
+
+        const { data: allowed, error: roleError } =
+          await supabase.rpc('is_admin')
+
+        if (roleError || allowed !== true) {
+          router.replace('/')
+          return
+        }
+
+        const { data, error } = await supabase
+          .from('site_editor_settings')
+          .select('content')
+          .eq('id', 'homepage')
+          .maybeSingle()
+
+        if (error) throw error
+
+        if (active && data?.content) {
+          setSettings({
+            ...DEFAULTS,
+            ...data.content,
+          })
+        }
+      } catch (error) {
+        if (active) {
+          setMessage(`Ачаалж чадсангүй: ${error.message}`)
+        }
+      } finally {
+        if (active) setLoading(false)
       }
-
-      const {
-        data: allowed,
-        error: roleError,
-      } = await supabase.rpc('is_admin')
-
-      if (roleError || allowed !== true) {
-        router.replace('/')
-        return
-      }
-
-      const { data, error } = await supabase
-        .from('site_editor_settings')
-        .select('content')
-        .eq('id', 'homepage')
-        .maybeSingle()
-
-      if (error) {
-        setMessage(error.message)
-      } else if (data?.content) {
-        setSettings({
-          ...DEFAULTS,
-          ...data.content,
-        })
-      }
-
-      setLoading(false)
     }
 
     initialize()
+
+    return () => {
+      active = false
+    }
   }, [router])
 
   function change(key, value) {
@@ -399,104 +365,117 @@ export default function SiteEditorPage() {
     const file = event.target.files?.[0]
     if (!file) return
 
-    if (
-      ![
-        'image/jpeg',
-        'image/png',
-        'image/webp',
-      ].includes(file.type)
-    ) {
-      setMessage(
-        'JPG, PNG эсвэл WEBP зураг сонгоно уу.'
-      )
+    if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
+      setMessage('JPG, PNG эсвэл WEBP зураг сонгоно уу.')
       return
     }
 
     if (file.size > 10 * 1024 * 1024) {
-      setMessage(
-        'Зураг 10 MB-аас бага байх ёстой.'
-      )
+      setMessage('Зураг 10 MB-аас бага байх ёстой.')
       return
     }
 
     setUploading(true)
     setMessage('')
 
-    const extension =
-      file.type === 'image/png'
-        ? 'png'
-        : file.type === 'image/webp'
-        ? 'webp'
-        : 'jpg'
+    try {
+      const extension =
+        file.type === 'image/png'
+          ? 'png'
+          : file.type === 'image/webp'
+          ? 'webp'
+          : 'jpg'
 
-    const path =
-      `homepage/${crypto.randomUUID()}.${extension}`
+      const path = `homepage/${crypto.randomUUID()}.${extension}`
 
-    const { error } = await supabase.storage
-      .from('site-images')
-      .upload(path, file, {
-        contentType: file.type,
-        upsert: false,
-      })
+      const { error } = await supabase.storage
+        .from('site-images')
+        .upload(path, file, {
+          contentType: file.type,
+          upsert: false,
+        })
 
-    if (error) {
-      setMessage(
-        `Зураг оруулахад алдаа гарлаа: ${error.message}`
-      )
-    } else {
+      if (error) throw error
+
       const { data } = supabase.storage
         .from('site-images')
         .getPublicUrl(path)
 
       change('heroImage', data.publicUrl)
-
-      setMessage(
-        'Зураг орлоо. Доорх ногоон Хадгалах товчийг дарна уу.'
-      )
+      setMessage('Зураг орлоо. Одоо Хадгалах товчийг дарна уу.')
+    } catch (error) {
+      setMessage(`Зураг оруулахад алдаа гарлаа: ${error.message}`)
+    } finally {
+      setUploading(false)
+      event.target.value = ''
     }
-
-    setUploading(false)
   }
 
   async function save() {
+    if (saving || uploading) return
+
     setSaving(true)
     setMessage('')
 
-    const { error } = await supabase
-      .from('site_editor_settings')
-      .upsert(
-        {
-          id: 'homepage',
-          content: settings,
-          updated_at: new Date().toISOString(),
-        },
-        { onConflict: 'id' }
-      )
+    const controller = new AbortController()
+    const timeout = setTimeout(() => controller.abort(), 15000)
 
-    setSaving(false)
+    try {
+      const { data, error } = await supabase
+        .from('site_editor_settings')
+        .upsert(
+          {
+            id: 'homepage',
+            content: settings,
+            updated_at: new Date().toISOString(),
+          },
+          { onConflict: 'id' }
+        )
+        .select('id, updated_at')
+        .abortSignal(controller.signal)
+        .single()
 
-    setMessage(
-      error
-        ? `Хадгалахад алдаа гарлаа: ${error.message}`
-        : 'Тохиргоо Supabase-д амжилттай хадгалагдлаа.'
-    )
+      if (error) throw error
+
+      if (!data || data.id !== 'homepage') {
+        throw new Error('Хадгалсан мөрийг баталгаажуулж чадсангүй.')
+      }
+
+      setMessage('Тохиргоо Supabase-д амжилттай хадгалагдлаа.')
+    } catch (error) {
+      const detail = controller.signal.aborted
+        ? 'Supabase 15 секундэд хариу өгсөнгүй. Холболт болон хүсэлтийн төлөвийг шалгана уу.'
+        : (error?.message || 'Тодорхойгүй алдаа')
+
+      setMessage('Хадгалахад алдаа гарлаа: ' + detail)
+      console.error('LearnMinea save error:', error)
+    } finally {
+      clearTimeout(timeout)
+      setSaving(false)
+    }
   }
 
   if (loading) {
-    return (
-      <div style={{ padding: 60 }}>
-        Admin эрх шалгаж байна...
-      </div>
-    )
+    return <div style={{ padding: 60 }}>Admin эрх шалгаж байна...</div>
   }
 
   return (
     <main className="siteEditor">
       <header className="pageHeading">
-        <Link href="/admin">
-          ← Admin руу буцах
-        </Link>
-
+          <div className="mineaEditorActions">
+            <a href="/" target="_blank" rel="noopener noreferrer" className="mineaOpenSite">
+              Сайтыг нээх ↗
+            </a>
+            <button
+              type="button"
+              className="saveButton"
+              onClick={save}
+              disabled={saving || uploading}
+            >
+              {saving ? 'Хадгалж байна...' : 'Бүгдийг хадгалах'}
+            </button>
+          </div>
+        <Link href="/admin">← Admin руу буцах</Link>
         <h1>Сайтын редактор</h1>
         <p>LEARN·MINEA · Homepage Settings</p>
       </header>
@@ -516,6 +495,12 @@ export default function SiteEditorPage() {
               label="Жижиг гарчиг"
               value={settings.heroEyebrow}
               html={settings.heroEyebrowHtml}
+              fontSize={settings.heroEyebrowFontSize ?? 14}
+              onFontSizeChange={value => change('heroEyebrowFontSize', value)}
+              lineHeight={settings.heroEyebrowLineHeight ?? 1.3}
+              onLineHeightChange={value => change('heroEyebrowLineHeight', value)}
+              letterSpacing={settings.heroEyebrowLetterSpacing ?? 0}
+              onLetterSpacingChange={value => change('heroEyebrowLetterSpacing', value)}
               onChange={(text, html) =>
                 changeRich('heroEyebrow', text, html)
               }
@@ -525,6 +510,12 @@ export default function SiteEditorPage() {
               label="Үндсэн гарчиг"
               value={settings.heroTitle}
               html={settings.heroTitleHtml}
+              fontSize={settings.heroFontSize ?? 72}
+              onFontSizeChange={value => change('heroFontSize', value)}
+              lineHeight={settings.heroTitleLineHeight ?? 1.3}
+              onLineHeightChange={value => change('heroTitleLineHeight', value)}
+              letterSpacing={settings.heroTitleLetterSpacing ?? 0}
+              onLetterSpacingChange={value => change('heroTitleLetterSpacing', value)}
               onChange={(text, html) =>
                 changeRich('heroTitle', text, html)
               }
@@ -534,77 +525,26 @@ export default function SiteEditorPage() {
               label="Тайлбар"
               value={settings.heroSubtitle}
               html={settings.heroSubtitleHtml}
+              fontSize={settings.heroTextSize ?? 18}
+              onFontSizeChange={value => change('heroTextSize', value)}
+              lineHeight={settings.heroSubtitleLineHeight ?? 1.3}
+              onLineHeightChange={value => change('heroSubtitleLineHeight', value)}
+              letterSpacing={settings.heroSubtitleLetterSpacing ?? 0}
+              onLetterSpacingChange={value => change('heroSubtitleLetterSpacing', value)}
               onChange={(text, html) =>
                 changeRich('heroSubtitle', text, html)
               }
             />
           </section>
 
-          <section className="panel">
-            <h2>02. Үсгийн хэмжээ</h2>
-
-            <Field
-              label={`Үндсэн гарчиг — ${settings.heroFontSize}px`}
-            >
-              <input
-                type="range"
-                min="32"
-                max="110"
-                value={settings.heroFontSize}
-                onChange={e =>
-                  change(
-                    'heroFontSize',
-                    Number(e.target.value)
-                  )
-                }
-              />
-            </Field>
-
-            <Field
-              label={`Тайлбар — ${settings.heroTextSize}px`}
-            >
-              <input
-                type="range"
-                min="12"
-                max="28"
-                value={settings.heroTextSize}
-                onChange={e =>
-                  change(
-                    'heroTextSize',
-                    Number(e.target.value)
-                  )
-                }
-              />
-            </Field>
-
-            <Field
-              label={`Бусад гарчиг — ${settings.headingFontSize}px`}
-            >
-              <input
-                type="range"
-                min="24"
-                max="76"
-                value={settings.headingFontSize}
-                onChange={e =>
-                  change(
-                    'headingFontSize',
-                    Number(e.target.value)
-                  )
-                }
-              />
-            </Field>
-          </section>
-
-          <section className="panel">
-            <h2>03. Өнгө</h2>
+<section className="panel">
+            <h2>02. Өнгө</h2>
 
             <Field label="Үндсэн цэнхэр">
               <input
                 type="color"
                 value={settings.primaryColor}
-                onChange={e =>
-                  change('primaryColor', e.target.value)
-                }
+                onChange={e => change('primaryColor', e.target.value)}
               />
             </Field>
 
@@ -612,9 +552,7 @@ export default function SiteEditorPage() {
               <input
                 type="color"
                 value={settings.heroColor}
-                onChange={e =>
-                  change('heroColor', e.target.value)
-                }
+                onChange={e => change('heroColor', e.target.value)}
               />
             </Field>
           </section>
@@ -631,22 +569,18 @@ export default function SiteEditorPage() {
               />
             </Field>
 
-            {uploading && (
-              <p>Зураг оруулж байна...</p>
-            )}
+            {uploading && <p>Зураг оруулж байна...</p>}
 
             <Field label="Зургийн URL">
               <input
                 type="url"
                 value={settings.heroImage}
-                onChange={e =>
-                  change('heroImage', e.target.value)
-                }
+                onChange={e => change('heroImage', e.target.value)}
                 placeholder="https://..."
               />
             </Field>
 
-            {settings.heroImage && (
+            {settings.heroImage && safeUrl(settings.heroImage) && (
               <img
                 className="uploadedImage"
                 src={settings.heroImage}
@@ -657,9 +591,7 @@ export default function SiteEditorPage() {
             <button
               type="button"
               className="secondaryButton"
-              onClick={() =>
-                change('heroImage', '')
-              }
+              onClick={() => change('heroImage', '')}
             >
               Зургийг тохиргооноос хасах
             </button>
@@ -667,89 +599,65 @@ export default function SiteEditorPage() {
 
           <section className="panel">
             <h2>05. Ticket байрлал</h2>
+<h3>Ticket бичвэр</h3>
+{[
+  ['ticketTitle', 'Гарчиг'],
+  ['ticketSubtitle', 'Дэд гарчиг'],
+  ['ticketLabels', 'Зүүн талын 4 мөр'],
+  ['ticketValues', 'Баруун талын 4 мөр'],
+  ['ticketBottom', 'Доод бичвэр'],
+].map(([key, label]) => (
+  <Field key={key} label={label}>
+    <textarea
+      className="ticketTextInput"
+      rows={key === 'ticketLabels' || key === 'ticketValues' ? 4 : 2}
+      value={String(settings[key] ?? '').replace(/\\n/g, '\n')}
+      onChange={e => change(key, e.target.value)}
+    />
+  </Field>
+))}
 
-            <Field
-              label={`Дээрээс — ${settings.ticketTop}%`}
-            >
-              <input
-                type="range"
-                min="0"
-                max="100"
-                value={settings.ticketTop}
-                onChange={e =>
-                  change(
-                    'ticketTop',
-                    Number(e.target.value)
-                  )
-                }
-              />
-            </Field>
+<h3>Ticket өнгө</h3>
+<div className="ticketColorRow">
+  {[
+    ['ticketBackground', 'Дэвсгэр'],
+    ['ticketTextColor', 'Бичвэр'],
+    ['ticketAccentColor', 'Тодруулга'],
+  ].map(([key, label]) => (
+    <Field key={key} label={label}>
+      <input
+        type="color"
+        value={settings[key] ?? '#ffffff'}
+        onChange={e => change(key, e.target.value)}
+      />
+    </Field>
+  ))}
+</div>
 
-            <Field
-              label={`Зүүнээс — ${settings.ticketLeft}%`}
-            >
-              <input
-                type="range"
-                min="0"
-                max="100"
-                value={settings.ticketLeft}
-                onChange={e =>
-                  change(
-                    'ticketLeft',
-                    Number(e.target.value)
-                  )
-                }
-              />
-            </Field>
 
-            <Field
-              label={`Хэмжээ — ${settings.ticketScale}`}
-            >
-              <input
-                type="range"
-                min="0.3"
-                max="1.2"
-                step="0.01"
-                value={settings.ticketScale}
-                onChange={e =>
-                  change(
-                    'ticketScale',
-                    Number(e.target.value)
-                  )
-                }
-              />
-            </Field>
-
-            <Field
-              label={`Хазайлт — ${settings.ticketRotate}°`}
-            >
-              <input
-                type="range"
-                min="-20"
-                max="20"
-                value={settings.ticketRotate}
-                onChange={e =>
-                  change(
-                    'ticketRotate',
-                    Number(e.target.value)
-                  )
-                }
-              />
-            </Field>
+            {[
+              ['ticketTop', 'Дээрээс', 0, 100, 1, '%'],
+              ['ticketLeft', 'Зүүнээс', 0, 100, 1, '%'],
+              ['ticketScale', 'Хэмжээ', 0.3, 1.2, 0.01, ''],
+              ['ticketRotate', 'Хазайлт', -20, 20, 1, '°'],
+            ].map(([key, label, min, max, step, unit]) => (
+              <Field
+                key={key}
+                label={`${label} — ${settings[key]}${unit}`}
+              >
+                <input
+                  type="range"
+                  min={min}
+                  max={max}
+                  step={step}
+                  value={settings[key]}
+                  onChange={e => change(key, Number(e.target.value))}
+                />
+              </Field>
+            ))}
           </section>
 
-          <div className="saveFooter">
-            <button
-              type="button"
-              className="saveButton"
-              onClick={save}
-              disabled={saving || uploading}
-            >
-              {saving
-                ? 'Хадгалж байна...'
-                : 'Хадгалах'}
-            </button>
-          </div>
+
         </div>
 
         <aside className="previewPanel">
@@ -760,20 +668,15 @@ export default function SiteEditorPage() {
 
           <div
             className="heroPreview"
-            style={{
-              background: settings.heroColor,
-            }}
+            style={{ background: settings.heroColor }}
           >
             <div className="previewText">
-              <small>
-                {settings.heroEyebrow}
-              </small>
+              <small>{settings.heroEyebrow}</small>
 
               <h2
                 style={{
                   fontSize: `clamp(24px, ${
-                    Number(settings.heroFontSize) *
-                    0.45
+                    Number(settings.heroFontSize) * 0.45
                   }px, 42px)`,
                 }}
               >
@@ -784,8 +687,7 @@ export default function SiteEditorPage() {
                 style={{
                   fontSize: `${Math.max(
                     11,
-                    Number(settings.heroTextSize) *
-                      0.75
+                    Number(settings.heroTextSize) * 0.75
                   )}px`,
                 }}
               >
@@ -793,7 +695,7 @@ export default function SiteEditorPage() {
               </p>
             </div>
 
-            {settings.heroImage && (
+            {settings.heroImage && safeUrl(settings.heroImage) && (
               <img
                 className="heroPreviewImage"
                 src={settings.heroImage}
@@ -805,25 +707,16 @@ export default function SiteEditorPage() {
               <div
                 className="ticketPreview"
                 style={{
-                  transform: `rotate(${
-                    settings.ticketRotate
-                  }deg) scale(${Math.min(
-                    1,
-                    Math.max(
-                      0.5,
-                      Number(settings.ticketScale)
-                    )
-                  )})`,
+                  top: `${settings.ticketTop}%`,
+                  left: `${settings.ticketLeft}%`,
+                  transform: `translate(-50%, -50%) rotate(${settings.ticketRotate}deg) scale(${settings.ticketScale})`,
                 }}
               >
                 <strong>
                   LEARN <span>✦</span> MINEA
                 </strong>
 
-                <small>
-                  KOREAN LEARNING · STUDENT PASS
-                </small>
-
+                <small>KOREAN LEARNING · STUDENT PASS</small>
                 <hr />
 
                 <div>
@@ -847,7 +740,6 @@ export default function SiteEditorPage() {
                 </div>
 
                 <hr />
-
                 <em>START LEARNING →</em>
               </div>
             </div>
@@ -856,9 +748,6 @@ export default function SiteEditorPage() {
           <p className="previewNote">
             Энэ бол редакторын багасгасан жишээ.
             Нүүр хуудасны яг ижил rendering биш.
-            Бичвэрийн формат нийтэд харагдахын
-            тулд нүүр хуудасны код мөн HTML
-            форматыг унших шаардлагатай.
           </p>
         </aside>
       </div>
@@ -867,10 +756,10 @@ export default function SiteEditorPage() {
         .siteEditor {
           --blue: #0879d1;
           --brown: #592d1f;
-          background: #f5f7fa;
-          color: #202126;
           min-height: 100vh;
           padding: 30px;
+          background: #f5f7fa;
+          color: #202126;
           font-family: Arial, Helvetica, sans-serif;
         }
 
@@ -911,9 +800,7 @@ export default function SiteEditorPage() {
 
         .editorGrid {
           display: grid;
-          grid-template-columns:
-            minmax(0, 1.05fr)
-            minmax(0, 1fr);
+          grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
           gap: 22px;
           align-items: start;
         }
@@ -927,7 +814,7 @@ export default function SiteEditorPage() {
 
         .panel,
         .previewPanel {
-          background: #fff;
+          background: white;
           border: 1px solid #dfe5ed;
           border-radius: 18px;
           padding: 25px;
@@ -967,6 +854,20 @@ export default function SiteEditorPage() {
           font-size: 14px;
         }
 
+        .field input[type=file] {
+          font-size: 13px;
+        }
+
+        .field input[type=file]::file-selector-button {
+          background: #e7f2ff;
+          color: #0879d1;
+          border: 1px solid #b9dbfb;
+          border-radius: 8px;
+          padding: 8px 12px;
+          margin-right: 14px;
+          cursor: pointer;
+        }
+
         .field input[type=range] {
           width: 100%;
           accent-color: var(--blue);
@@ -985,7 +886,7 @@ export default function SiteEditorPage() {
           border: 1px solid #cbd0d5;
           border-radius: 10px;
           overflow: hidden;
-          background: #fff;
+          background: white;
         }
 
         .toolbar {
@@ -1024,7 +925,6 @@ export default function SiteEditorPage() {
         }
 
         .colorTool {
-          position: relative;
           display: inline-flex;
           flex-direction: column;
           align-items: center;
@@ -1055,8 +955,7 @@ export default function SiteEditorPage() {
         }
 
         .editableArea:focus {
-          box-shadow:
-            inset 0 0 0 2px #b7dafa;
+          box-shadow: inset 0 0 0 2px #b7dafa;
         }
 
         .editableArea img {
@@ -1071,40 +970,41 @@ export default function SiteEditorPage() {
         .uploadedImage {
           display: block;
           width: 100%;
-          max-height: 180px;
+          max-width: 300px;
+          max-height: 220px;
           object-fit: contain;
-          margin-bottom: 15px;
+          border-radius: 12px;
+          margin: 15px 0;
         }
 
         .secondaryButton {
-          border: 0;
           background: #e7f2ff;
-          color: var(--blue);
-          padding: 11px 14px;
-          border-radius: 9px;
+          color: #0879d1;
+          border: 0;
+          border-radius: 10px;
+          padding: 11px 15px;
           cursor: pointer;
         }
 
         .saveFooter {
           display: flex;
           justify-content: flex-start;
-          padding: 3px 0 30px;
+          padding-bottom: 20px;
         }
 
         .saveButton {
-          background: #00d67b;
+          background: #168b57;
           color: white;
           border: 0;
-          padding: 15px 25px;
-          border-radius: 11px;
-          font-size: 19px;
-          font-weight: 750;
+          border-radius: 10px;
+          padding: 14px 32px;
+          font-size: 15px;
+          font-weight: 700;
           cursor: pointer;
         }
 
         .saveButton:disabled {
-          opacity: 0.55;
-          cursor: not-allowed;
+          opacity: 0.6;
         }
 
         .previewPanel {
@@ -1112,137 +1012,121 @@ export default function SiteEditorPage() {
           top: 20px;
         }
 
-        .previewHeading p,
-        .previewNote {
+        .previewHeading p {
           color: #818793;
           font-size: 12px;
-          line-height: 1.6;
+          margin: -14px 0 20px;
         }
 
         .heroPreview {
           position: relative;
           min-height: 390px;
-          width: 100%;
+          border-radius: 15px;
+          padding: 28px;
           overflow: hidden;
-          border-radius: 16px;
-          padding: 32px;
-          display: grid;
-          grid-template-columns:
-            minmax(0, 1fr)
-            minmax(0, 1fr);
-          gap: 18px;
-          align-items: center;
         }
 
         .previewText {
-          min-width: 0;
           position: relative;
-          z-index: 1;
+          z-index: 2;
+          max-width: 60%;
+          color: #202126;
         }
 
         .previewText small {
-          color: #fff;
           display: block;
           font-size: 9px;
-          letter-spacing: 1.3px;
+          letter-spacing: 1px;
+          font-weight: bold;
           margin-bottom: 15px;
         }
 
         .previewText h2 {
-          color: #fff;
-          font-family: Georgia, serif;
-          font-weight: 400;
-          line-height: 1.15;
-          overflow-wrap: anywhere;
-          margin: 0 0 17px;
+          line-height: 1.1;
+          margin: 0 0 15px;
+          font-weight: 800;
         }
 
         .previewText p {
-          color: #344d64;
-          line-height: 1.6;
-          margin: 0;
-          overflow-wrap: anywhere;
+          font-size: 13px;
+          line-height: 1.5;
         }
 
         .heroPreviewImage {
           position: absolute;
-          right: 0;
-          bottom: 0;
-          width: 35%;
-          max-height: 60%;
+          right: 5%;
+          bottom: 8%;
+          width: 30%;
+          max-height: 75%;
           object-fit: contain;
-          pointer-events: none;
         }
 
         .ticketArea {
-          min-width: 0;
-          display: flex;
-          justify-content: center;
-          align-items: center;
-          position: relative;
-          z-index: 2;
+          position: absolute;
+          inset: 0;
+          pointer-events: none;
         }
 
         .ticketPreview {
-          width: 280px;
-          flex-shrink: 0;
+          position: absolute;
+          width: 210px;
           background: white;
-          color: #242237;
+          border: 1px solid #e5e5e5;
           border-radius: 14px;
-          padding: 23px;
-          box-shadow: 0 12px 30px #00000020;
+          padding: 17px;
+          box-shadow: 0 10px 28px #0000001a;
           transform-origin: center;
+          color: #592d1f;
         }
 
         .ticketPreview > strong {
-          font-size: 22px;
-          letter-spacing: -0.8px;
           display: block;
+          font-size: 15px;
           white-space: nowrap;
         }
 
-        .ticketPreview strong span {
-          color: #ff777e;
+        .ticketPreview > strong span {
+          color: #0879d1;
         }
 
         .ticketPreview > small {
           display: block;
           font-size: 7px;
-          color: #8c8b99;
-          letter-spacing: 1.4px;
-          margin: 12px 0;
+          margin: 8px 0;
         }
 
         .ticketPreview hr {
           border: 0;
-          border-top: 2px dashed #d9d4e4;
-          margin: 16px 0;
+          border-top: 1px dashed #d9d9d9;
+          margin: 12px 0;
         }
 
         .ticketPreview div {
           display: flex;
           justify-content: space-between;
           gap: 8px;
-          margin: 10px 0;
-          font-size: 10px;
+          font-size: 9px;
+          margin: 9px 0;
         }
 
         .ticketPreview div span {
-          color: #8c8b99;
-        }
-
-        .ticketPreview div b {
-          text-align: right;
+          color: #888;
         }
 
         .ticketPreview em {
-          font-size: 11px;
+          font-size: 9px;
           font-style: normal;
-          font-weight: 800;
-          color: var(--blue);
+          font-weight: bold;
         }
 
-        @media (max-width: 1150px) {
+        .previewNote {
+          color: #818793;
+          font-size: 12px;
+          line-height: 1.7;
+          margin: 20px 0 0;
+        }
+
+        @media (max-width: 1100px) {
           .editorGrid {
             grid-template-columns: 1fr;
           }
@@ -1252,24 +1136,22 @@ export default function SiteEditorPage() {
           }
         }
 
-        @media (max-width: 650px) {
+        @media (max-width: 600px) {
           .siteEditor {
             padding: 15px;
           }
 
           .panel,
           .previewPanel {
-            padding: 17px;
+            padding: 18px;
           }
 
           .heroPreview {
-            grid-template-columns: 1fr;
-            padding: 24px;
-            gap: 25px;
+            min-height: 320px;
           }
 
-          .ticketPreview {
-            width: 260px;
+          .previewText {
+            max-width: 70%;
           }
         }
       `}</style>

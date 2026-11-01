@@ -1,0 +1,458 @@
+
+/* LEARNMINEA — HEADER + HERO
+   Зөвхөн нүүр хуудасны эхний хэсэг
+*/
+
+.mineaSite {
+  --hero-blue: #79b8fa;
+}
+
+/* Header */
+
+.mineaSite .header {
+  background: #79b8fa !important;
+  border-bottom: 1px solid rgba(255,255,255,.45) !important;
+  box-shadow: none !important;
+}
+
+.mineaSite .headerInner {
+  min-height: 86px;
+  width: min(1480px, calc(100% - 72px));
+}
+
+.mineaSite .logo {
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 35px;
+  font-weight: 400 !important;
+  letter-spacing: -1.2px;
+}
+
+.mineaSite .nav {
+  gap: 38px;
+}
+
+.mineaSite .nav a {
+  font-size: 16px;
+  font-weight: 400 !important;
+  letter-spacing: 0;
+}
+
+.mineaSite .languages {
+  background: rgba(255,255,255,.5);
+  border: 1px solid rgba(255,255,255,.35);
+}
+
+.mineaSite .languages button {
+  font-size: 12px;
+  font-weight: 400 !important;
+  color: #29384b;
+}
+
+.mineaSite .languages button.active {
+  background: white;
+  color: #172338;
+}
+
+.mineaSite .surveyIcon {
+  background: rgba(255,255,255,.55);
+  border: 0;
+}
+
+/* HERO — зөөлөн цэнхэр өнгө */
+
+.mineaSite .hero {
+  background:
+    radial-gradient(
+      ellipse at 72% 48%,
+      rgba(108,169,255,.32) 0%,
+      transparent 57%
+    ),
+    linear-gradient(
+      115deg,
+      #77b5fa 0%,
+      #79b8fa 38%,
+      #a9d2ff 100%
+    ) !important;
+
+  color: #fff;
+  overflow: hidden;
+}
+
+.mineaSite .heroGrid {
+  width: min(1480px, calc(100% - 72px));
+  min-height: 760px;
+  grid-template-columns: 1fr 1fr;
+  gap: 70px;
+  padding: 90px 0;
+}
+
+.mineaSite .heroCopy {
+  position: relative;
+  z-index: 2;
+}
+
+.mineaSite .eyebrow.white {
+  font-size: 14px;
+  font-weight: 400 !important;
+  letter-spacing: 3px;
+  color: #fff;
+  margin-bottom: 32px;
+}
+
+.mineaSite .hero h1 {
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(62px, 5.7vw, 105px);
+  font-weight: 400 !important;
+  letter-spacing: -2px;
+  line-height: 1.04;
+  margin-bottom: 30px;
+  color: #fff;
+}
+
+.mineaSite .heroCopy > p {
+  color: #52677f !important;
+  font-size: 19px;
+  font-weight: 400;
+  line-height: 1.75;
+  max-width: 650px;
+}
+
+/* Search */
+
+.mineaSite .heroSearch {
+  max-width: 700px;
+  min-height: 76px;
+  margin-top: 34px;
+  padding: 7px;
+  border-radius: 50px;
+  background: #fff;
+  box-shadow: 0 12px 30px rgba(34,87,144,.13);
+}
+
+.mineaSite .heroSearch input {
+  font-size: 16px;
+  font-weight: 400;
+}
+
+.mineaSite .heroSearch button {
+  background: #0988f5 !important;
+  color: white;
+  font-size: 16px;
+  font-weight: 500 !important;
+  padding: 17px 27px;
+  box-shadow: 0 4px 0 #086dc7;
+}
+
+/* Баруун талын дүрслэл */
+
+.mineaSite .heroArt {
+  position: relative;
+  width: 100%;
+  min-height: 560px;
+  display: block;
+  isolation: isolate;
+}
+
+/* Голын шаргал ticket */
+
+.mineaSite .studentPass {
+  position: absolute !important;
+  top: 50% !important;
+  left: 55% !important;
+
+  width: 340px !important;
+  max-width: none !important;
+  padding: 28px !important;
+
+  margin: 0 !important;
+  border-radius: 20px;
+  background: #fff9ee;
+  color: #592d1f;
+
+  transform:
+    translate(-50%, -50%)
+    rotate(7deg)
+    scale(.62) !important;
+
+  transform-origin: center center;
+  z-index: 2;
+  box-shadow: 0 22px 55px rgba(36,80,125,.14);
+}
+
+/* Дөрвөн карт — бичиг, өнгө, фонт хэвээр */
+
+.mineaSite .heroArt .floatCard {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  width: max-content;
+  max-width: 240px;
+  min-height: 76px;
+  padding: 17px 25px;
+
+  background: #eaf3ff;
+  color: #202329;
+  border-radius: 21px;
+
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 25px;
+  font-weight: 400;
+  line-height: 1.3;
+  white-space: nowrap;
+
+  box-shadow: 0 15px 25px rgba(24,64,110,.11);
+  z-index: 3;
+}
+
+/* Зүүн дээд */
+
+.mineaSite .heroArt .floatOne {
+  top: 6%;
+  left: 0;
+  right: auto;
+  bottom: auto;
+  transform: rotate(-8deg);
+}
+
+/* Баруун дээд */
+
+.mineaSite .heroArt .floatTwo {
+  top: 13%;
+  right: 0;
+  left: auto;
+  bottom: auto;
+  transform: rotate(7deg);
+}
+
+/* Зүүн доод */
+
+.mineaSite .heroArt .floatThree {
+  bottom: 9%;
+  left: 4%;
+  right: auto;
+  top: auto;
+  transform: rotate(-6deg);
+}
+
+/* Баруун доод */
+
+.mineaSite .heroArt .floatFour {
+  bottom: 6%;
+  right: 3%;
+  left: auto;
+  top: auto;
+  transform: rotate(7deg);
+}
+
+/* Tablet */
+
+@media (max-width: 1100px) {
+  .mineaSite .heroGrid {
+    gap: 30px;
+    min-height: 650px;
+  }
+
+  .mineaSite .hero h1 {
+    font-size: clamp(52px, 6vw, 76px);
+  }
+
+  .mineaSite .heroArt {
+    min-height: 460px;
+  }
+
+  .mineaSite .heroArt .floatCard {
+    font-size: 19px;
+    min-height: 60px;
+    padding: 12px 16px;
+  }
+}
+
+/* Mobile */
+
+@media (max-width: 760px) {
+  .mineaSite .headerInner {
+    width: calc(100% - 32px);
+    min-height: 70px;
+  }
+
+  .mineaSite .logo {
+    font-size: 27px;
+  }
+
+  .mineaSite .heroGrid {
+    width: calc(100% - 36px);
+    grid-template-columns: 1fr;
+    min-height: auto;
+    padding: 65px 0 55px;
+    gap: 35px;
+  }
+
+  .mineaSite .hero h1 {
+    font-size: clamp(48px, 10vw, 70px);
+  }
+
+  .mineaSite .heroCopy > p {
+    font-size: 15px;
+  }
+
+  .mineaSite .heroSearch {
+    min-height: 60px;
+  }
+
+  .mineaSite .heroSearch input {
+    font-size: 12px;
+  }
+
+  .mineaSite .heroSearch button {
+    font-size: 13px;
+    padding: 13px 16px;
+  }
+
+  .mineaSite .heroArt {
+    min-height: 400px;
+  }
+
+  .mineaSite .studentPass {
+    left: 50% !important;
+    transform:
+      translate(-50%, -50%)
+      rotate(7deg)
+      scale(.54) !important;
+  }
+
+  .mineaSite .heroArt .floatCard {
+    font-size: 16px;
+    min-height: 52px;
+    padding: 10px 13px;
+  }
+}
+
+
+/* HERO CARD SPACING START */
+
+/* Баруун талын дүрслэлийн талбай */
+.mineaSite .heroArt {
+  position: relative;
+  min-height: 560px;
+}
+
+/* Гол ticket */
+.mineaSite .heroArt .studentPass {
+  top: 50% !important;
+  left: 50% !important;
+  transform: translate(-50%, -50%) rotate(7deg) scale(.62) !important;
+  transform-origin: center center;
+}
+
+/* Зүүн дээд */
+.mineaSite .heroArt .floatOne {
+  top: 2% !important;
+  left: -5% !important;
+  right: auto !important;
+  bottom: auto !important;
+}
+
+/* Баруун дээд */
+.mineaSite .heroArt .floatTwo {
+  top: 5% !important;
+  right: -5% !important;
+  left: auto !important;
+  bottom: auto !important;
+}
+
+/* Зүүн доод */
+.mineaSite .heroArt .floatThree {
+  bottom: 2% !important;
+  left: -2% !important;
+  right: auto !important;
+  top: auto !important;
+}
+
+/* Баруун доод */
+.mineaSite .heroArt .floatFour {
+  bottom: 2% !important;
+  right: -3% !important;
+  left: auto !important;
+  top: auto !important;
+}
+
+/* HERO CARD SPACING END */
+
+/* BOOK PRICE — black, like reference */
+.mineaSite .bookCard .price,
+.mineaSite .bookCard .bookPrice,
+.mineaSite .book-card .price,
+.mineaSite .book-card .book-price {
+  color: #242424 !important;
+  font-size: 22px !important;
+  font-weight: 600 !important;
+  letter-spacing: -0.3px;
+  line-height: 1.4;
+}
+
+
+/* BOOK PRICE — black, like reference */
+.mineaSite .bookCard .price,
+.mineaSite .bookCard .bookPrice,
+.mineaSite .book-card .price,
+.mineaSite .book-card .book-price {
+  color: #242424 !important;
+  font-size: 22px !important;
+  font-weight: 600 !important;
+  letter-spacing: -0.3px;
+  line-height: 1.4;
+}
+
+
+
+/* BOOK PRICE FIX START */
+.mineaSite .bookInfo .bookPrice {
+  color: #242424 !important;
+  font-size: 19px !important;
+  font-weight: 600 !important;
+  line-height: 1.4;
+  letter-spacing: -0.3px;
+  margin-top: 14px !important;
+
+  padding-top: 0;}
+/* BOOK PRICE FIX END */
+
+
+/* BOOK INFO ALIGNMENT START */
+
+/* Номын картуудыг ижил өндөртэй байлгана */
+.mineaSite .bookGrid {
+  align-items: stretch;
+}
+
+/* Номын мэдээллийн хэсэг */
+.mineaSite .bookInfo {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: flex-start !important;
+  height: auto;
+  padding-top: 12px;
+}
+
+/* Номын нэр */
+.mineaSite .bookInfo h3 {
+  margin-top: 0;
+  margin-bottom: 10px;
+}
+
+/* Номын үнэ */
+.mineaSite .bookInfo .bookPrice {
+  display: block !important;
+  color: #242424 !important;
+  font-size: 22px !important;
+  font-weight: 650 !important;
+  line-height: 1.35;
+  letter-spacing: -0.3px;
+  margin-top: auto !important;
+  padding-top: 24px;
+  margin-bottom: 0 !important;
+}
+
+/* BOOK INFO ALIGNMENT END */

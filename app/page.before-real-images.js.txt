@@ -1,0 +1,5 @@
+import OriginalHome from './OriginalHome'
+
+export default function HomePage() {
+  return <OriginalHome />
+}

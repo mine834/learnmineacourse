@@ -174,13 +174,7 @@ export default function AdminDashboardPage() {
       icon: 'editor',
       featured: true,
     },
-    {
-      title: 'Бүтээгдэхүүн',
-      description:
-        'Ном нэмэх, зураг солих, үнэ болон тайлбар засах',
-      path: '/admin/products',
-      icon: 'products',
-    },
+
     {
       title: 'Сургалт',
       description:

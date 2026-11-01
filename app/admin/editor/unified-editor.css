@@ -1,0 +1,197 @@
+
+.mineaToolbarField {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.mineaToolbarField input {
+  width: 58px;
+  min-width: 58px;
+  padding: 6px;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  background: #fff;
+  color: #243449;
+  font-size: 13px;
+}
+
+
+.pageHeading {
+  position: relative;
+  padding-right: 260px;
+  min-height: 130px;
+}
+
+.mineaEditorActions {
+  position: absolute;
+  top: 0;
+  right: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 12px;
+  width: 230px;
+  z-index: 2;
+}
+
+.mineaOpenSite {
+  display: block;
+  text-align: center;
+  padding: 12px 16px;
+  text-decoration: none;
+  color: #243449;
+  font-size: 16px;
+}
+
+.mineaEditorActions .saveButton {
+  width: 100%;
+  padding: 15px 18px;
+}
+
+@media (max-width: 700px) {
+  .pageHeading {
+    padding-right: 0;
+    padding-bottom: 120px;
+  }
+
+  .mineaEditorActions {
+    top: auto;
+    bottom: 0;
+    right: 0;
+    width: 100%;
+  }
+}
+
+
+/* Ticket admin: compact form layout */
+.ticketTextInput {
+  display: block;
+  width: 100%;
+  min-height: 85px;
+  padding: 14px 16px;
+  border: 1px solid #cbd8ed;
+  border-radius: 10px;
+  background: #fff;
+  color: #1d2939;
+  font: inherit;
+  font-size: 15px;
+  line-height: 1.55;
+  resize: vertical;
+  box-sizing: border-box;
+}
+
+.ticketTextInput:focus {
+  outline: 2px solid #0879d1;
+  outline-offset: 1px;
+}
+
+.ticketColorRow {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+  align-items: start;
+}
+
+.ticketColorRow > * {
+  min-width: 0;
+}
+
+.ticketColorRow input[type="color"] {
+  width: 100%;
+  max-width: 100px;
+  height: 44px;
+  cursor: pointer;
+}
+
+@media (max-width: 520px) {
+  .ticketColorRow {
+    gap: 8px;
+  }
+
+  .ticketColorRow input[type="color"] {
+    max-width: 100%;
+  }
+}
+
+
+/* LEARNMINEA EDITOR HEADER ACTIONS FIX */
+
+.siteEditor .pageHeading {
+  position: relative;
+  padding-right: 230px;
+  min-height: 145px;
+}
+
+.siteEditor .pageHeading .mineaEditorActions {
+  position: absolute;
+  top: 18px;
+  right: 18px;
+  left: auto;
+  bottom: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 10px;
+  width: 190px;
+  max-width: calc(100% - 36px);
+  z-index: 3;
+}
+
+.siteEditor .mineaOpenSite {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 40px;
+  padding: 9px 14px;
+  border: 1px solid #d6e0ed;
+  border-radius: 12px;
+  background: #ffffff;
+  color: #243449;
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+  box-sizing: border-box;
+}
+
+.siteEditor .mineaOpenSite:hover {
+  background: #f2f7ff;
+  border-color: #9cbfe9;
+}
+
+.siteEditor .mineaEditorActions .saveButton {
+  display: block;
+  width: 100%;
+  min-height: 44px;
+  padding: 11px 14px;
+  border: 0;
+  border-radius: 12px;
+  background: #0879d1;
+  color: white;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  box-sizing: border-box;
+}
+
+.siteEditor .mineaEditorActions .saveButton:hover:not(:disabled) {
+  background: #0667b4;
+}
+
+@media (max-width: 700px) {
+  .siteEditor .pageHeading {
+    padding-right: 0;
+    padding-top: 130px;
+    min-height: 0;
+  }
+
+  .siteEditor .pageHeading .mineaEditorActions {
+    top: 12px;
+    right: 12px;
+    width: 170px;
+  }
+}
+
+/* END EDITOR HEADER ACTIONS FIX */

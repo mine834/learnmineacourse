@@ -41,7 +41,7 @@ export default function AssessmentPage() {
           className="start"
           onClick={() => router.push("/assessment/questions")}
         >
-          Оношилгоо эхлүүлэх <span>→</span>
+          Судалгааг эхлүүлэх <span>→</span>
         </button>
 
         <div className="note">
@@ -53,11 +53,11 @@ export default function AssessmentPage() {
         .assessment {
           min-height: 100vh;
           background:
-            radial-gradient(circle at 80% 20%, #eeeaff 0%, transparent 35%),
-            radial-gradient(circle at 10% 90%, #f0ecff 0%, transparent 35%),
-            #f8f7ff;
+            radial-gradient(circle at 80% 20%, #EAF5FF 0%, transparent 35%),
+            radial-gradient(circle at 10% 90%, #EAF5FF 0%, transparent 35%),
+            #F3F9FF;
           padding: 28px 6% 90px;
-          color: #27213d;
+          color: #142536;
         }
 
         .topbar {
@@ -71,7 +71,7 @@ export default function AssessmentPage() {
         .back {
           background: none;
           border: 0;
-          color: #817991;
+          color: #64788B;
           font-size: 13px;
           font-weight: 700;
           cursor: pointer;
@@ -86,13 +86,13 @@ export default function AssessmentPage() {
 
         .intro {
           max-width: 860px;
-          margin: 70px auto 0;
+          margin: 44px auto 0;
           background: white;
-          border: 1px solid #ebe6fb;
+          border: 1px solid #DDEAF5;
           border-radius: 32px;
-          padding: 65px 55px;
+          padding: 42px 36px;
           text-align: center;
-          box-shadow: 0 24px 70px rgba(87, 68, 155, 0.07);
+          box-shadow: 0 24px 70px rgba(8, 70, 120, 0.07);
         }
 
         .icon {
@@ -102,7 +102,7 @@ export default function AssessmentPage() {
           display: grid;
           place-items: center;
           border-radius: 25px;
-          background: #eeeaff;
+          background: #EAF5FF;
           font-size: 39px;
         }
 
@@ -116,7 +116,7 @@ export default function AssessmentPage() {
 
         h1 {
           margin: 0;
-          font-size: clamp(35px, 5.5vw, 60px);
+          font-size: clamp(28px, 4vw, 40px);
           line-height: 1.2;
           font-weight: 900;
           letter-spacing: -0.055em;
@@ -129,9 +129,9 @@ export default function AssessmentPage() {
         .description {
           max-width: 590px;
           margin: 25px auto 0;
-          font-size: 17px;
+          font-size: 15px;
           line-height: 1.85;
-          color: #80798f;
+          color: #64788B;
         }
 
         .stats {
@@ -139,9 +139,9 @@ export default function AssessmentPage() {
           grid-template-columns: repeat(3, 1fr);
           max-width: 510px;
           margin: 42px auto 0;
-          border: 1px solid #e8e2f8;
+          border: 1px solid #DDEAF5;
           border-radius: 20px;
-          background: #faf9ff;
+          background: #F7FBFF;
           overflow: hidden;
         }
 
@@ -160,12 +160,12 @@ export default function AssessmentPage() {
           font-size: 16px;
           font-weight: 800;
           cursor: pointer;
-          box-shadow: 0 10px 25px rgba(108, 92, 231, 0.22);
+          box-shadow: 0 10px 25px rgba(8, 121, 209, 0.22);
           transition: transform 0.2s, background 0.2s;
         }
 
         .start:hover {
-          background: #5948d6;
+          background: #0669B7;
           transform: translateY(-2px);
         }
 
@@ -175,7 +175,7 @@ export default function AssessmentPage() {
 
         .note {
           margin-top: 23px;
-          color: #938ba2;
+          color: #7C91A3;
           font-size: 12px;
           line-height: 1.7;
         }
@@ -218,7 +218,7 @@ function Info({ value, label }) {
     <div
       style={{
         padding: "22px 8px",
-        borderRight: label !== "Минут" ? "1px solid #E8E2F8" : "none",
+        borderRight: label !== "Минут" ? "1px solid #DDEAF5" : "none",
       }}
     >
       <div
@@ -234,7 +234,7 @@ function Info({ value, label }) {
         style={{
           marginTop: "5px",
           fontSize: "12px",
-          color: "#817991",
+          color: "#64788B",
           fontWeight: 600,
         }}
       >

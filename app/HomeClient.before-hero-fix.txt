@@ -1,0 +1,1860 @@
+
+'use client'
+
+import Link from 'next/link'
+import { useState } from 'react'
+import {
+  localizeHomeContent,
+  publicHomeContent,
+  safeHomeLink,
+  safeImageUrl,
+} from './lib/homeContent.mjs'
+
+const palette = {
+  blue: '#0879d1',
+  brown: '#592d1f',
+}
+
+function SiteLink({ href, children, className = '', ...props }) {
+  const safe = safeHomeLink(href) || '/'
+
+  if (/^https?:\/\//.test(safe)) {
+    return (
+      <a
+        href={safe}
+        target="_blank"
+        rel="noopener noreferrer"
+        className={className}
+        {...props}
+      >
+        {children}
+      </a>
+    )
+  }
+
+  return (
+    <Link href={safe} className={className} {...props}>
+      {children}
+    </Link>
+  )
+}
+
+function SectionHeading({ eyebrow, title, body }) {
+  return (
+    <>
+      {eyebrow && <div className="eyebrow">{eyebrow}</div>}
+      <h2>{title}</h2>
+      {body && <p className="sub">{body}</p>}
+    </>
+  )
+}
+
+export default function Home({
+  books = [],
+  catalogError = false,
+  homeContent,
+}) {
+  const [lang, setLang] = useState('MN')
+  const [search, setSearch] = useState('')
+  const [faqOpen, setFaqOpen] = useState(0)
+  const [menuOpen, setMenuOpen] = useState(false)
+  const [playing, setPlaying] = useState(false)
+
+  const raw = publicHomeContent(homeContent)
+  const content = localizeHomeContent(raw, lang)
+
+  const {
+    hero,
+    study,
+    conversation,
+    books: bookSection,
+    assessment,
+    why,
+    lifestyle,
+    testimonials,
+    registration,
+    faq,
+    finalCta,
+    footer,
+  } = content
+
+  const footerText = footer[
+    lang === '한국' ? 'KR' : lang
+  ] || footer.MN
+
+  const t = (mn, en, kr) =>
+    lang === 'EN' ? en : lang === '한국' ? kr : mn
+
+  function speak(text) {
+    if (
+      typeof window === 'undefined' ||
+      !window.speechSynthesis
+    ) return
+
+    window.speechSynthesis.cancel()
+
+    const utterance = new SpeechSynthesisUtterance(text)
+    utterance.lang = 'ko-KR'
+    utterance.rate = 0.85
+
+    utterance.onstart = () => setPlaying(true)
+    utterance.onend = () => setPlaying(false)
+    utterance.onerror = () => setPlaying(false)
+
+    window.speechSynthesis.speak(utterance)
+  }
+
+  function submitSearch(event) {
+    event.preventDefault()
+    const query = search.trim()
+
+    window.location.href = query
+      ? `/books?search=${encodeURIComponent(query)}`
+      : '/books'
+  }
+
+  return (
+    <div className="mineaSite">
+      <header className="header">
+        <div className="headerInner">
+          <Link href="/" className="logo">
+            learnminea<span>.</span>
+          </Link>
+
+          <nav className={menuOpen ? 'nav open' : 'nav'}>
+            <Link href="/">{footerText.home}</Link>
+            <Link href="/topik">TOPIK</Link>
+            <Link href="/kdrama">K-Drama</Link>
+            <Link href="/books">{footerText.books}</Link>
+            <Link href="/learn">
+              {t('Сурах', 'Learn', '학습')}
+            </Link>
+          </nav>
+
+          <div className="headerRight">
+            <div className="languages">
+              {['MN', 'EN', '한국'].map(item => (
+                <button
+                  type="button"
+                  key={item}
+                  className={lang === item ? 'active' : ''}
+                  onClick={() => setLang(item)}
+                >
+                  {item}
+                </button>
+              ))}
+            </div>
+
+            <Link
+              href="/assessment/questions"
+              className="surveyIcon"
+              aria-label={t('Судалгаа', 'Assessment', '학습 진단')}
+            >
+              ◇
+            </Link>
+
+            <button
+              type="button"
+              className="menuButton"
+              aria-label="Menu"
+              onClick={() => setMenuOpen(!menuOpen)}
+            >
+              ☰
+            </button>
+          </div>
+        </div>
+      </header>
+
+      <main>
+        <section className="hero">
+          <div className="wrap heroGrid">
+            <div className="heroCopy">
+              <div className="eyebrow white">
+                {hero.eyebrow}
+              </div>
+
+              <h1>{hero.title}</h1>
+              <p>{hero.body}</p>
+
+              <form className="heroSearch" onSubmit={submitSearch}>
+                <span className="searchIcon">⌕</span>
+                <input
+                  value={search}
+                  onChange={event => setSearch(event.target.value)}
+                  placeholder={hero.search_placeholder}
+                  aria-label={hero.search_placeholder}
+                />
+                <button type="submit">
+                  {hero.search_button}
+                </button>
+              </form>
+            </div>
+
+            <div className="heroArt" aria-hidden="true">
+              <span className="floatCard floatOne">
+                오늘 뭐 해요?
+              </span>
+              <span className="floatCard floatTwo">
+                -고 싶어요
+              </span>
+              <span className="floatCard floatThree">
+                TOPIK II ✦
+              </span>
+              <span className="floatCard floatFour">
+                진짜?
+              </span>
+
+              <div className="studentPass">
+                <div className="passTop">
+                  LEARN <span>✦</span> MINEA
+                </div>
+                <small>
+                  KOREAN LEARNING · STUDENT PASS
+                </small>
+                <div className="passLine" />
+                <div className="passRows">
+                  <span>
+                    {t('Суралцагч', 'Student', '학습자')}
+                    <br />
+                    {t('Сургалт', 'Course', '수업')}
+                    <br />
+                    {t('Систем', 'System', '시스템')}
+                    <br />
+                    {t('Ахиц', 'Progress', '진도')}
+                  </span>
+                  <strong>
+                    LEARNMINEA
+                    <br />
+                    Korean
+                    <br />
+                    Video + Quiz
+                    <br />
+                    Progress tracking
+                  </strong>
+                </div>
+                <div className="passLine" />
+                <div className="passBottom">
+                  START LEARNING →
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section className="section" id="study">
+          <div className="wrap">
+            <SectionHeading
+              eyebrow={study.eyebrow}
+              title={study.title}
+              body={study.body}
+            />
+
+            <div className="studyGrid">
+              {(study.cards || []).map((item, index) => (
+                <SiteLink
+                  href={item.url}
+                  className="studyCard"
+                  key={index}
+                >
+                  <span className="studySymbol">
+                    {item.symbol}
+                  </span>
+                  <div>
+                    <h3>{item.title}</h3>
+                    <p>{item.body}</p>
+                  </div>
+                  <span className="arrow">→</span>
+                </SiteLink>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <section className="section conversation" id="conversation">
+          <div className="wrap split">
+            <div className="talkCard">
+              <div className="talkTop">
+                <span>{conversation.eyebrow}</span>
+                <button
+                  type="button"
+                  aria-label="Play Korean audio"
+                  onClick={() => speak(conversation.korean)}
+                >
+                  {playing ? 'Ⅱ' : '▶'}
+                </button>
+              </div>
+
+              <h2 lang="ko">{conversation.korean}</h2>
+              <p>{conversation.translation}</p>
+
+              <div className="tip">{conversation.tip}</div>
+            </div>
+
+            <div className="splitCopy">
+              <div className="eyebrow">
+                {conversation.side_eyebrow}
+              </div>
+              <h2>{conversation.side_title}</h2>
+              <p>{conversation.side_body}</p>
+
+              <SiteLink
+                href={conversation.button_url}
+                className="textLink"
+              >
+                {conversation.button_text}
+              </SiteLink>
+            </div>
+          </div>
+        </section>
+
+        <section className="section" id="books">
+          <div className="wrap">
+            <div className="sectionTop">
+              <div>
+                <SectionHeading
+                  eyebrow={bookSection.eyebrow}
+                  title={bookSection.title}
+                  body={bookSection.body}
+                />
+              </div>
+
+              <SiteLink
+                href={bookSection.button_url}
+                className="textLink"
+              >
+                {bookSection.button_text}
+              </SiteLink>
+            </div>
+
+            {catalogError && (
+              <p className="catalogNote">
+                {t(
+                  'Номын мэдээллийг ачаалахад асуудал гарлаа.',
+                  'Unable to load the book catalog.',
+                  '전자책 목록을 불러오지 못했습니다.'
+                )}
+              </p>
+            )}
+
+            <div className="booksGrid">
+              {books.slice(0, 4).map((book, index) => {
+                const title =
+                  book.title_mn ||
+                  book.title ||
+                  book.name ||
+                  `Book ${index + 1}`
+
+                const image =
+                  book.cover_url ||
+                  book.image_url ||
+                  book.cover_image_url ||
+                  ''
+
+                const href =
+                  book.slug
+                    ? `/books/${encodeURIComponent(book.slug)}`
+                    : book.id
+                      ? `/books/${encodeURIComponent(book.id)}`
+                      : '/books'
+
+                return (
+                  <SiteLink
+                    key={book.id || book.slug || index}
+                    href={href}
+                    className="bookCard"
+                  >
+                    <div className="bookCover">
+                      {safeImageUrl(image) ? (
+                        <img src={safeImageUrl(image)} alt={title} />
+                      ) : (
+                        <div className="bookPlaceholder">
+                          <small>LEARNMINEA</small>
+                          <strong>한국어</strong>
+                          <span>DIGITAL BOOK</span>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="bookInfo">
+                      <h3>{title}</h3>
+                      {book.price !== undefined &&
+                        book.price !== null && (
+                          <p>
+                            {Number(book.price).toLocaleString()}
+                            {' '}₮
+                          </p>
+                        )}
+                    </div>
+                  </SiteLink>
+                )
+              })}
+            </div>
+
+            {!catalogError && books.length === 0 && (
+              <p className="emptyBooks">
+                {bookSection.empty_text}
+              </p>
+            )}
+          </div>
+        </section>
+
+        <section
+          className="section method"
+          id="method"
+          style={{
+            background: assessment.style.background,
+            paddingTop: assessment.style.section_padding,
+            paddingBottom: assessment.style.section_padding,
+          }}
+        >
+          <div className="wrap split">
+            <div className="methodCopy">
+              <div
+                className="eyebrow"
+                style={{
+                  color: assessment.style.eyebrow_color,
+                  fontSize: assessment.style.eyebrow_size,
+                }}
+              >
+                {assessment.eyebrow}
+              </div>
+
+              <h2
+                style={{
+                  color: assessment.style.heading_color,
+                  fontSize: `clamp(30px, 4vw, ${assessment.style.heading_size}px)`,
+                }}
+              >
+                {assessment.title}
+              </h2>
+
+              <p
+                style={{
+                  color: assessment.style.body_color,
+                  fontSize: `clamp(16px, 2vw, ${assessment.style.body_size}px)`,
+                }}
+              >
+                {assessment.body}
+              </p>
+
+              <SiteLink
+                href={assessment.button_url}
+                className="assessmentButton"
+                style={{
+                  background: assessment.style.button_background,
+                  color: assessment.style.button_text_color,
+                  fontSize: assessment.style.button_size,
+                }}
+              >
+                {assessment.button_text}
+              </SiteLink>
+            </div>
+
+            <div
+              className="methodCard"
+              style={{
+                background: assessment.style.card_background,
+                borderColor: assessment.style.card_border,
+                borderRadius: assessment.style.card_radius,
+                color: assessment.style.card_text_color,
+              }}
+            >
+              <div className="duration">
+                <strong
+                  style={{
+                    fontSize: `clamp(65px, 8vw, ${assessment.style.duration_size}px)`,
+                  }}
+                >
+                  {assessment.duration}
+                </strong>
+                <span
+                  style={{
+                    color: assessment.style.muted_text_color,
+                  }}
+                >
+                  {assessment.duration_unit}
+                </span>
+              </div>
+
+              <hr />
+
+              {(assessment.benefits || []).map((item, index) => (
+                <p
+                  key={index}
+                  style={{
+                    fontSize: `clamp(16px, 2vw, ${assessment.style.benefit_size}px)`,
+                  }}
+                >
+                  ✓ {item}
+                </p>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <section className="section" id="why">
+          <div className="wrap split whyGrid">
+            <div>
+              <SectionHeading
+                eyebrow={why.eyebrow}
+                title={why.title}
+              />
+            </div>
+
+            <div className="reasons">
+              {(why.reasons || []).map((reason, index) => (
+                <div className="reason" key={index}>
+                  <span>
+                    {String(index + 1).padStart(2, '0')}
+                  </span>
+                  <div>
+                    <h3>{reason.title}</h3>
+                    <p>{reason.body}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {lifestyle.enabled && (
+          <section className="section lifestyle">
+            <div className="wrap split">
+              <div className="lifestyleCopy">
+                <SectionHeading
+                  eyebrow={lifestyle.eyebrow}
+                  title={lifestyle.title}
+                  body={lifestyle.body}
+                />
+
+                <div className="tags">
+                  {(lifestyle.tags || []).map((tag, index) => (
+                    <span key={index}>{tag}</span>
+                  ))}
+                </div>
+              </div>
+
+              <div className="lifestyleVisual">
+                {safeImageUrl(lifestyle.image_url) ? (
+                  <img
+                    src={safeImageUrl(lifestyle.image_url)}
+                    alt={lifestyle.title}
+                  />
+                ) : (
+                  <div className="lifestyleScene">
+                    <span>☁</span>
+                    <strong>오늘의 한국어</strong>
+                    <small>CAFE · SCHOOL · DAILY LIFE</small>
+                    <span>✦</span>
+                  </div>
+                )}
+              </div>
+            </div>
+          </section>
+        )}
+
+        {testimonials.enabled &&
+          testimonials.reviews.length > 0 && (
+            <section className="section testimonials">
+              <div className="wrap">
+                <SectionHeading
+                  eyebrow={testimonials.eyebrow}
+                  title={testimonials.title}
+                />
+
+                <div className="reviewsGrid">
+                  {testimonials.reviews.map(item => (
+                    <article className="reviewCard" key={item.id}>
+                      <div className="stars">★★★★★</div>
+                      <p>“{item.text}”</p>
+                      <strong>{item.name}</strong>
+                      <small>{item.caption}</small>
+                    </article>
+                  ))}
+                </div>
+              </div>
+            </section>
+          )}
+
+        {registration.enabled &&
+          registration.button_url && (
+            <section className="section registration">
+              <div className="wrap registrationInner">
+                <div>
+                  <SectionHeading
+                    eyebrow={registration.eyebrow}
+                    title={registration.title}
+                    body={registration.body}
+                  />
+                </div>
+
+                <SiteLink
+                  href={registration.button_url}
+                  className="lightButton"
+                >
+                  {registration.button_text}
+                </SiteLink>
+              </div>
+            </section>
+          )}
+
+        <section className="section" id="faq">
+          <div className="wrap split faqGrid">
+            <div>
+              <SectionHeading
+                eyebrow={faq.eyebrow}
+                title={faq.title}
+              />
+            </div>
+
+            <div className="faqList">
+              {(faq.items || []).map((item, index) => (
+                <div className="faqItem" key={index}>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setFaqOpen(
+                        faqOpen === index ? -1 : index
+                      )
+                    }
+                    aria-expanded={faqOpen === index}
+                  >
+                    <span>{item.question}</span>
+                    <b>{faqOpen === index ? '−' : '+'}</b>
+                  </button>
+
+                  {faqOpen === index && (
+                    <p>{item.answer}</p>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <section className="section finalCta">
+          <div className="wrap finalInner">
+            <div className="eyebrow">
+              {finalCta.eyebrow}
+            </div>
+            <h2>{finalCta.title}</h2>
+            <p>{finalCta.body}</p>
+            <SiteLink
+              href={finalCta.button_url}
+              className="primaryButton"
+            >
+              {finalCta.button_text}
+            </SiteLink>
+          </div>
+        </section>
+      </main>
+
+      <footer className="footer" id="contact">
+        <div className="wrap">
+          <div className="footerGrid">
+            <div className="footerBrand">
+              <Link href="/" className="footerLogo">
+                {footer.logo}<span>.</span>
+              </Link>
+
+              <p>{footerText.description}</p>
+
+              <div className="footerSocials">
+                {safeImageUrl(footer.instagram) && (
+                  <a
+                    href={safeImageUrl(footer.instagram)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label="Instagram"
+                    title="Instagram"
+                  >
+                    <svg
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="1.8"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <rect x="2" y="2" width="20" height="20" rx="5" />
+                      <circle cx="12" cy="12" r="4" />
+                      <circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none" />
+                    </svg>
+                  </a>
+                )}
+
+                {safeImageUrl(footer.facebook) && (
+                  <a
+                    href={safeImageUrl(footer.facebook)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label="Facebook"
+                    title="Facebook"
+                  >
+                    <svg viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M22 12a10 10 0 1 0-11.56 9.88v-6.99H7.9V12h2.54V9.8c0-2.5 1.49-3.89 3.77-3.89 1.09 0 2.23.19 2.23.19v2.46h-1.26c-1.24 0-1.63.77-1.63 1.56V12h2.78l-.44 2.89h-2.34v6.99A10 10 0 0 0 22 12Z" />
+                    </svg>
+                  </a>
+                )}
+
+                {footer.email && (
+                  <a
+                    href={`mailto:${footer.email}`}
+                    aria-label="Email"
+                    title="Email"
+                  >
+                    <svg
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="1.8"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <rect x="2" y="5" width="20" height="14" rx="2" />
+                      <path d="m3 7 9 7 9-7" />
+                    </svg>
+                  </a>
+                )}
+              </div>
+            </div>
+
+            <div className="footerColumn">
+              <h3>{footerText.learn_heading}</h3>
+              <Link href="/topik">{footerText.topik}</Link>
+              <Link href="/kdrama">{footerText.kdrama}</Link>
+              <Link href="/books">{footerText.books}</Link>
+            </div>
+
+            <div className="footerColumn">
+              <h3>{footerText.site_heading}</h3>
+              <Link href="/">{footerText.home}</Link>
+              <Link href="/#method">
+                {footerText.assessment}
+              </Link>
+              <Link href="/#faq">{footerText.faq}</Link>
+              <Link href="/#contact">{footerText.contact}</Link>
+            </div>
+          </div>
+
+          <div className="footerBottom">
+            <span>{footerText.copyright}</span>
+            <span>{footerText.rights}</span>
+          </div>
+        </div>
+      </footer>
+
+      <style jsx global>{`
+        .mineaSite {
+          --blue: #0879d1;
+          --brown: #592d1f;
+          color: #1d2430;
+          background: #fff;
+          font-family: Arial, Helvetica, sans-serif;
+        }
+
+        .mineaSite *,
+        .mineaSite *::before,
+        .mineaSite *::after {
+          box-sizing: border-box;
+        }
+
+        .mineaSite a {
+          color: inherit;
+          text-decoration: none;
+        }
+
+        .mineaSite button,
+        .mineaSite input {
+          font: inherit;
+        }
+
+        .mineaSite .wrap {
+          width: min(1220px, calc(100% - 60px));
+          margin: 0 auto;
+        }
+
+        .mineaSite .header {
+  position: relative;
+  z-index: 20;
+  background: #79B6FA;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.35);
+}
+
+        .mineaSite .headerInner {
+          width: min(1320px, calc(100% - 50px));
+          margin: 0 auto;
+          min-height: 72px;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 20px;
+        }
+
+        .mineaSite .logo {
+          font-family: Georgia, serif;
+          font-size: 30px;
+          font-weight: 700;
+          white-space: nowrap;
+        }
+
+        .mineaSite .logo span,
+        .mineaSite .footerLogo span {
+          color: var(--blue);
+        }
+
+        .mineaSite .nav {
+          display: flex;
+          align-items: center;
+          gap: 28px;
+        }
+
+        .mineaSite .nav a {
+          font-size: 13px;
+          font-weight: 700;
+        }
+
+        .mineaSite .nav a:hover {
+          color: var(--blue);
+        }
+
+        .mineaSite .headerRight {
+          display: flex;
+          align-items: center;
+          gap: 13px;
+        }
+
+        .mineaSite .languages {
+          display: flex;
+          background: #f1f5f9;
+          padding: 4px;
+          border-radius: 25px;
+          gap: 2px;
+        }
+
+        .mineaSite .languages button {
+          border: 0;
+          background: transparent;
+          color: #748295;
+          padding: 7px 11px;
+          border-radius: 20px;
+          font-size: 11px;
+          font-weight: 800;
+          cursor: pointer;
+        }
+
+        .mineaSite .languages button.active {
+          color: var(--blue);
+          background: white;
+          box-shadow: 0 1px 5px #dce5f0;
+        }
+
+        .mineaSite .surveyIcon,
+        .mineaSite .menuButton {
+          display: grid;
+          place-items: center;
+          width: 36px;
+          height: 36px;
+          border: 1px solid #e5eaf1;
+          border-radius: 50%;
+          background: white;
+          color: #334155;
+          font-size: 20px;
+        }
+
+        .mineaSite .menuButton {
+          display: none;
+          cursor: pointer;
+        }
+
+        .mineaSite .hero {
+          background: linear-gradient(120deg, #0879d1, #439ce8 65%, #78b7fa);
+          color: white;
+          overflow: hidden;
+        }
+
+        .mineaSite .heroGrid {
+          min-height: 640px;
+          display: grid;
+          grid-template-columns: 1.1fr .9fr;
+          align-items: center;
+          gap: 45px;
+          padding: 80px 0;
+        }
+
+        .mineaSite .eyebrow {
+          color: var(--blue);
+          font-size: 12px;
+          font-weight: 900;
+          letter-spacing: 2.5px;
+          text-transform: uppercase;
+          margin-bottom: 20px;
+        }
+
+        .mineaSite .eyebrow.white {
+          color: #e5f3ff;
+        }
+
+        .mineaSite .hero h1 {
+          white-space: pre-line;
+          font-family: Georgia, serif;
+          font-size: clamp(45px, 5vw, 80px);
+          line-height: 1.08;
+          letter-spacing: -2px;
+          margin: 0 0 28px;
+        }
+
+        .mineaSite .heroCopy > p {
+          font-size: 17px;
+          line-height: 1.85;
+          max-width: 580px;
+          color: #edf6ff;
+        }
+
+        .mineaSite .heroSearch {
+          margin-top: 34px;
+          display: flex;
+          align-items: center;
+          background: white;
+          padding: 7px;
+          border-radius: 50px;
+          max-width: 550px;
+          box-shadow: 0 12px 35px rgba(0,40,100,.15);
+        }
+
+        .mineaSite .searchIcon {
+          color: #8496a8;
+          font-size: 25px;
+          padding-left: 14px;
+        }
+
+        .mineaSite .heroSearch input {
+          flex: 1;
+          min-width: 0;
+          border: 0;
+          outline: 0;
+          color: #233247;
+          padding: 10px;
+          font-size: 13px;
+        }
+
+        .mineaSite .heroSearch button {
+          border: 0;
+          border-radius: 30px;
+          background: var(--brown);
+          color: white;
+          font-size: 13px;
+          font-weight: 800;
+          padding: 15px 20px;
+          cursor: pointer;
+          white-space: nowrap;
+        }
+
+        .mineaSite .heroArt {
+          position: relative;
+          min-height: 440px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+
+        .mineaSite .studentPass {
+  position: relative;
+  z-index: 2;
+  width: 340px;
+  max-width: 90%;
+  flex-shrink: 0;
+  padding: 28px;
+  border-radius: 20px;
+  background: #fff9ee;
+  color: var(--brown);
+  transform: rotate(7deg) scale(0.48);
+  transform-origin: center center;
+  box-shadow: 0 30px 70px rgba(0,45,90,.25);
+}
+
+        .mineaSite .passTop {
+          font-family: Georgia, serif;
+          font-size: 27px;
+          font-weight: 900;
+        }
+
+        .mineaSite .passTop span {
+          color: var(--blue);
+        }
+
+        .mineaSite .studentPass > small {
+          display: block;
+          margin-top: 10px;
+          font-size: 9px;
+          letter-spacing: 1px;
+        }
+
+        .mineaSite .passLine {
+          border-top: 1px dashed #cbb9a7;
+          margin: 22px 0;
+        }
+
+        .mineaSite .passRows {
+          display: flex;
+          justify-content: space-between;
+          font-size: 12px;
+          line-height: 2.3;
+        }
+
+        .mineaSite .passRows strong {
+          text-align: right;
+        }
+
+        .mineaSite .passBottom {
+          text-align: right;
+          font-size: 12px;
+          font-weight: 900;
+        }
+
+        .mineaSite .floatCard {
+          position: absolute;
+          z-index: 3;
+          padding: 15px 20px;
+          border-radius: 14px;
+          background: white;
+          color: var(--brown);
+          font-size: 16px;
+          font-weight: 900;
+          box-shadow: 0 12px 30px rgba(0,30,80,.15);
+        }
+
+        .mineaSite .floatOne {
+          top: 10%;
+          left: 2%;
+          transform: rotate(-9deg);
+        }
+
+        .mineaSite .floatTwo {
+          top: 12%;
+          right: 0;
+          transform: rotate(9deg);
+        }
+
+        .mineaSite .floatThree {
+          bottom: 12%;
+          left: 0;
+          transform: rotate(7deg);
+        }
+
+        .mineaSite .floatFour {
+          bottom: 5%;
+          right: 5%;
+          transform: rotate(-8deg);
+        }
+
+        .mineaSite .section {
+          padding: 100px 0;
+        }
+
+        .mineaSite .section h2 {
+          font-family: Georgia, serif;
+          font-size: clamp(32px, 4vw, 52px);
+          line-height: 1.2;
+          margin: 0 0 22px;
+        }
+
+        .mineaSite .sub {
+          font-size: 17px;
+          line-height: 1.85;
+          color: #7a8290;
+          max-width: 700px;
+          margin: 0 0 38px;
+        }
+
+        .mineaSite .studyGrid {
+          display: grid;
+          grid-template-columns: repeat(4, 1fr);
+          gap: 17px;
+        }
+
+        .mineaSite .studyCard {
+          min-height: 225px;
+          display: flex;
+          flex-direction: column;
+          padding: 26px;
+          border: 1px solid #e4e9f0;
+          border-radius: 20px;
+          background: white;
+          transition: transform .2s, box-shadow .2s;
+        }
+
+        .mineaSite .studyCard:hover {
+          transform: translateY(-4px);
+          box-shadow: 0 15px 30px rgba(0,40,90,.08);
+        }
+
+        .mineaSite .studySymbol {
+          display: grid;
+          place-items: center;
+          width: 48px;
+          height: 48px;
+          border-radius: 14px;
+          background: #eaf4ff;
+          color: var(--blue);
+          font-size: 23px;
+          font-weight: 900;
+          margin-bottom: 24px;
+        }
+
+        .mineaSite .studyCard h3 {
+          margin: 0 0 10px;
+          font-size: 20px;
+        }
+
+        .mineaSite .studyCard p {
+          margin: 0;
+          color: #8791a0;
+          font-size: 13px;
+          line-height: 1.6;
+        }
+
+        .mineaSite .arrow {
+          align-self: flex-end;
+          margin-top: auto;
+          color: var(--blue);
+          font-size: 22px;
+        }
+
+        .mineaSite .split {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          align-items: center;
+          gap: 80px;
+        }
+
+        .mineaSite .conversation {
+          background: #f6f9fd;
+        }
+
+        .mineaSite .talkCard {
+          background: white;
+          border: 1px solid #e6edf4;
+          border-radius: 24px;
+          padding: 32px;
+          box-shadow: 0 15px 40px rgba(30,70,110,.04);
+        }
+
+        .mineaSite .talkTop {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          color: var(--blue);
+          font-size: 12px;
+          letter-spacing: 1.4px;
+          font-weight: 900;
+        }
+
+        .mineaSite .talkTop button {
+          border: 0;
+          width: 46px;
+          height: 46px;
+          border-radius: 50%;
+          background: #e8f3ff;
+          color: var(--blue);
+          cursor: pointer;
+          font-size: 18px;
+        }
+
+        .mineaSite .talkCard h2 {
+          font-family: Arial, sans-serif;
+          font-size: clamp(24px, 3vw, 35px);
+          margin: 28px 0 15px;
+        }
+
+        .mineaSite .talkCard > p {
+          color: #738197;
+          font-size: 16px;
+        }
+
+        .mineaSite .tip {
+          background: #edf6ff;
+          color: #45627f;
+          border-radius: 13px;
+          padding: 18px;
+          font-size: 13px;
+          line-height: 1.8;
+          margin-top: 28px;
+        }
+
+        .mineaSite .splitCopy > p {
+          font-size: 17px;
+          color: #7d8795;
+          line-height: 1.9;
+        }
+
+        .mineaSite .textLink {
+          display: inline-block;
+          margin-top: 20px;
+          color: var(--blue);
+          font-weight: 900;
+          font-size: 14px;
+        }
+
+        .mineaSite .sectionTop {
+          display: flex;
+          justify-content: space-between;
+          align-items: flex-end;
+          gap: 20px;
+          margin-bottom: 30px;
+        }
+
+        .mineaSite .sectionTop .sub {
+          margin-bottom: 0;
+        }
+
+        .mineaSite .booksGrid {
+          display: grid;
+          grid-template-columns: repeat(4, 1fr);
+          gap: 22px;
+        }
+
+        .mineaSite .bookCard {
+          display: block;
+          min-width: 0;
+        }
+
+        .mineaSite .bookCover {
+          aspect-ratio: 4 / 5;
+          overflow: hidden;
+          background: #e6f2ff;
+          border-radius: 14px;
+        }
+
+        .mineaSite .bookCover img {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+        }
+
+        .mineaSite .bookPlaceholder {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          gap: 24px;
+          height: 100%;
+          color: #2363a3;
+          background: linear-gradient(135deg, #dceeff, #9acbff);
+        }
+
+        .mineaSite .bookPlaceholder strong {
+          font-size: 34px;
+        }
+
+        .mineaSite .bookInfo h3 {
+          font-size: 17px;
+          margin: 15px 0 7px;
+        }
+
+        .mineaSite .bookInfo p {
+          color: var(--blue);
+          font-weight: 900;
+          margin: 0;
+        }
+
+        .mineaSite .catalogNote,
+        .mineaSite .emptyBooks {
+          color: #8491a1;
+          font-size: 14px;
+        }
+
+        .mineaSite .method {
+          background: #191919;
+          color: white;
+        }
+
+        .mineaSite .methodCopy h2 {
+          font-family: Georgia, serif;
+          line-height: 1.2;
+        }
+
+        .mineaSite .methodCopy > p {
+          line-height: 1.8;
+          margin: 40px 0;
+        }
+
+        .mineaSite .assessmentButton {
+          display: inline-block;
+          padding: 20px 30px;
+          border-radius: 50px;
+          font-weight: 900;
+        }
+
+        .mineaSite .methodCard {
+          border: 1px solid #494949;
+          padding: clamp(28px, 5vw, 60px);
+          min-height: 450px;
+        }
+
+        .mineaSite .duration {
+          display: flex;
+          align-items: flex-end;
+          gap: 14px;
+        }
+
+        .mineaSite .duration strong {
+          font-family: Georgia, serif;
+          line-height: 1.1;
+          font-weight: 400;
+        }
+
+        .mineaSite .duration span {
+          margin-bottom: 18px;
+        }
+
+        .mineaSite .methodCard hr {
+          border: 0;
+          border-top: 1px solid #4d4d4d;
+          margin: 30px 0 40px;
+        }
+
+        .mineaSite .methodCard p {
+          margin: 0 0 28px;
+          line-height: 1.5;
+        }
+
+        .mineaSite .whyGrid {
+          align-items: start;
+        }
+
+        .mineaSite .reasons {
+          display: grid;
+        }
+
+        .mineaSite .reason {
+          display: flex;
+          gap: 25px;
+          border-top: 1px solid #e5e9ef;
+          padding: 25px 0;
+        }
+
+        .mineaSite .reason > span {
+          color: var(--blue);
+          font-weight: 900;
+        }
+
+        .mineaSite .reason h3 {
+          font-size: 21px;
+          margin: 0 0 9px;
+        }
+
+        .mineaSite .reason p {
+          color: #7c8795;
+          font-size: 15px;
+          line-height: 1.7;
+          margin: 0;
+        }
+
+        .mineaSite .lifestyle {
+          background: #f7faff;
+        }
+
+        .mineaSite .tags {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 10px;
+          margin-top: 28px;
+        }
+
+        .mineaSite .tags span {
+          border: 1px solid #d9e8f8;
+          padding: 10px 15px;
+          border-radius: 30px;
+          color: #48739c;
+          font-size: 13px;
+          background: white;
+        }
+
+        .mineaSite .lifestyleVisual {
+          min-height: 350px;
+          overflow: hidden;
+          border-radius: 26px;
+          background: #dceeff;
+        }
+
+        .mineaSite .lifestyleVisual img {
+          width: 100%;
+          height: 100%;
+          min-height: 350px;
+          object-fit: cover;
+        }
+
+        .mineaSite .lifestyleScene {
+          min-height: 350px;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          gap: 25px;
+          color: #2876bd;
+          background: linear-gradient(145deg, #dceeff, #a9d3fa);
+        }
+
+        .mineaSite .lifestyleScene strong {
+          font-size: 30px;
+        }
+
+        .mineaSite .lifestyleScene small {
+          letter-spacing: 2px;
+        }
+
+        .mineaSite .reviewsGrid {
+          display: grid;
+          grid-template-columns: repeat(3, 1fr);
+          gap: 20px;
+        }
+
+        .mineaSite .reviewCard {
+          padding: 28px;
+          border: 1px solid #e5ebf3;
+          border-radius: 18px;
+        }
+
+        .mineaSite .stars {
+          color: #e7ac44;
+          margin-bottom: 20px;
+        }
+
+        .mineaSite .reviewCard p {
+          color: #586879;
+          line-height: 1.8;
+        }
+
+        .mineaSite .reviewCard strong,
+        .mineaSite .reviewCard small {
+          display: block;
+          margin-top: 10px;
+        }
+
+        .mineaSite .reviewCard small {
+          color: #8492a1;
+        }
+
+        .mineaSite .registration {
+          background: #eaf5ff;
+        }
+
+        .mineaSite .registrationInner {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          gap: 30px;
+        }
+
+        .mineaSite .lightButton {
+          display: inline-block;
+          white-space: nowrap;
+          padding: 18px 27px;
+          background: var(--blue);
+          color: white;
+          border-radius: 35px;
+          font-weight: 900;
+        }
+
+        .mineaSite .faqGrid {
+          align-items: start;
+        }
+
+        .mineaSite .faqList {
+          border-top: 1px solid #e4e9ef;
+        }
+
+        .mineaSite .faqItem {
+          border-bottom: 1px solid #e4e9ef;
+        }
+
+        .mineaSite .faqItem button {
+          width: 100%;
+          display: flex;
+          justify-content: space-between;
+          gap: 15px;
+          align-items: center;
+          text-align: left;
+          background: none;
+          border: 0;
+          padding: 24px 0;
+          cursor: pointer;
+          font-size: 17px;
+          font-weight: 800;
+          color: #25364a;
+        }
+
+        .mineaSite .faqItem button b {
+          color: var(--blue);
+          font-size: 23px;
+        }
+
+        .mineaSite .faqItem p {
+          color: #798594;
+          line-height: 1.8;
+          font-size: 15px;
+          padding-bottom: 22px;
+          margin: 0;
+        }
+
+        .mineaSite .finalCta {
+          background: #f4f9ff;
+          text-align: center;
+        }
+
+        .mineaSite .finalInner {
+          max-width: 750px;
+        }
+
+        .mineaSite .finalCta p {
+          color: #7b8795;
+          font-size: 17px;
+          line-height: 1.8;
+        }
+
+        .mineaSite .primaryButton {
+          display: inline-block;
+          margin-top: 25px;
+          padding: 18px 30px;
+          border-radius: 35px;
+          background: var(--blue);
+          color: white;
+          font-weight: 900;
+        }
+
+        .mineaSite .footer {
+          background: #191919;
+          color: white;
+          padding: 85px 0 30px;
+        }
+
+        .mineaSite .footerGrid {
+          display: grid;
+          grid-template-columns: 2fr 1fr 1fr;
+          gap: 70px;
+          padding-bottom: 70px;
+        }
+
+        .mineaSite .footerLogo {
+          font-family: Georgia, serif;
+          font-size: 35px;
+          font-weight: 700;
+        }
+
+        .mineaSite .footerBrand > p {
+          color: #a2a2aa;
+          font-size: 15px;
+          line-height: 1.8;
+          max-width: 340px;
+          margin: 16px 0 22px;
+        }
+
+        .mineaSite .footerSocials {
+          display: flex;
+          gap: 23px;
+        }
+
+        .mineaSite .footerSocials a {
+          display: inline-flex;
+          width: 24px;
+          height: 24px;
+          color: white;
+        }
+
+        .mineaSite .footerSocials svg {
+          width: 24px;
+          height: 24px;
+        }
+
+        .mineaSite .footerColumn {
+          display: flex;
+          flex-direction: column;
+          gap: 24px;
+        }
+
+        .mineaSite .footerColumn h3 {
+          margin: 0 0 12px;
+          font-size: 12px;
+          letter-spacing: 2px;
+        }
+
+        .mineaSite .footerColumn a {
+          color: #a4a4ad;
+          font-size: 16px;
+        }
+
+        .mineaSite .footerColumn a:hover {
+          color: white;
+        }
+
+        .mineaSite .footerBottom {
+          display: flex;
+          justify-content: space-between;
+          gap: 25px;
+          border-top: 1px solid #414141;
+          padding-top: 30px;
+          color: #9999a3;
+          font-size: 12px;
+          line-height: 1.6;
+        }
+
+        @media (max-width: 1000px) {
+          .mineaSite .nav {
+            gap: 15px;
+          }
+
+          .mineaSite .split {
+            gap: 40px;
+          }
+
+          .mineaSite .studyGrid {
+            grid-template-columns: repeat(2, 1fr);
+          }
+        }
+
+        @media (max-width: 760px) {
+          .mineaSite .wrap {
+            width: min(100% - 32px, 620px);
+          }
+
+          .mineaSite .header {
+  position: relative;
+  z-index: 20;
+  background: #79b6fa;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.35);
+}
+
+          .mineaSite .logo {
+            font-size: 23px;
+          }
+
+          .mineaSite .nav {
+            display: none;
+            position: absolute;
+            top: 72px;
+            left: 0;
+            right: 0;
+            background: white;
+            padding: 20px;
+            border-top: 1px solid #e8edf3;
+            box-shadow: 0 20px 30px rgba(0,0,0,.07);
+            flex-direction: column;
+            align-items: flex-start;
+          }
+
+          .mineaSite .nav.open {
+            display: flex;
+          }
+
+          .mineaSite .menuButton {
+            display: grid;
+          }
+
+          .mineaSite .languages button {
+            padding: 7px;
+          }
+
+          .mineaSite .heroGrid,
+          .mineaSite .split {
+            grid-template-columns: 1fr;
+          }
+
+          .mineaSite .heroGrid {
+            padding: 70px 0;
+            gap: 30px;
+          }
+
+          .mineaSite .heroArt {
+            min-height: 390px;
+          }
+
+          .mineaSite .section {
+            padding: 70px 0;
+          }
+
+          .mineaSite .booksGrid,
+          .mineaSite .reviewsGrid {
+            grid-template-columns: repeat(2, 1fr);
+          }
+
+          .mineaSite .sectionTop,
+          .mineaSite .registrationInner {
+            flex-direction: column;
+            align-items: flex-start;
+          }
+
+          .mineaSite .footerGrid {
+            grid-template-columns: 1fr 1fr;
+            gap: 45px;
+          }
+
+          .mineaSite .footerBrand {
+            grid-column: 1 / -1;
+          }
+
+          .mineaSite .footerBottom {
+            flex-direction: column;
+          }
+        }
+
+        @media (max-width: 450px) {
+          .mineaSite .surveyIcon {
+            display: none;
+          }
+
+          .mineaSite .studyGrid,
+          .mineaSite .booksGrid,
+          .mineaSite .reviewsGrid {
+            grid-template-columns: 1fr;
+          }
+
+          .mineaSite .heroSearch button {
+            padding: 13px;
+          }
+
+          .mineaSite .methodCard {
+            min-height: auto;
+          }
+
+          .mineaSite .footerGrid {
+            gap: 35px;
+          }
+        }
+
+/* HERO — баруун талын бүх элемент */
+.mineaSite .heroVisual {
+  position: relative;
+  width: 100%;
+  max-width: 590px;
+  height: 540px;
+  margin: 0 auto;
+  overflow: visible;
+}
+
+/* Гол ticket */
+.mineaSite .studentPass {
+  position: absolute;
+  width: 350px;
+  max-width: 65%;
+  height: auto;
+  min-height: 370px;
+
+  top: 95px;
+  left: 50%;
+
+  transform: translateX(-50%) rotate(-7deg);
+  transform-origin: center;
+
+  background: #FFF9F0;
+  color: #592D1F;
+  border-radius: 26px;
+  padding: 30px 27px;
+
+  box-shadow: 0 20px 42px rgba(24, 64, 110, 0.13);
+  z-index: 2;
+}
+
+/* Дөрвөн жижиг картын нийтлэг загвар */
+.mineaSite .floatCard {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  width: max-content;
+  max-width: 220px;
+  min-height: 76px;
+  padding: 17px 25px;
+
+  background: #EAF3FF;
+  color: #202329;
+
+  border: none;
+  border-radius: 21px;
+
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 25px;
+  font-weight: 400;
+  line-height: 1.3;
+  white-space: nowrap;
+
+  box-shadow: 0 15px 25px rgba(24, 64, 110, 0.13);
+  z-index: 3;
+}
+
+/* 오늘 뭐 해요? — зүүн дээд */
+.mineaSite .floatCard:nth-of-type(1) {
+  top: 40px;
+  left: 12px;
+  transform: rotate(-7deg);
+}
+
+/* -고 싶어요 — баруун дээд */
+.mineaSite .floatCard:nth-of-type(2) {
+  top: 95px;
+  right: 0;
+  transform: rotate(6deg);
+}
+
+/* TOPIK II — зүүн доод */
+.mineaSite .floatCard:nth-of-type(3) {
+  bottom: 65px;
+  left: 8px;
+  transform: rotate(-4deg);
+}
+
+/* 진짜? — баруун доод */
+.mineaSite .floatCard:nth-of-type(4) {
+  bottom: 35px;
+  right: 12px;
+  transform: rotate(7deg);
+}
+
+/* Жижиг дэлгэц */
+@media (max-width: 650px) {
+  .mineaSite .heroVisual {
+    max-width: 360px;
+    height: 390px;
+  }
+
+  .mineaSite .studentPass {
+    width: 245px;
+    min-height: 285px;
+    top: 65px;
+    padding: 22px 18px;
+  }
+
+  .mineaSite .floatCard {
+    max-width: 145px;
+    min-height: 52px;
+    padding: 11px 15px;
+    border-radius: 15px;
+    font-size: 17px;
+  }
+
+  .mineaSite .floatCard:nth-of-type(1) {
+    top: 15px;
+    left: 0;
+  }
+
+  .mineaSite .floatCard:nth-of-type(2) {
+    top: 65px;
+    right: 0;
+  }
+
+  .mineaSite .floatCard:nth-of-type(3) {
+    bottom: 40px;
+    left: 0;
+  }
+
+  .mineaSite .floatCard:nth-of-type(4) {
+    bottom: 10px;
+    right: 0;
+  }
+}
+
+      `}</style>
+    </div>
+  )
+}

@@ -1,0 +1,31 @@
+import HomeClient from './HomeClient'
+import { getPublishedCatalog } from './lib/catalog.mjs'
+import { createPublicCatalogClient } from './lib/publicCatalog'
+import { getHomeContent } from './lib/homeContent.mjs'
+
+export const dynamic = 'force-dynamic'
+
+export default async function HomePage() {
+  const client = createPublicCatalogClient()
+
+  const [{ books, errors }, { content, error }] = await Promise.all([
+    getPublishedCatalog(client),
+    getHomeContent(client),
+  ])
+
+  if (error) {
+    console.error('Homepage content query failed', error.message)
+  }
+
+  if (errors.length) {
+    console.error('Public catalog query failed', errors)
+  }
+
+  return (
+    <HomeClient
+      books={books}
+      catalogError={errors.length > 0}
+      homeContent={content}
+    />
+  )
+}

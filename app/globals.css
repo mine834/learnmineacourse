@@ -267,3 +267,114 @@ body:has(a[href="/admin"]) a[href^="/admin"]:hover {
   line-height: 1.8;
   font-family: Arial, "Apple Color Emoji", "Segoe UI Emoji", sans-serif;
 }
+.footer-socials {
+  display: flex;
+  align-items: center;
+  gap: 22px;
+  margin-top: 16px;
+}
+
+.footer-socials a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 25px;
+  height: 25px;
+  color: #ffffff;
+  transition: opacity 0.2s, transform 0.2s;
+}
+
+.footer-socials svg {
+  width: 23px;
+  height: 23px;
+}
+
+.footer-socials a:hover {
+  opacity: 0.75;
+  transform: translateY(-2px);
+}
+/* =========================================
+   ADMIN — IMAGE UPLOAD
+========================================= */
+
+.image-upload-row,
+.imageUploadRow {
+  display: flex !important;
+  align-items: center !important;
+  flex-wrap: wrap;
+  gap: 18px !important;
+  margin: 20px 0 12px;
+}
+
+.image-upload-row > label,
+.imageUploadRow .imageLabel {
+  margin: 0 !important;
+  font-size: 14px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+/* Хуучин native file input ашиглаж байгаа бол */
+.image-file-input {
+  display: inline-block !important;
+  width: auto !important;
+  max-width: 300px;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  background: transparent !important;
+  font-size: 13px;
+  color: #718096;
+}
+
+.image-file-input::file-selector-button {
+  margin-right: 12px;
+  padding: 10px 15px;
+  background: #f0f6ff;
+  border: 1px solid #cfe2fa;
+  border-radius: 9px;
+  color: #0879d1;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+/* Шинэ custom upload товч */
+.imageUploadRow .imageChooseButton {
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: auto !important;
+  margin: 0 !important;
+  padding: 10px 15px;
+  background: #f0f6ff;
+  border: 1px solid #cfe2fa;
+  border-radius: 9px;
+  color: #0879d1;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.imageUploadRow .hiddenFileInput {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  opacity: 0 !important;
+  overflow: hidden;
+}
+
+.imageUploadRow .imageFileName {
+  color: #718096;
+  font-size: 12px;
+}
+/* LEARNMINEA — COMPACT CONTACT PAGE */
+@media (min-width: 768px) {
+  body:has(a[href^="tel:"]) main,
+  body:has(a[href^="mailto:"]) main {
+    /* Existing layout preserved */
+  }
+}

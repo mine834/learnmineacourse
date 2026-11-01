@@ -1,0 +1,399 @@
+
+/* LEARNMINEA COMPACT SIZES */
+
+/* Ерөнхий гарчиг, тайлбар */
+.site .section h2 {
+  font-size: clamp(34px, 3.5vw, 56px);
+}
+
+.site .sub {
+  font-size: 18px;
+}
+
+.site .studyCard h3 {
+  font-size: 29px;
+}
+
+.site .studyCard p {
+  font-size: 15px;
+}
+
+.site .splitCopy > p,
+.site .method .split > div > p {
+  font-size: 18px;
+}
+
+.site .talkCard > p {
+  font-size: 19px;
+}
+
+.site .tip {
+  font-size: 15px;
+}
+
+.site .booksHead > p {
+  font-size: 16px;
+}
+
+.site .bookItem h3 {
+  font-size: 21px;
+}
+
+.site .bookItem p {
+  font-size: 14px;
+}
+
+.site .reason h3 {
+  font-size: 29px;
+}
+
+.site .reason p {
+  font-size: 15px;
+}
+
+.site .faqItem button {
+  font-size: 25px;
+}
+
+.site .faqItem p {
+  font-size: 16px;
+}
+
+/* FOOTER — бүхэлд нь жижигрүүлэх */
+.site .footer {
+  padding: 34px 0 18px !important;
+}
+
+.site .footerGrid {
+  gap: 24px;
+}
+
+.site .footer .logo {
+  font-size: 27px;
+}
+
+.site .footerGrid p {
+  font-size: 13px;
+  line-height: 1.5;
+  max-width: 260px;
+  margin: 12px 0;
+}
+
+.site .footerGrid > div:not(:first-child) {
+  gap: 10px;
+}
+
+.site .footerGrid strong {
+  font-size: 10px;
+}
+
+.site .footerGrid a:not(.logo) {
+  font-size: 13px;
+}
+
+.site .footerSocials {
+  gap: 12px;
+}
+
+.site .footerSocials svg {
+  width: 18px;
+  height: 18px;
+}
+
+.site .footerBottom {
+  margin-top: 28px;
+  padding-top: 14px;
+  font-size: 10px;
+}
+
+/* Утасны харагдац */
+@media (max-width: 700px) {
+  .site .section h2 {
+    font-size: clamp(29px, 7vw, 40px);
+  }
+
+  .site .studyCard h3 {
+    font-size: 24px;
+  }
+
+  .site .footer {
+    padding: 28px 0 16px !important;
+  }
+
+  .site .footer .logo {
+    font-size: 25px;
+  }
+
+  .site .footerGrid {
+    gap: 20px;
+  }
+
+  .site .footerBottom {
+    margin-top: 22px;
+  }
+}
+
+
+/* Ticket layout fix */
+.site .ticket {
+  width: 300px;
+  padding: 19px 18px;
+  border-radius: 9px;
+  overflow: hidden;
+}
+
+.site .ticketRows {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr);
+  gap: 10px;
+  padding: 12px 0;
+}
+
+.site .ticketLabels,
+.site .ticketValues {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 0;
+}
+
+.site .ticketLabels span,
+.site .ticketValues strong {
+  display: block;
+  font-size: 11px;
+  line-height: 1.5;
+  white-space: nowrap;
+}
+
+.site .ticketLabels span {
+  color: #85818b;
+}
+
+.site .ticketValues strong {
+  text-align: right;
+  color: #252235;
+}
+
+@media (max-width: 700px) {
+  .site .ticket {
+    width: 240px;
+  }
+
+  .site .ticketLabels span,
+  .site .ticketValues strong {
+    font-size: 9px;
+  }
+}
+
+
+/* LEARNMINEA MOTION ONLY — NOTION INSPIRED */
+/* Зөвхөн хөдөлгөөн. Өнгө, хэмжээ, layout өөрчлөхгүй. */
+
+/* 1. Товч болон холбоосын зөөлөн hover */
+.site .blueBtn,
+.site .whiteBtn,
+.site .textLink,
+.site .nav a,
+.site .footer a,
+.site .search button {
+  transition:
+    opacity 200ms ease,
+    filter 200ms ease;
+}
+
+.site .blueBtn:hover,
+.site .whiteBtn:hover,
+.site .search button:hover {
+  filter: brightness(1.06);
+}
+
+.site .nav a:hover,
+.site .footer a:hover,
+.site .textLink:hover {
+  opacity: 0.78;
+}
+
+/* 2. Картуудын зөөлөн хөдөлгөөн */
+.site .studyCard,
+.site .bookItem,
+.site .testimonial,
+.site .reason {
+  transition:
+    transform 200ms ease,
+    box-shadow 200ms ease;
+}
+
+.site .studyCard:hover,
+.site .bookItem:hover,
+.site .testimonial:hover {
+  transform: translateY(-4px);
+}
+
+/* 3. Hero дээрх солонгос үгтэй картууд */
+.site .floatCard {
+  animation: mineaGentleFloat 5s ease-in-out infinite;
+}
+
+.site .cardTwo {
+  animation-delay: -1.2s;
+}
+
+.site .cardThree {
+  animation-delay: -2.4s;
+}
+
+.site .cardFour {
+  animation-delay: -3.6s;
+}
+
+@keyframes mineaGentleFloat {
+  0%, 100% {
+    translate: 0 0;
+  }
+  50% {
+    translate: 0 -9px;
+  }
+}
+
+/* 4. Hero-ийн Student Pass */
+.site .ticket {
+  animation: mineaTicketFloat 6s ease-in-out infinite;
+}
+
+@keyframes mineaTicketFloat {
+  0%, 100% {
+    translate: 0 0;
+  }
+  50% {
+    translate: 0 -7px;
+  }
+}
+
+/* 5. Accessibility: хөдөлгөөн багасгах тохиргоо */
+@media (prefers-reduced-motion: reduce) {
+  .site .floatCard,
+  .site .ticket {
+    animation: none !important;
+  }
+
+  .site .studyCard,
+  .site .bookItem,
+  .site .testimonial,
+  .site .reason,
+  .site .blueBtn,
+  .site .whiteBtn,
+  .site .textLink,
+  .site .nav a,
+  .site .footer a,
+  .site .search button {
+    transition: none !important;
+  }
+}
+
+
+/* LEARNMINEA TWO FONT SYSTEM */
+/* Font family only — хэмжээ, өнгө, layout өөрчлөхгүй */
+
+/* 1. Бүх үндсэн текст */
+.site {
+  font-family: Arial, sans-serif;
+}
+
+/* 2. Бүх гарчиг */
+.site h1,
+.site h2,
+.site h3,
+.site h4,
+.site h5,
+.site h6,
+.site .ticketName,
+.site .logo {
+  font-family: Georgia, serif !important;
+}
+
+/* 3. Тайлбар, меню, товч, картын жижиг текст */
+.site p,
+.site span,
+.site small,
+.site label,
+.site input,
+.site button,
+.site a,
+.site li,
+.site .eyebrow,
+.site .bookMeta,
+.site .ticketSub,
+.site .ticketRows,
+.site .ticketBottom {
+  font-family: Arial, sans-serif;
+}
+
+/* 4. Гарчигтай холбоосуудыг Georgia хэвээр хадгалах */
+.site a.logo,
+.site .studyCard h3,
+.site .bookItem h3,
+.site .reason h3,
+.site .testimonial h3,
+.site .faq h2,
+.site .cta h2 {
+  font-family: Georgia, serif !important;
+}
+
+
+/* LEARNMINEA REGISTRATION V2 */
+/* Зөвхөн онлайн сургалтын хэсэг */
+
+.site .registration {
+  position: relative;
+  padding-top: 64px;
+  padding-bottom: 64px;
+}
+
+.site .mineaRegistrationLayout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 220px;
+  gap: 36px;
+  align-items: start;
+}
+
+.site .mineaRegistrationContent {
+  min-width: 0;
+  max-width: 760px;
+}
+
+.site .mineaRegistrationContent h2 {
+  max-width: 700px;
+}
+
+.site .mineaRegistrationContent .sub {
+  margin-top: 18px;
+  max-width: 700px;
+}
+
+.site .mineaRegistrationAction {
+  position: sticky;
+  top: 110px;
+  align-self: start;
+  padding-top: 38px;
+}
+
+.site .mineaRegistrationAction .blueBtn {
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+@media (max-width: 800px) {
+  .site .mineaRegistrationLayout {
+    grid-template-columns: 1fr;
+    gap: 22px;
+  }
+
+  .site .mineaRegistrationAction {
+    position: static;
+    padding-top: 0;
+    max-width: 240px;
+  }
+}

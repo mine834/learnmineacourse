@@ -313,11 +313,7 @@ export default function AdminCourseBuilderPage() {
     setUploadingLessonId(lesson.id)
 
     try {
-      if (lesson.video_url) {
-        await deleteVideoFile(
-          lesson.video_url
-        )
-      }
+      const previousVideoUrl = lesson.video_url
 
       const extension =
         file.name
@@ -366,6 +362,10 @@ export default function AdminCourseBuilderPage() {
           .remove([filePath])
 
         throw updateError
+      }
+
+      if (previousVideoUrl) {
+        await deleteVideoFile(previousVideoUrl)
       }
 
       await loadModules()

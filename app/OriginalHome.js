@@ -913,9 +913,7 @@ export default function Home({ books = [], homeContent = null, editorSettings = 
   </a>
 
   <a
-    href={home.footer?.email
-      ? `mailto:${home.footer.email}`
-      : 'mailto:hello@learnminea.com'}
+    href="/contact" 
     aria-label="Gmail"
     title="И-мэйл"
   >

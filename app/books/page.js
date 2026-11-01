@@ -233,8 +233,7 @@ export default async function BooksPage({ searchParams }) {
 .booksPage,
 .booksPage .mineabooksIntro,
 .booksPage .booksCatalog,
-.booksPage .booksBottom,
-.booksPage .booksFooter {
+.booksPage .booksBottom {
   background: #F5FAFF !important;
 }
 

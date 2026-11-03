@@ -1,3 +1,4 @@
+import './footer-compact.css'
 
 import Link from 'next/link'
 import PublicHeader, { PageIntro } from '../components/PublicHeader'
@@ -32,12 +33,47 @@ function canonicalCategory(value) {
   return aliases[key] || key
 }
 
+const BOOKS_HERO_DEFAULTS = {
+  eyebrow: 'LEARNMINEA · DIGITAL LIBRARY',
+  title: 'Цахим номын\nсан',
+  description: 'Түвшин, зорилгодоо тохирсон цахим ном, гарын авлагаа сонгоод хаанаас ч сураарай.',
+  buttonText: 'Номуудыг үзэх',
+  gradientStart: '#D3E8FC',
+  gradientEnd: '#E8F0F9',
+}
+
+function validHex(value, fallback) {
+  return typeof value === 'string' && /^#[0-9a-fA-F]{6}$/.test(value)
+    ? value
+    : fallback
+}
+
 export default async function BooksPage({ searchParams }) {
   const params = await searchParams
   const selectedCategory = canonicalCategory(params?.category || 'all')
   const search = String(params?.search || '').trim().toLocaleLowerCase()
 
-  const { books, errors } = await getPublishedCatalog(createPublicCatalogClient())
+  const catalogClient = createPublicCatalogClient()
+  const { books, errors } = await getPublishedCatalog(catalogClient)
+
+  const { data: booksHeroRow, error: booksHeroError } = await catalogClient
+    .from('site_editor_settings')
+    .select('content')
+    .eq('id', 'books_hero')
+    .maybeSingle()
+
+  if (booksHeroError) console.error('Books hero settings:', booksHeroError.message)
+
+  const booksHeroSettings = {
+    ...BOOKS_HERO_DEFAULTS,
+    ...(booksHeroRow?.content || {}),
+  }
+
+  const heroGradient = `linear-gradient(120deg, ${
+    validHex(booksHeroSettings.gradientStart, BOOKS_HERO_DEFAULTS.gradientStart)
+  } 0%, ${
+    validHex(booksHeroSettings.gradientEnd, BOOKS_HERO_DEFAULTS.gradientEnd)
+  } 100%)`
   if (errors.length) console.error('Public catalog query failed', errors)
   const filteredBooks = books.filter(book =>
     (selectedCategory === 'all' || canonicalCategory(book.category) === selectedCategory) &&
@@ -49,59 +85,39 @@ export default async function BooksPage({ searchParams }) {
       <PublicHeader active="/books" />
       {
 /* LEARNMINEA BOOKS SUPER INTRO */}
-      <section className="mineabooksIntro">
+      <section className="mineabooksIntro" style={{ "--books-hero-gradient": heroGradient }}>
         <div className="mineabooksIntroInner">
           <div className="mineabooksIntroCopy">
             <div className="mineabooksEyebrow">
-              LEARNMINEA · DIGITAL LIBRARY
+              {booksHeroSettings.eyebrow}
             </div>
 
-            <h1>
-              Сурах зүйлээ
-              <br />
-              <span>өөрийнхөөрөө</span> сонго.
-            </h1>
+            <h1 style={{ whiteSpace: "pre-line" }}>{booksHeroSettings.title}</h1>
 
             <p>
-              Үгийн сан, дүрэм, TOPIK болон өдөр тутмын
-              хэрэглээний цахим ном, материалаа нэг дороос
-              олж, өөрийн хурдаар суралцаарай.
+              {booksHeroSettings.description}
             </p>
 
             <a className="mineabooksExplore" href="#book-catalog">
-              Номуудыг үзэх <span>↗</span>
+              {booksHeroSettings.buttonText} <span>↗</span>
             </a>
-
-            <div className="mineabooksNote">
-              Өөрийн түвшинд тохирсон материалаас эхлээрэй.
-            </div>
           </div>
 
-          <div className="mineabooksArtwork" aria-hidden="true">
+          <div className="mineabooksArtwork" aria-label="Манай цахим номууд">
             <div className="mineabooksSticker stickerOne">가</div>
             <div className="mineabooksSticker stickerTwo">✦</div>
 
-            <div className="mineabooksBook bookBack">
-              <span>LEARNMINEA</span>
-              <strong>TOPIK</strong>
-              <small>STUDY NOTES</small>
-            </div>
-
-            <div className="mineabooksBook bookFront">
-              <span>LEARNMINEA</span>
-              <strong>나의 한국어</strong>
-              <small>MY KOREAN NOTEBOOK</small>
-              <div className="mineabooksBookLabel">
-                <span>NAME</span>
-                <b>my study journey</b>
-                <span>LEVEL</span>
-                <b>01 — 06</b>
+            {books.filter(book => book.cover_url).slice(0, 2).map((book, index) => (
+              <div
+                key={book.id}
+                className={`mineabooksBook ${index === 0 ? 'bookBack' : 'bookFront'}`}
+              >
+                <img
+                  src={book.cover_url}
+                  alt={book.title || 'Цахим ном'}
+                />
               </div>
-            </div>
-
-            <div className="mineabooksScribble">
-              made for your learning journey ↗
-            </div>
+            ))}
           </div>
         </div>
       </section>
@@ -224,7 +240,103 @@ export default async function BooksPage({ searchParams }) {
         </div>
       </footer>
 
-      <style>{`
+      <style>{`\n.booksPage .mineabooksIntro { background: var(--books-hero-gradient) !important; }
+
+/* LEARNMINEA REAL BOOK HERO */
+.booksPage .mineabooksIntro {
+  background: #edf7ff !important;
+  padding: 95px 32px 110px;
+}
+
+.booksPage .mineabooksIntroInner {
+  max-width: 1180px;
+  margin: auto;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  align-items: center;
+  gap: 55px;
+}
+
+.booksPage .mineabooksIntro h1 {
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(58px, 6vw, 100px);
+  font-weight: 400;
+  line-height: 1.08;
+  letter-spacing: -2px;
+  color: #18191b;
+  margin: 0 0 30px;
+}
+
+.booksPage .mineabooksIntroCopy > p {
+  max-width: 520px;
+  color: #63738a;
+  font-size: 19px;
+  line-height: 1.8;
+  margin-bottom: 35px;
+}
+
+.booksPage .mineabooksArtwork {
+  position: relative;
+  width: 100%;
+  height: 490px;
+}
+
+.booksPage .mineabooksBook {
+  position: absolute;
+  width: 56%;
+  height: 78%;
+  padding: 0;
+  border-radius: 16px;
+  overflow: hidden;
+  background: #fff;
+  box-shadow: 0 24px 55px rgba(38, 76, 120, .18);
+  animation: none !important;
+}
+
+.booksPage .mineabooksBook.bookBack {
+  left: 13%;
+  top: 9%;
+  transform: rotate(-12deg);
+}
+
+.booksPage .mineabooksBook.bookFront {
+  left: 40%;
+  top: 15%;
+  transform: rotate(8deg);
+}
+
+.booksPage .mineabooksBook img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.booksPage .mineabooksSticker {
+  z-index: 5;
+}
+
+@media (max-width: 768px) {
+  .booksPage .mineabooksIntro {
+    padding: 65px 22px 40px;
+  }
+
+  .booksPage .mineabooksIntroInner {
+    grid-template-columns: 1fr;
+    gap: 30px;
+  }
+
+  .booksPage .mineabooksIntro h1 {
+    font-size: clamp(48px, 11vw, 72px);
+  }
+
+  .booksPage .mineabooksArtwork {
+    height: 340px;
+    max-width: 420px;
+    transform: none;
+  }
+}
+
 /* BOOKS BOTTOM CTA — BROWN CARD */
 .booksPage .booksBottom {
   background: #F5FAFF !important;
@@ -318,7 +430,6 @@ export default async function BooksPage({ searchParams }) {
 /* Зөвхөн цахим номын хуудасны арын өнгө */
 
 .booksPage,
-.booksPage .mineabooksIntro,
 .booksPage .booksCatalog,
 .booksPage .booksBottom {
   background: #F5FAFF !important;
@@ -1119,7 +1230,31 @@ export default async function BooksPage({ searchParams }) {
 @media(max-width:1000px){.booksPage .booksGrid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:600px){.booksPage .booksGrid{gap:12px}.booksPage .bookItem{padding:10px;border-radius:14px}.booksPage .mineaCatalogShort{font-size:12px}}
 
-`}</style>
+/* BOOKS MATCH OTHER PAGE HERO */
+.booksPage {
+  background: #F5FAFF;
+}
+
+.booksPage .mineabooksIntro {
+  background: linear-gradient(
+    120deg,
+    #D3E8FC 0%,
+    #E8F0F9 100%
+  ) !important;
+}
+
+.booksPage .publicHeader,
+.booksPage .booksHeader {
+  background: linear-gradient(
+    120deg,
+    #D3E8FC 0%,
+    #E8F0F9 100%
+  ) !important;
+  border-bottom: 1px solid rgba(255,255,255,.65);
+}
+
+  `}
+  </style>
     </main>
   )
 }

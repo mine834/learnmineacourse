@@ -402,6 +402,20 @@ function LearnMineaIllustrations() {
 }
 
 export default function Home({ books = [], homeContent = null, editorSettings = {} }) {
+  const featuredIds = Array.isArray(homeContent?.books?.featured_book_ids)
+    ? homeContent.books.featured_book_ids.filter(Boolean).map(String)
+    : []
+
+  const selectedBooks = featuredIds
+    .map(id => books.find(book => String(book.id) === id))
+    .filter(Boolean)
+
+  const remainingBooks = books.filter(
+    book => !selectedBooks.some(selected => String(selected.id) === String(book.id))
+  )
+
+  const homepageBooks = [...selectedBooks, ...remainingBooks].slice(0, 4)
+
   const [lang, setLang] = useState('MN')
   const home = localizeHomeContent(
     homeContent,
@@ -420,7 +434,12 @@ export default function Home({ books = [], homeContent = null, editorSettings = 
  const [playing,setPlaying]=useState(false)
  const speak=(value)=>{if(typeof window==='undefined'||!window.speechSynthesis)return;window.speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(value);u.lang='ko-KR';u.rate=.85;setPlaying(true);u.onend=()=>setPlaying(false);window.speechSynthesis.speak(u)}
  const searchNow=(e)=>{e.preventDefault();window.location.href='/books?search='+encodeURIComponent(search)}
- return <div className="site">
+ return <div className="site" style={{
+    '--theme-primary': editorSettings.siteTheme?.primary || '#0879D1',
+    '--theme-secondary': editorSettings.siteTheme?.secondary || '#80B8F8',
+    '--theme-surface': editorSettings.siteTheme?.surface || '#EAF4FF',
+    '--theme-text': editorSettings.siteTheme?.text || '#25364A',
+  }}>
     <LearnMineaIllustrations />
     {/* Hero zoom/pin disabled; full-page scroll reveals remain enabled. */}
     <FullPageScrollReveal />
@@ -574,7 +593,7 @@ export default function Home({ books = [], homeContent = null, editorSettings = 
     </div>
   </section>
   <section className="section" id="books"><div className="wrap"><div className="booksHead"><div><div className="eyebrow">{home.books.eyebrow}</div><h2>{home.books.title}</h2></div><p>{home.books.body}</p></div><div className="booksGrid">
-  {books.slice(0, 4).map((book, i) => {
+  {homepageBooks.map((book, i) => {
     const image = book.cover_url || book.image_url || book.cover_image_url || ''
 
     return (

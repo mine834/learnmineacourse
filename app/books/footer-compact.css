@@ -1,0 +1,25 @@
+/* Compact footer — books page only */
+
+.booksPage .booksFooter {
+  padding: 25px 28px 10px !important;
+  min-height: 0 !important;
+}
+
+.booksPage .footerInner {
+  padding: 0 0 10px !important;
+  min-height: 0 !important;
+  gap: 12px !important;
+}
+
+.booksPage .footerLogo {
+  font-size: 23px !important;
+}
+
+.booksPage .footerInner nav {
+  gap: 8px !important;
+}
+
+.booksPage .footerCopyright {
+  padding: 8px 0 0 !important;
+  margin-top: 0 !important;
+}

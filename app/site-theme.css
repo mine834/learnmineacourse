@@ -1,0 +1,46 @@
+
+/* LearnMinea unified theme — homepage only */
+.site {
+  --lm-primary: var(--theme-primary, #0879D1);
+  --lm-secondary: var(--theme-secondary, #80B8F8);
+  --lm-surface: var(--theme-surface, #EAF4FF);
+  --lm-text: var(--theme-text, #25364A);
+}
+
+.site .header {
+  background: var(--lm-secondary) !important;
+}
+
+.site .hero {
+  background: linear-gradient(
+    125deg,
+    var(--lm-primary) 0%,
+    var(--lm-secondary) 65%,
+    var(--lm-surface) 100%
+  ) !important;
+}
+
+.site .search button,
+.site .blueBtn,
+.site .mineaBookOrder,
+.site .center .blueBtn {
+  background: var(--lm-primary) !important;
+}
+
+.site .eyebrow,
+.site .textLink,
+.site .price {
+  color: var(--lm-primary) !important;
+}
+
+.site .studyCard:hover {
+  border-color: var(--lm-primary);
+}
+
+.site #books .bookItem:hover {
+  border-color: var(--lm-primary);
+}
+
+.site .siteThemeSurface {
+  background: var(--lm-surface);
+}

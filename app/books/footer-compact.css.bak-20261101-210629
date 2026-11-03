@@ -1,0 +1,22 @@
+/* Only the digital library footer */
+
+.booksPage .booksFooter {
+  padding: 28px 32px 14px !important;
+  min-height: 0 !important;
+}
+
+.booksPage .footerInner {
+  padding-top: 0 !important;
+  padding-bottom: 18px !important;
+  min-height: 0 !important;
+  gap: 20px !important;
+}
+
+.booksPage .footerLogo {
+  font-size: 25px !important;
+}
+
+.booksPage .footerCopyright {
+  padding-top: 12px !important;
+  margin-top: 0 !important;
+}

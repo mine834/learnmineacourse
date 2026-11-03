@@ -224,7 +224,7 @@ function Field({ label, value, onChange, multiline, type = 'text' }) {
   )
 }
 
-function MiniPreview({ section, data }) {
+function MiniPreview({ section, data, availableBooks = [], featuredBookIds = [] }) {
   const value = data[section] || {}
   if (section === 'topikInfo') return <div className="sharedSitePreview"><TopikInfoSection value={value} preview /></div>
   if (section === 'gksInfo') return <div className="sharedSitePreview"><GksInfoSection value={value} preview /></div>
@@ -324,12 +324,39 @@ function MiniPreview({ section, data }) {
 
       {section === 'books' && (
         <div className="miniGrid">
-          {['01', '02', '03', '04'].map(item => (
-            <div className="miniBook" key={item}>
-              <div>LEARNMINEA</div>
-              <strong>{item}</strong>
-            </div>
-          ))}
+          {[0, 1, 2, 3].map(index => {
+            const ids = featuredBookIds
+            const book = availableBooks.find(
+              item => String(item.id) === String(ids[index] || '')
+            )
+
+            return (
+              <div className="miniBook" key={index}
+                style={{
+                  background: book?.image_url ? '#fff' : '#dcecff',
+                  overflow: 'hidden',
+                  padding: book?.image_url ? 8 : undefined,
+                }}
+              >
+                {book?.image_url ? (
+                  <img
+                    src={book.image_url}
+                    alt={book.title}
+                    style={{
+                      width: '100%',
+                      height: '100%',
+                      objectFit: 'contain',
+                    }}
+                  />
+                ) : (
+                  <>
+                    <div>LEARNMINEA</div>
+                    <strong>{String(index + 1).padStart(2, '0')}</strong>
+                  </>
+                )}
+              </div>
+            )
+          })}
         </div>
       )}
 
@@ -405,6 +432,7 @@ function MiniPreview({ section, data }) {
 }
 
 export default function HomeSectionsEditor({ selectedSection = null }) {
+  const [availableBooks, setAvailableBooks] = useState([])
   const [content, setContent] = useState(() =>
     normalizeHomeContent(null)
   )
@@ -417,6 +445,25 @@ export default function HomeSectionsEditor({ selectedSection = null }) {
   const [opened, setOpened] = useState({})
   const [file, setFile] = useState(null)
   const [previewUrl, setPreviewUrl] = useState('')
+
+  useEffect(() => {
+    let active = true
+    async function loadAvailableBooks() {
+      const { data, error } = await supabase
+        .from('products')
+        .select('id,title,image_url,published')
+        .eq('published', true)
+        .order('created_at', { ascending: false })
+
+      if (error) {
+        console.error('Ном ачаалах:', error.message)
+      } else if (active) {
+        setAvailableBooks(data || [])
+      }
+    }
+    loadAvailableBooks()
+    return () => { active = false }
+  }, [])
 
   const localized = useMemo(
     () => localizeHomeContent(content, language),
@@ -464,6 +511,25 @@ export default function HomeSectionsEditor({ selectedSection = null }) {
 
     return () => URL.revokeObjectURL(url)
   }, [file])
+
+  function changeFeaturedBook(index, id) {
+    setContent(current => {
+      const ids = Array.isArray(current.books?.featured_book_ids)
+        ? [...current.books.featured_book_ids]
+        : ['', '', '', '']
+
+      while (ids.length < 4) ids.push('')
+      ids[index] = id
+
+      return {
+        ...current,
+        books: {
+          ...current.books,
+          featured_book_ids: ids,
+        },
+      }
+    })
+  }
 
   function change(section, field, value) {
     setContent(current => {
@@ -750,6 +816,8 @@ export default function HomeSectionsEditor({ selectedSection = null }) {
             <MiniPreview
               section={section.key}
               data={localized}
+              featuredBookIds={content.books?.featured_book_ids || []}
+              availableBooks={availableBooks}
             />
 
             <button
@@ -783,6 +851,69 @@ export default function HomeSectionsEditor({ selectedSection = null }) {
                     />
                     Сайтад харуулах
                   </label>
+                )}
+
+                {section.key === 'books' && language === 'MN' && (
+                  <div style={{
+                    background: '#fff',
+                    border: '1px solid #dce5ef',
+                    borderRadius: 16,
+                    padding: 20,
+                    marginBottom: 20,
+                  }}>
+                    <h3 style={{ margin: '0 0 8px' }}>
+                      Нүүр хуудсанд харуулах 4 ном
+                    </h3>
+                    <p style={{ color: '#718096', fontSize: 13 }}>
+                      Номын удирдлагад нийтлэгдсэн номнуудаас сонгоно.
+                    </p>
+                    <div style={{ display: 'grid', gap: 12 }}>
+                      {[0, 1, 2, 3].map(index => {
+                        const ids = content.books?.featured_book_ids || []
+                        const selectedId = String(ids[index] || '')
+                        const book = availableBooks.find(
+                          item => String(item.id) === selectedId
+                        )
+                        return (
+                          <div key={index} style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 14,
+                            padding: 12,
+                            background: '#f8fbff',
+                            border: '1px solid #e1e8f0',
+                            borderRadius: 12,
+                          }}>
+                            <div style={{ width: 52, flexShrink: 0 }}>
+                              {book?.image_url ? (
+                                <img src={book.image_url} alt={book.title}
+                                  style={{ width: 52, height: 68, objectFit: 'contain' }} />
+                              ) : (
+                                <div style={{ padding: 12, background: '#e8eef5' }}>📖</div>
+                              )}
+                            </div>
+                            <label style={{ flex: 1 }}>
+                              <span style={{ display: 'block', marginBottom: 6 }}>
+                                Ном {index + 1}
+                              </span>
+                              <select
+                                value={selectedId}
+                                onChange={event => changeFeaturedBook(index, event.target.value)}
+                                style={{ width: '100%', padding: 11, borderRadius: 9 }}
+                              >
+                                <option value="">Автоматаар сонгох</option>
+                                {availableBooks.map(item => (
+                                  <option key={item.id} value={String(item.id)}>
+                                    {item.title}
+                                  </option>
+                                ))}
+                              </select>
+                            </label>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </div>
                 )}
 
                 {section.fields.map(([key, label, multiline]) => (

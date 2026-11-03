@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import HomeSectionsEditor from "../../content/HomeSectionsEditor";
+import BooksHeroEditor from "../../editor/BooksHeroEditor";
 
 const titles = {
   hero: "Эхний нүүр / Hero", study: "Өнөөдөр юу сурах вэ?", topikInfo: "TOPIK мэдээлэл",
@@ -21,6 +22,7 @@ export default function SectionAdminPage() {
         <p style={{color:'#0879d1',fontSize:12,fontWeight:800,letterSpacing:1.4}}>LEARN·MINEA / ADMIN</p>
         <h1 style={{fontSize:32,color:'#1d2939',marginBottom:8}}>{titles[section]}</h1>
         <p style={{color:'#718096',marginBottom:24}}>Энэ хэсгийн мэдээллийг засаж хадгална. Нүүр хуудастай нэг өгөгдлийн эх сурвалж ашиглана.</p>
+        {section === "books" && <BooksHeroEditor />}
         <HomeSectionsEditor selectedSection={section} />
       </div>
     </main>

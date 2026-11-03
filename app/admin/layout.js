@@ -174,7 +174,7 @@ const sectionItems = [
   ['why','Бидний тухай'], ['lifestyle','Бодит хэрэглээ'], ['testimonials','Сэтгэгдэл'],
   ['registration','Сургалтын бүртгэл'], ['faq','Түгээмэл асуулт'],
   ['finalCta','Сүүлийн уриалга / CTA'], ['footer','Footer / Холбоо барих'],
-  ['social','Сошиал хаягууд'],
+  ['theme','Загвар сонгох'],
 ].map(([key,label]) => ({label, path:`/admin/sections/${key}`,icon:'editor'}))
 
 menuGroups.push({title:'САЙТЫН ХЭСГҮҮД',items:sectionItems})

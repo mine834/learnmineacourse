@@ -152,6 +152,7 @@ export const homeContentDefaults = {
   },
 
   books: {
+    featured_book_ids: ['', '', '', ''],
     eyebrow: 'ЦАХИМ НОМЫН САН',
     title: 'Сурах материалаа сонго',
     body: 'Түвшин, зорилгодоо тохирсон цахим ном, материалуудаа үзээрэй.',

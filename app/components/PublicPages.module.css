@@ -12,3 +12,15 @@
 a:focus-visible,button:focus-visible,summary:focus-visible{outline:3px solid #0879d1;outline-offset:4px}
 @media(max-width:800px){.headerInner{padding:14px 24px;gap:14px;flex-wrap:wrap}.nav{order:3;justify-content:center;width:100%;gap:20px;padding:8px 0}.intro{padding:54px 0 60px}.content{padding-top:52px;padding-bottom:60px}.registration{padding:28px;grid-template-columns:1fr}.registrationAction{text-align:left}}
 @media(max-width:480px){.headerInner{padding:12px 20px}.logo{font-size:26px}.nav{gap:16px;justify-content:flex-start;overflow-x:auto}.nav a{font-size:12px}.iconLink{width:36px;height:36px}.container{width:calc(100% - 40px)}.intro h1{font-size:42px;letter-spacing:-1px}.description{font-size:16px}.rowLink{grid-template-columns:28px 1fr 20px;gap:14px;padding:26px 0}.rowTitle{font-size:27px}.detailsBody{padding:0 0 24px 42px;font-size:14px}.phraseRow{grid-template-columns:25px 1fr 42px;gap:14px;padding:24px 0}.korean{font-size:28px}.meaning{font-size:16px}.sound{width:40px;height:40px}.learningGrid{gap:12px}.learningCard{padding:20px;min-height:170px}.cardBottom h2{font-size:23px}.registration{padding:24px}.sectionTitle{font-size:30px}.subtext{font-size:16px}}
+
+/* BOOKS HEADER BLUE — only /books */
+:global(.booksPage) .header {
+  background: linear-gradient(
+    120deg,
+    #CCE5FC 0%,
+    #DCECFB 48%,
+    #EAF3FC 100%
+  ) !important;
+  border-bottom: 1px solid rgba(255,255,255,.65) !important;
+  box-shadow: none !important;
+}

@@ -51,6 +51,124 @@ export default async function BookDetailPage({ params }) {
       </section>
     </div>
     <style>{`
+
+      /* LEARNMINEA_DESCRIPTION_REFINED_V1 */
+
+      @media (min-width: 1001px) {
+        .bookDetail .detailColumns {
+          max-width: 1440px;
+          grid-template-columns:
+            minmax(0, 0.78fr)
+            minmax(0, 1.55fr);
+          gap: clamp(40px, 4.5vw, 76px);
+          align-items: start;
+        }
+
+        .bookDetail .coverFrame {
+          max-width: 430px;
+        }
+      }
+
+      .bookDetail .descriptionPanel {
+        min-width: 0;
+        max-width: 790px;
+        padding-top: 4px;
+      }
+
+      .bookDetail .richDescription {
+        color: #303640;
+        font-size: 16px;
+        line-height: 1.85;
+        letter-spacing: 0;
+        white-space: normal;
+        overflow-wrap: break-word;
+      }
+
+      .bookDetail .richDescription h1,
+      .bookDetail .richDescription h2,
+      .bookDetail .richDescription h3,
+      .bookDetail .richDescription h4 {
+        color: #192538;
+        font-weight: 750;
+        line-height: 1.4;
+        letter-spacing: -0.35px;
+        margin: 36px 0 18px;
+      }
+
+      .bookDetail .richDescription > :first-child {
+        margin-top: 0;
+      }
+
+      .bookDetail .richDescription h1 {
+        font-size: 25px;
+      }
+
+      .bookDetail .richDescription h2 {
+        font-size: 21px;
+      }
+
+      .bookDetail .richDescription h3,
+      .bookDetail .richDescription h4 {
+        font-size: 18px;
+      }
+
+      .bookDetail .richDescription p {
+        margin: 0 0 18px;
+        line-height: 1.85;
+      }
+
+      .bookDetail .richDescription ul,
+      .bookDetail .richDescription ol {
+        padding-left: 26px;
+        margin: 12px 0 32px;
+      }
+
+      .bookDetail .richDescription li {
+        padding-left: 7px;
+        margin-bottom: 13px;
+        line-height: 1.8;
+      }
+
+      .bookDetail .richDescription li::marker {
+        color: #0879d1;
+      }
+
+      .bookDetail .richDescription strong,
+      .bookDetail .richDescription b {
+        color: #172235;
+        font-weight: 750;
+      }
+
+      .bookDetail .richDescription blockquote {
+        margin: 28px 0;
+        padding: 18px 22px;
+        border-left: 3px solid #0879d1;
+        border-radius: 0 12px 12px 0;
+        background: #f1f7ff;
+        color: #33465e;
+      }
+
+      .bookDetail .richDescription img {
+        max-width: 100%;
+        height: auto;
+        border-radius: 12px;
+      }
+
+      @media (max-width: 700px) {
+        .bookDetail .richDescription {
+          font-size: 15px;
+          line-height: 1.75;
+        }
+
+        .bookDetail .richDescription h2 {
+          font-size: 20px;
+        }
+
+        .bookDetail .richDescription li {
+          margin-bottom: 10px;
+        }
+      }
+
       /* LEARNMINEA_RICH_DESCRIPTION_START */
       .descriptionPanel {
         min-width: 0;
@@ -326,6 +444,98 @@ export default async function BookDetailPage({ params }) {
         border-radius: inherit;
       }
       /* LEARNMINEA_COVER_FIT_END */
-    `}</style>
+
+      
+      /* LEARNMINEA_BOOK_DETAIL_CLEAN_LAYOUT */
+
+      @media (min-width: 1001px) {
+        .bookDetail .detailColumns {
+          max-width: 1250px;
+          margin: 48px auto 90px;
+          padding: 0 36px;
+          display: grid;
+          grid-template-columns: minmax(0, 290px) minmax(0, 1fr);
+          gap: 64px;
+          align-items: start;
+        }
+
+        .bookDetail .coverFrame {
+          max-width: 290px;
+        }
+
+        .bookDetail .descriptionPanel {
+          max-width: 760px;
+          padding-top: 4px;
+        }
+      }
+
+      .bookDetail .richDescription {
+        color: #30343b;
+        font-size: 16px;
+        line-height: 1.8;
+        letter-spacing: 0;
+        white-space: normal;
+        overflow-wrap: break-word;
+      }
+
+      .bookDetail .richDescription h1,
+      .bookDetail .richDescription h2,
+      .bookDetail .richDescription h3,
+      .bookDetail .richDescription h4 {
+        color: #172235;
+        line-height: 1.4;
+        font-weight: 750;
+        margin: 32px 0 16px;
+      }
+
+      .bookDetail .richDescription > :first-child {
+        margin-top: 0;
+      }
+
+      .bookDetail .richDescription h1 { font-size: 24px; }
+      .bookDetail .richDescription h2 { font-size: 21px; }
+      .bookDetail .richDescription h3,
+      .bookDetail .richDescription h4 { font-size: 18px; }
+
+      .bookDetail .richDescription p {
+        margin: 0 0 18px;
+        line-height: 1.8;
+      }
+
+      .bookDetail .richDescription ul,
+      .bookDetail .richDescription ol {
+        padding-left: 26px;
+        margin: 12px 0 30px;
+      }
+
+      .bookDetail .richDescription li {
+        margin-bottom: 12px;
+        padding-left: 6px;
+        line-height: 1.75;
+      }
+
+      .bookDetail .richDescription li::marker {
+        color: #0879d1;
+      }
+
+      .bookDetail .richDescription strong,
+      .bookDetail .richDescription b {
+        color: #172235;
+        font-weight: 750;
+      }
+
+      @media (max-width: 700px) {
+        .bookDetail .coverFrame {
+          max-width: 290px;
+          margin-left: auto;
+          margin-right: auto;
+        }
+
+        .bookDetail .richDescription {
+          font-size: 15px;
+          line-height: 1.75;
+        }
+      }
+`}</style>
   </main>
 }

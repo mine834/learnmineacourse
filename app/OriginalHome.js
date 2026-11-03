@@ -1033,7 +1033,7 @@ export default function Home({ books = [], homeContent = null, editorSettings = 
 .site #books .bookItem h3 {font-size:21px;line-height:1.35;margin:12px 0 12px;min-height:2.7em;}
 .site #books .mineaBookShort {font:15px/1.6 Arial,'Noto Sans',sans-serif;color:#858a97;flex:1;margin:0 0 18px;min-height:4.8em;overflow-wrap:anywhere;}
 .site #books .mineaBookFooter {display:flex;align-items:center;justify-content:space-between;gap:8px;border-top:1px solid #e7e9f0;padding-top:15px;margin-top:auto;min-height:55px;}
-.site #books .mineaBookFooter .price {font:700 18px/1.3 Arial,'Noto Sans',sans-serif;color:#6960e9;margin:0;padding:0;white-space:nowrap;}
+.site #books .mineaBookFooter .price {font:700 18px/1.3 Arial,'Noto Sans',sans-serif;color:#0879D1;margin:0;padding:0;white-space:nowrap;}
 .site #books .mineaBookOrder {font:700 14px/1.2 Arial,'Noto Sans',sans-serif;color:#292535;border:1px solid #e4e7f0;border-radius:12px;padding:12px 14px;background:#fff;white-space:nowrap;}
 .site #books .bookItem:hover .mineaBookOrder {border-color:#91c4f4;background:#f6fbff;}
 @media(max-width:1050px){.site #books .booksGrid{grid-template-columns:repeat(2,minmax(0,1fr));}}

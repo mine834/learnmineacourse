@@ -169,6 +169,12 @@ export default function LoginPage() {
             />
           </div>
 
+          <div style={{ textAlign: 'right', marginTop: '-8px' }}>
+            <a href="/forgot-password" style={{ color: '#0879D1', fontSize: '13px', fontWeight: 700, textDecoration: 'none' }}>
+              Нууц үг мартсан?
+            </a>
+          </div>
+
           {error && (
             <div style={styles.error}>
               {error}

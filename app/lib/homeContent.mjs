@@ -120,6 +120,9 @@ export const homeContentDefaults = {
     registration_korea_text: 'Солонгост бүртгүүлэх',
     registration_korea_url: 'https://www.topik.go.kr/',
     registration_steps_title: 'Бүртгэлийн алхмууд',
+    registration_self_text: 'Өөрөө бүртгүүлэх',
+    registration_service_text: 'TOPIK шалгалтын бүртгэл хийлгэх',
+    registration_service_url: '',
     registration_steps: 'TOPIK I эсвэл TOPIK II сонгох\\nБүртгэлийн хугацааг шалгах\\nХувийн мэдээлэл, зургаа бэлтгэх\\nЗааврын дагуу бүртгүүлэх\\nТөлбөр болон баталгаажуулалтаа шалгах\\nШалгалтын байр, цагийг нягтлах',
   },
   gksInfo: {

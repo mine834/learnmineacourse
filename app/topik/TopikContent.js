@@ -108,11 +108,36 @@ export default function TopikContent({ books = [], loadError = false, registrati
           <details>
             <summary><span>03</span><strong>{registration.registration_steps_title || "Бүртгэлийн алхмууд"}</strong><b>+</b></summary>
             <div className="lmTopikRegistrationBody">
-              <ol>
-                {String(registration.registration_steps || '').split('\\n').map(x => x.trim()).filter(Boolean).map((step, index) => (
-                  <li key={index}>{step}</li>
-                ))}
-              </ol>
+              <details>
+                <summary>
+                  <strong>{registration.registration_self_text || 'Өөрөө бүртгүүлэх'}</strong>
+                  <b>+</b>
+                </summary>
+                <div className="lmTopikRegistrationBody">
+                  <ol>
+                    {String(registration.registration_steps || '').split('\\n').map(x => x.trim()).filter(Boolean).map((step, index) => (
+                      <li key={index}>{step}</li>
+                    ))}
+                  </ol>
+                </div>
+              </details>
+
+              {safeHomeLink(registration.registration_service_url) ? (
+                <a
+                  href={safeHomeLink(registration.registration_service_url)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="lmTopikDirectCard"
+                >
+                  <strong>{registration.registration_service_text || 'TOPIK шалгалтын бүртгэл хийлгэх'}</strong>
+                  <b>↗</b>
+                </a>
+              ) : (
+                <div className="lmTopikDirectCard">
+                  <strong>{registration.registration_service_text || 'TOPIK шалгалтын бүртгэл хийлгэх'}</strong>
+                  <small>Бүртгэлийн холбоос удахгүй нэмэгдэнэ</small>
+                </div>
+              )}
             </div>
           </details>
         </div>

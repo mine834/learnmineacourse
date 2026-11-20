@@ -552,7 +552,7 @@ export default function Home({ books = [], homeContent = null, editorSettings = 
   
   {/* Shared public/admin components: identical markup and styles */}
   <div className="wrap"><TopikInfoSection value={home.topikInfo} /></div>
-  <div className="wrap" style={{paddingBottom:70}}><GksInfoSection value={home.gksInfo} /></div>
+  <div className="wrap" style={{paddingBottom:70}}><GksInfoSection value={home.gksInfo} consultationUrl={editorSettings?.gksConsultationUrl} /></div>
 
   <section className="section conversation" id="conversation">
     <div className="wrap split">

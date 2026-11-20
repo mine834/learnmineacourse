@@ -21,7 +21,7 @@ export function TopikInfoSection({ value = {}, preview = false }) {
   </section>
 }
 
-export function GksInfoSection({ value = {}, preview = false }) {
+export function GksInfoSection({ value = {}, preview = false, consultationUrl }) {
   const [open, setOpen] = useState(false)
   const items = [['tracks_title','tracks_body'],['selection_title','selection_body'],['preparation_title','preparation_body'],['apostille_title','apostille_body']]
   return <section className={s.gks} id={preview ? undefined : 'gks-info'}>
@@ -35,7 +35,7 @@ export function GksInfoSection({ value = {}, preview = false }) {
       <div className={s.gksSection}><h3>{value.optional_title}</h3><ul className={s.twoCols}>{lines(value.optional_list).map((item,i) => <li key={i}>{item}</li>)}</ul>{value.documents_note && <p className={s.note}>{value.documents_note}</p>}</div>
       <div className={s.gksCards}>{items.map(([title,body]) => <article key={title}><h3>{value[title]}</h3><p>{value[body]}</p></article>)}</div>
       <div className={s.actions}>{value.official_link_text && (preview ? <span>{value.official_link_text}</span> : <a href="https://www.studyinkorea.go.kr/" target="_blank" rel="noopener noreferrer">{value.official_link_text}</a>)}
-        {value.consultation_text && (preview ? <span className={s.consult}>{value.consultation_text}</span> : <Link className={s.consult} href={safeHomeLink(value.consultation_url) || '/survey'}>{value.consultation_text}</Link>)}
+        {value.consultation_text && (preview ? <span className={s.consult}>{value.consultation_text}</span> : <Link className={s.consult} href={safeHomeLink(consultationUrl?.trim() || value.consultation_url) || '/survey'}>{value.consultation_text}</Link>)}
       </div>
     </div>}
   </section>

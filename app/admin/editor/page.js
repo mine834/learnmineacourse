@@ -13,6 +13,7 @@ const DEFAULTS = {
     'Хэл сурахад ихийг биш, зөвийг сур. Өөрийн түвшин, зорилго, сурах арга барилдаа тохирсон материалуудаа нэг дороос олоорой.',
   heroEyebrow: 'ӨӨРИЙН ХЭМНЭЛЭЭР, БОДИТ ХЭРЭГЛЭЭНЭЭС',
   heroImage: '',
+  gksConsultationUrl: '',
   heroFontSize: 72,
   heroTextSize: 18,
   headingFontSize: 48,
@@ -555,6 +556,19 @@ export default function SiteEditorPage() {
                 onChange={e => change('heroColor', e.target.value)}
               />
             </Field>
+          </section>
+
+          <section className="panel">
+            <h2>GKS · Зөвлөгөө авах линк</h2>
+            <Field label="Зөвлөгөө авах товчны URL">
+              <input
+                type="text"
+                value={settings.gksConsultationUrl || ''}
+                onChange={e => change('gksConsultationUrl', e.target.value)}
+                placeholder="/survey эсвэл https://..."
+              />
+            </Field>
+            <p>Хоосон үлдээвэл одоогийн /survey линк ашиглагдана.</p>
           </section>
 
           <section className="panel">

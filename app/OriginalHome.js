@@ -1,10 +1,5 @@
 'use client'
 
-import './learnminea-illustrations.css'
-import './steep-cinematic.css'
-import './site-compact.css'
-import './steep-motion.css'
-import './method-compact.css'
 import Link from 'next/link'
 import { TopikInfoSection, GksInfoSection } from './components/InfoSections'
 import { useState, useEffect } from 'react'

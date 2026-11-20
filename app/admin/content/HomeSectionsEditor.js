@@ -45,6 +45,17 @@ const sections = [
       ['card1_body', '1-р картын тайлбар', true], ['card1_link_text', '1-р картын холбоосын бичвэр'],
       ['card2_symbol', '2-р картын тэмдэг'], ['card2_title', '2-р картын гарчиг'],
       ['card2_body', '2-р картын тайлбар', true], ['card2_link_text', '2-р картын холбоосын бичвэр'],
+
+      ['registration_title', 'Бүртгэлийн гарчиг'],
+      ['registration_description', 'Бүртгэлийн тайлбар', true],
+      ['registration_official_text', 'Албан ёсны сайтын товчны нэр'],
+      ['registration_official_url', 'Албан ёсны сайтын URL'],
+      ['registration_mongolia_text', 'Монголд бүртгүүлэх товчны нэр'],
+      ['registration_mongolia_url', 'Монголд бүртгүүлэх URL'],
+      ['registration_korea_text', 'Солонгост бүртгүүлэх товчны нэр'],
+      ['registration_korea_url', 'Солонгост бүртгүүлэх URL'],
+      ['registration_steps_title', 'Бүртгэлийн алхмуудын гарчиг'],
+      ['registration_steps', 'Бүртгэлийн алхмууд (мөр бүр нэг)', true],
     ],
   },
   {

@@ -2,12 +2,13 @@
 
 import { useEffect, useRef } from 'react'
 import { useSearchParams } from 'next/navigation'
+import { safeHomeLink } from '../lib/homeContent.mjs'
 import PublicHeader, { PageIntro } from '../components/PublicHeader'
 import styles from '../components/PublicPages.module.css'
 import './topik-custom.css'
 import bookStyles from './TopikBooks.module.css'
 
-export default function TopikContent({ books = [], loadError = false }) {
+export default function TopikContent({ books = [], loadError = false, registration = {} }) {
   const params = useSearchParams()
   const aboutRef = useRef(null)
   const registerRef = useRef(null)
@@ -91,29 +92,26 @@ export default function TopikContent({ books = [], loadError = false }) {
         <div className="lmTopikRegistrationHead">
           <div>
             <p className="lmTopikEyebrow">TOPIK</p>
-            <h2>TOPIK шалгалтын бүртгэл</h2>
-            <p>Шалгалт өгөх улс, бүртгэлийн хугацаа болон заавраа сонгоорой.</p>
+            <h2>{registration.registration_title || "TOPIK шалгалтын бүртгэл"}</h2>
+            <p>{registration.registration_description || "Шалгалт өгөх улс, бүртгэлийн хугацаа болон заавраа сонгоорой."}</p>
           </div>
-          <a href="https://www.topik.go.kr/" target="_blank" rel="noopener noreferrer" className="lmTopikOfficial">
-            Албан ёсны сайт ↗
+          <a href={safeHomeLink(registration.registration_official_url) || "https://www.topik.go.kr/"} target="_blank" rel="noopener noreferrer" className="lmTopikOfficial">
+            {registration.registration_official_text || "Албан ёсны сайт ↗"}
           </a>
         </div>
 
         <div className="lmTopikRegistrationGrid">
-          <a className="lmTopikDirectCard" href="https://topik.mn/" target="_blank" rel="noopener noreferrer"><span>01</span><strong>Монголд бүртгүүлэх</strong><b>↗</b></a>
+          <a className="lmTopikDirectCard" href={safeHomeLink(registration.registration_mongolia_url) || "https://topik.mn/"} target="_blank" rel="noopener noreferrer"><span>01</span><strong>{registration.registration_mongolia_text || "Монголд бүртгүүлэх"}</strong><b>↗</b></a>
 
-          <a className="lmTopikDirectCard" href="https://www.topik.go.kr/" target="_blank" rel="noopener noreferrer"><span>02</span><strong>Солонгост бүртгүүлэх</strong><b>↗</b></a>
+          <a className="lmTopikDirectCard" href={safeHomeLink(registration.registration_korea_url) || "https://www.topik.go.kr/"} target="_blank" rel="noopener noreferrer"><span>02</span><strong>{registration.registration_korea_text || "Солонгост бүртгүүлэх"}</strong><b>↗</b></a>
 
           <details>
-            <summary><span>03</span><strong>Бүртгэлийн алхмууд</strong><b>+</b></summary>
+            <summary><span>03</span><strong>{registration.registration_steps_title || "Бүртгэлийн алхмууд"}</strong><b>+</b></summary>
             <div className="lmTopikRegistrationBody">
               <ol>
-                <li>TOPIK I эсвэл TOPIK II сонгох</li>
-                <li>Бүртгэлийн хугацааг шалгах</li>
-                <li>Хувийн мэдээлэл, зургаа бэлтгэх</li>
-                <li>Зааврын дагуу бүртгүүлэх</li>
-                <li>Төлбөр болон баталгаажуулалтаа шалгах</li>
-                <li>Шалгалтын байр, цагийг нягтлах</li>
+                {String(registration.registration_steps || '').split('\\n').map(x => x.trim()).filter(Boolean).map((step, index) => (
+                  <li key={index}>{step}</li>
+                ))}
               </ol>
             </div>
           </details>

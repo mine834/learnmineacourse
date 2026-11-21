@@ -95,54 +95,89 @@ export default function TopikContent({ books = [], loadError = false, registrati
             <h2>{registration.registration_title || "TOPIK шалгалтын бүртгэл"}</h2>
             <p>{registration.registration_description || "Шалгалт өгөх улс, бүртгэлийн хугацаа болон заавраа сонгоорой."}</p>
           </div>
-          <a href={safeHomeLink(registration.registration_official_url) || "https://www.topik.go.kr/"} target="_blank" rel="noopener noreferrer" className="lmTopikOfficial">
-            {registration.registration_official_text || "Албан ёсны сайт ↗"}
-          </a>
+          {registration.registration_official_text?.trim() &&
+            safeHomeLink(registration.registration_official_url) && (
+            <a
+              href={safeHomeLink(registration.registration_official_url)}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="lmTopikOfficial"
+            >
+              {registration.registration_official_text.trim()}
+            </a>
+          )}
         </div>
 
         <div className="lmTopikRegistrationGrid">
-          <a className="lmTopikDirectCard" href={safeHomeLink(registration.registration_mongolia_url) || "https://topik.mn/"} target="_blank" rel="noopener noreferrer"><span>01</span><strong>{registration.registration_mongolia_text || "Монголд бүртгүүлэх"}</strong><b>↗</b></a>
+          {registration.registration_mongolia_text?.trim() &&
+            safeHomeLink(registration.registration_mongolia_url) && (
+            <a
+              className="lmTopikDirectCard"
+              href={safeHomeLink(registration.registration_mongolia_url)}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <span>01</span>
+              <strong>{registration.registration_mongolia_text.trim()}</strong>
+              <b>↗</b>
+            </a>
+          )}
 
-          <a className="lmTopikDirectCard" href={safeHomeLink(registration.registration_korea_url) || "https://www.topik.go.kr/"} target="_blank" rel="noopener noreferrer"><span>02</span><strong>{registration.registration_korea_text || "Солонгост бүртгүүлэх"}</strong><b>↗</b></a>
+          {registration.registration_korea_text?.trim() &&
+            safeHomeLink(registration.registration_korea_url) && (
+            <a
+              className="lmTopikDirectCard"
+              href={safeHomeLink(registration.registration_korea_url)}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <span>02</span>
+              <strong>{registration.registration_korea_text.trim()}</strong>
+              <b>↗</b>
+            </a>
+          )}
 
-          <details>
-            <summary><span>03</span><strong>{registration.registration_steps_title || "Бүртгэлийн алхмууд"}</strong><b>+</b></summary>
-            <div className="lmTopikRegistrationBody">
-              {safeHomeLink(registration.registration_self_url) ? (
-                <a
-                  href={safeHomeLink(registration.registration_self_url)}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="lmTopikDirectCard"
-                >
-                  <strong>{registration.registration_self_text || 'Өөрөө бүртгүүлэх'}</strong>
-                  <b>↗</b>
-                </a>
-              ) : (
-                <div className="lmTopikDirectCard">
-                  <strong>{registration.registration_self_text || 'Өөрөө бүртгүүлэх'}</strong>
-                  <small>Зааврын холбоос удахгүй нэмэгдэнэ</small>
-                </div>
-              )}
+          {(
+            (registration.registration_self_text?.trim() &&
+              safeHomeLink(registration.registration_self_url)) ||
+            (registration.registration_service_text?.trim() &&
+              safeHomeLink(registration.registration_service_url))
+          ) && (
+            <details>
+              <summary>
+                <span>03</span>
+                <strong>{registration.registration_steps_title || 'Бүртгэлийн алхмууд'}</strong>
+                <b>+</b>
+              </summary>
+              <div className="lmTopikRegistrationBody">
+                {registration.registration_self_text?.trim() &&
+                  safeHomeLink(registration.registration_self_url) && (
+                  <a
+                    href={safeHomeLink(registration.registration_self_url)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="lmTopikDirectCard"
+                  >
+                    <strong>{registration.registration_self_text.trim()}</strong>
+                    <b>↗</b>
+                  </a>
+                )}
 
-              {safeHomeLink(registration.registration_service_url) ? (
-                <a
-                  href={safeHomeLink(registration.registration_service_url)}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="lmTopikDirectCard"
-                >
-                  <strong>{registration.registration_service_text || 'TOPIK шалгалтын бүртгэл хийлгэх'}</strong>
-                  <b>↗</b>
-                </a>
-              ) : (
-                <div className="lmTopikDirectCard">
-                  <strong>{registration.registration_service_text || 'TOPIK шалгалтын бүртгэл хийлгэх'}</strong>
-                  <small>Бүртгэлийн холбоос удахгүй нэмэгдэнэ</small>
-                </div>
-              )}
-            </div>
-          </details>
+                {registration.registration_service_text?.trim() &&
+                  safeHomeLink(registration.registration_service_url) && (
+                  <a
+                    href={safeHomeLink(registration.registration_service_url)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="lmTopikDirectCard"
+                  >
+                    <strong>{registration.registration_service_text.trim()}</strong>
+                    <b>↗</b>
+                  </a>
+                )}
+              </div>
+            </details>
+          )}
         </div>
       </div>
     </section>

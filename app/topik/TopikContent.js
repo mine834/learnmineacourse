@@ -109,75 +109,33 @@ export default function TopikContent({ books = [], loadError = false, registrati
         </div>
 
         <div className="lmTopikRegistrationGrid">
-          {registration.registration_mongolia_text?.trim() &&
-            safeHomeLink(registration.registration_mongolia_url) && (
-            <a
-              className="lmTopikDirectCard"
-              href={safeHomeLink(registration.registration_mongolia_url)}
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              <span>01</span>
-              <strong>{registration.registration_mongolia_text.trim()}</strong>
-              <b>↗</b>
-            </a>
-          )}
-
-          {registration.registration_korea_text?.trim() &&
-            safeHomeLink(registration.registration_korea_url) && (
-            <a
-              className="lmTopikDirectCard"
-              href={safeHomeLink(registration.registration_korea_url)}
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              <span>02</span>
-              <strong>{registration.registration_korea_text.trim()}</strong>
-              <b>↗</b>
-            </a>
-          )}
-
-          {(
-            (registration.registration_self_text?.trim() &&
-              safeHomeLink(registration.registration_self_url)) ||
-            (registration.registration_service_text?.trim() &&
-              safeHomeLink(registration.registration_service_url))
-          ) && (
-            <details>
-              <summary>
-                <span>03</span>
-                <strong>{registration.registration_steps_title || 'Бүртгэлийн алхмууд'}</strong>
-                <b>+</b>
-              </summary>
-              <div className="lmTopikRegistrationBody">
-                {registration.registration_self_text?.trim() &&
-                  safeHomeLink(registration.registration_self_url) && (
-                  <a
-                    href={safeHomeLink(registration.registration_self_url)}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="lmTopikDirectCard"
-                  >
-                    <strong>{registration.registration_self_text.trim()}</strong>
-                    <b>↗</b>
-                  </a>
-                )}
-
-                {registration.registration_service_text?.trim() &&
-                  safeHomeLink(registration.registration_service_url) && (
-                  <a
-                    href={safeHomeLink(registration.registration_service_url)}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="lmTopikDirectCard"
-                  >
-                    <strong>{registration.registration_service_text.trim()}</strong>
-                    <b>↗</b>
-                  </a>
-                )}
-              </div>
-            </details>
-          )}
+          {[
+            {
+              text: registration.registration_mongolia_text,
+              url: registration.registration_mongolia_url,
+            },
+            {
+              text: registration.registration_self_text,
+              url: registration.registration_self_url,
+            },
+            {
+              text: registration.registration_service_text,
+              url: registration.registration_service_url,
+            },
+          ].filter(item => item.text?.trim() && safeHomeLink(item.url))
+            .map((item, index) => (
+              <a
+                key={index}
+                className="lmTopikDirectCard"
+                href={safeHomeLink(item.url)}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <span>{String(index + 1).padStart(2, '0')}</span>
+                <strong>{item.text.trim()}</strong>
+                <b>↗</b>
+              </a>
+            ))}
         </div>
       </div>
     </section>

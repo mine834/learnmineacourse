@@ -58,7 +58,7 @@ const sections = [
       ['registration_self_text', 'Өөрөө бүртгүүлэх сонголтын нэр'],
       ['registration_self_url', 'Өөрөө бүртгүүлэх зааврын URL'],
       ['registration_service_text', 'Бүртгэл хийлгэх сонголтын нэр'],
-      ['registration_service_url', 'Бүртгэл хийлгэх маягтын URL'],
+      ['registration_service_url', 'Бүртгэл хийлгэх сонголтын URL (Google Form / Notion / бусад)'],
       ['registration_steps', 'Бүртгэлийн алхмууд (мөр бүр нэг)', true],
     ],
   },

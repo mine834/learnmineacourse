@@ -109,3 +109,65 @@
 @media (prefers-reduced-motion: reduce) {
   .site .lmScrollItem { opacity: 1 !important; transform: none !important; }
 }
+
+/* LEARN MINEA — MOBILE CONVERSATION */
+@media (max-width: 700px) {
+  .site .conversation {
+    padding: 48px 0;
+  }
+
+  .site .conversation .wrap.split {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 32px;
+  }
+
+  .site .conversation .talkCard {
+    min-width: 0;
+    padding: 24px 20px;
+    border-radius: 22px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, .045);
+  }
+
+  .site .conversation .talkTop {
+    gap: 12px;
+    letter-spacing: 1.2px;
+  }
+
+  .site .conversation .talkTop span {
+    font-size: 11px;
+    line-height: 1.5;
+    font-weight: 600;
+  }
+
+  .site .conversation .talkTop button {
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    padding: 0;
+    font-size: 19px;
+    box-shadow: none;
+  }
+
+  .site .conversation .talkCard h2 {
+    font-size: clamp(27px, 7vw, 38px);
+    line-height: 1.4;
+    letter-spacing: -0.8px;
+    margin: 32px 0 14px;
+    overflow-wrap: break-word;
+    word-break: keep-all;
+  }
+
+  .site .conversation .talkCard > p {
+    font-size: 16px;
+    line-height: 1.6;
+    margin: 0;
+  }
+
+  .site .conversation .talkCard .tip {
+    margin-top: 24px;
+    padding: 16px 18px;
+    border-radius: 14px;
+    font-size: 14px;
+    line-height: 1.65;
+  }
+}

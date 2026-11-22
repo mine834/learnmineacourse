@@ -569,7 +569,11 @@ export default function Home({ books = [], homeContent = null, editorSettings = 
 
         <h2 lang="ko">{home.conversation.korean}</h2>
         <p>{home.conversation.translation}</p>
-        <div className="tip">{home.conversation.tip}</div>
+        <div className="tip">
+  {String(home.conversation.tip || '')
+    .replace(/^[\s📌📍📎♧]+/u, '')
+    .trim()}
+</div>
       </div>
 
       <div className="splitCopy">

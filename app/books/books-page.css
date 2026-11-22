@@ -319,7 +319,7 @@
   top: 25px;
   left: 32px;
   transform: rotate(-13deg);
-  animation: mineaBookFloatBack 6s ease-in-out infinite;
+  animation: none;
 }
 
 .booksPage .bookFront {
@@ -328,7 +328,7 @@
   top: 75px;
   left: 155px;
   transform: rotate(8deg);
-  animation: mineaBookFloatFront 5.5s ease-in-out infinite;
+  animation: none;
 }
 
 .booksPage .mineabooksBookLabel {

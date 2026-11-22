@@ -4,10 +4,10 @@ import { createPublicCatalogClient } from '../lib/publicCatalog'
 import { getPublishedCatalog } from '../lib/catalog.mjs'
 import { getHomeContent } from '../lib/homeContent.mjs'
 
-export const dynamic = 'force-dynamic'
+export const revalidate = 60
 
 export default async function Topik() {
-  const client = createPublicCatalogClient()
+  const client = createPublicCatalogClient({ revalidate: 60 })
   const [{ books, errors }, { content: homeContent, error: contentError }] = await Promise.all([
     getPublishedCatalog(client),
     getHomeContent(client),

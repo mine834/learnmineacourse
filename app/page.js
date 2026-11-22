@@ -3,10 +3,10 @@ import { getPublishedCatalog } from './lib/catalog.mjs'
 import { createPublicCatalogClient } from './lib/publicCatalog'
 import { getHomeContent } from './lib/homeContent.mjs'
 
-export const dynamic = 'force-dynamic'
+export const revalidate = 60
 
 export default async function HomePage() {
-  const client = createPublicCatalogClient()
+  const client = createPublicCatalogClient({ revalidate: 60 })
   const [{ books, errors }, { content: homeContent, error: homeError }] =
     await Promise.all([
       getPublishedCatalog(client),

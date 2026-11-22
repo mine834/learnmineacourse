@@ -4,12 +4,12 @@ import { createPublicCatalogClient } from '../lib/publicCatalog'
 import { getHomeContent } from '../lib/homeContent.mjs'
 import { getPublishedCatalog } from '../lib/catalog.mjs'
 import LearnCategoryExplorer from './LearnCategoryExplorer'
-export const dynamic = 'force-dynamic'
+export const revalidate = 60
 export default async function LearnPage() {
-  const { content, error } = await getHomeContent(createPublicCatalogClient())
+  const { content, error } = await getHomeContent(createPublicCatalogClient({ revalidate: 60 }))
   if (error) console.error('Course registration content unavailable', error.message)
   const registration = content.registration
-  const { books, errors } = await getPublishedCatalog(createPublicCatalogClient())
+  const { books, errors } = await getPublishedCatalog(createPublicCatalogClient({ revalidate: 60 }))
   if (errors.length) console.error("Learn catalog unavailable", errors)
   return <main className={styles.page}>
     <PublicHeader active="/learn" />

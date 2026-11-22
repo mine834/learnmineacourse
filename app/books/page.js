@@ -6,7 +6,7 @@ import PublicHeader, { PageIntro } from '../components/PublicHeader'
 import { getPublishedCatalog } from '../lib/catalog.mjs'
 import { createPublicCatalogClient } from '../lib/publicCatalog'
 
-export const dynamic = 'force-dynamic'
+export const revalidate = 60
 
 const colors = {
   blue: '#009DFF',
@@ -54,14 +54,19 @@ export default async function BooksPage({ searchParams }) {
   const selectedCategory = canonicalCategory(params?.category || 'all')
   const search = String(params?.search || '').trim().toLocaleLowerCase()
 
-  const catalogClient = createPublicCatalogClient()
-  const { books, errors } = await getPublishedCatalog(catalogClient)
+  const catalogClient = createPublicCatalogClient({ revalidate: 60 })
 
-  const { data: booksHeroRow, error: booksHeroError } = await catalogClient
-    .from('site_editor_settings')
-    .select('content')
-    .eq('id', 'books_hero')
-    .maybeSingle()
+  const [
+    { books, errors },
+    { data: booksHeroRow, error: booksHeroError },
+  ] = await Promise.all([
+    getPublishedCatalog(catalogClient),
+    catalogClient
+      .from('site_editor_settings')
+      .select('content')
+      .eq('id', 'books_hero')
+      .maybeSingle(),
+  ])
 
   if (booksHeroError) console.error('Books hero settings:', booksHeroError.message)
 

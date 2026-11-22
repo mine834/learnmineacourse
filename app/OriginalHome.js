@@ -594,8 +594,7 @@ export default function Home({ books = [], homeContent = null, editorSettings = 
     return (
       <Link
         href={`/books/${book.id}`}
-        prefetch={false}
-        className="bookItem"
+                className="bookItem"
         key={`${book.source || 'book'}-${book.id}`}
       >
         <div className="bookCover">

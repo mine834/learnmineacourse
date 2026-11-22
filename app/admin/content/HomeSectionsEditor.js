@@ -931,17 +931,101 @@ export default function HomeSectionsEditor({ selectedSection = null }) {
                   </div>
                 )}
 
-                {section.fields.map(([key, label, multiline]) => (
-                  <Field
-                    key={key}
-                    label={label}
-                    value={value[key]}
-                    multiline={Boolean(multiline)}
-                    onChange={text =>
-                      change(section.key, key, text)
-                    }
-                  />
-                ))}
+                {section.key === 'topikInfo' ? (
+                  <div style={{ display: 'grid', gap: 14 }}>
+                    {[
+                      {
+                        title: '01 · Нүүр хуудасны TOPIK',
+                        description: 'Нүүр хуудасны танилцуулга болон 2 мэдээллийн карт',
+                        keys: [
+                          'eyebrow', 'title', 'body',
+                          'card1_symbol', 'card1_title', 'card1_body', 'card1_link_text',
+                          'card2_symbol', 'card2_title', 'card2_body', 'card2_link_text',
+                        ],
+                      },
+                      {
+                        title: '02 · TOPIK шалгалтын бүртгэл',
+                        description: 'Бүртгэлийн хэсгийн гарчиг болон тайлбар',
+                        keys: ['registration_title', 'registration_description'],
+                      },
+                      {
+                        title: '03 · Бүртгэлийн товчнууд',
+                        description: 'Товчны нэр, URL хоёуланг бөглөсөн үед үндсэн сайтад харагдана',
+                        keys: [
+                          'registration_mongolia_text', 'registration_mongolia_url',
+                          'registration_self_text', 'registration_self_url',
+                          'registration_service_text', 'registration_service_url',
+                        ],
+                      },
+                      {
+                        title: '04 · Нэмэлт тохиргоо',
+                        description: 'Албан ёсны сайт, Солонгосын бүртгэл болон бусад тохиргоо',
+                        keys: [
+                          'registration_official_text', 'registration_official_url',
+                          'registration_korea_text', 'registration_korea_url',
+                          'registration_steps_title', 'registration_steps',
+                        ],
+                      },
+                    ].map((group, groupIndex) => (
+                      <details
+                        key={group.title}
+                        open={groupIndex === 2 ? true : undefined}
+                        style={{
+                          border: '1px solid #dce5ef',
+                          borderRadius: 14,
+                          background: '#fff',
+                          padding: '16px 18px',
+                        }}
+                      >
+                        <summary style={{
+                          cursor: 'pointer',
+                          fontWeight: 750,
+                          fontSize: 16,
+                          color: '#18314d',
+                        }}>
+                          {group.title}
+                          <span style={{
+                            display: 'block',
+                            fontSize: 12,
+                            fontWeight: 400,
+                            color: '#64748b',
+                            marginTop: 5,
+                          }}>
+                            {group.description}
+                          </span>
+                        </summary>
+                        <div style={{ display: 'grid', gap: 14, marginTop: 20 }}>
+                          {group.keys.map(key => {
+                            const field = section.fields.find(item => item[0] === key)
+                            if (!field) return null
+                            const [, label, multiline] = field
+                            return (
+                              <Field
+                                key={key}
+                                label={label}
+                                value={value[key]}
+                                multiline={Boolean(multiline)}
+                                onChange={text => change(section.key, key, text)}
+                              />
+                            )
+                          })}
+                        </div>
+                      </details>
+                    ))}
+                  </div>
+                ) : (
+                  section.fields.map(([key, label, multiline]) => (
+                    <Field
+                      key={key}
+                      label={label}
+                      value={value[key]}
+                      multiline={Boolean(multiline)}
+                      onChange={text =>
+                        change(section.key, key, text)
+                      }
+                    />
+                  ))
+                )}
 
                 {linkSections[section.key] && (
                   <Field

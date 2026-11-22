@@ -177,7 +177,7 @@ export default async function BooksPage({ searchParams }) {
                       ДИЖИТАЛ МАТЕРИАЛ · PDF
                     </p>
 
-                    <h3><Link prefetch={false} href={`/books/${book.id}`}>{book.title}</Link></h3>
+                    <h3><Link prefetch={true} href={`/books/${book.id}`}>{book.title}</Link></h3>
                     {Boolean(book.short_description || book.shortDescription) && (
                       <p className="mineaCatalogShort">{book.short_description || book.shortDescription}</p>
                     )}

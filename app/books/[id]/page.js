@@ -4,11 +4,11 @@ import { getPublishedBook } from '../../lib/catalog.mjs'
 import { createPublicCatalogClient } from '../../lib/publicCatalog'
 import BookPreview from '../BookPreview'
 
-export const dynamic = 'force-dynamic'
+export const revalidate = 60
 
 export default async function BookDetailPage({ params }) {
   const { id } = await params
-  const supabase = createPublicCatalogClient()
+  const supabase = createPublicCatalogClient({ revalidate: 60 })
   const { book, error } = await getPublishedBook(supabase, id)
   if (error) throw new Error('Номын мэдээллийг ачаалж чадсангүй. Дахин оролдоно уу.')
   if (!book) notFound()
